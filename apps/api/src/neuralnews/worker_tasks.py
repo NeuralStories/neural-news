@@ -1,0 +1,141 @@
+"""Manejadores de trabajos del worker. Cada handler es idempotente.
+
+Las operaciones de pago nunca se reintentan a ciegas tras un timeout: si el
+presupuesto lo bloquea o ya se registró consumo, el trabajo falla de forma
+definitiva con un mensaje claro.
+"""
+from __future__ import annotations
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from .models import Job, Source, Story
+from .queue import mark_done, mark_failed, mark_retryable
+from .services import budget as budget_service
+from .services import batches as batch_service
+from .services import research as research_service
+from .services import scripts as script_service
+from .services.sources import extract_stories_from_source, run_fetch
+
+PROCESS_SOURCE = "process_source"
+ANALYZE_VIDEO = "analyze_video"
+RESEARCH_STORY = "research_story"
+DRAFT_SCRIPT = "draft_script"
+EXPORT_BATCH = "export_batch"
+
+HANDLERS = {}
+
+
+def handler(job_type: str):
+    def register(fn):
+        HANDLERS[job_type] = fn
+        return fn
+
+    return register
+
+
+@handler(PROCESS_SOURCE)
+def handle_process_source(db: Session, job: Job) -> str:
+    source_id = job.payload["source_id"]
+    source = db.get(Source, source_id)
+    if source is None:
+        raise RuntimeError("La fuente ya no existe")
+    run_fetch(db, source)
+    stories = extract_stories_from_source(db, source)
+    return f"Fuente procesada; {len(stories)} candidato(s) de noticias"
+
+
+@handler(ANALYZE_VIDEO)
+def handle_analyze_video(db: Session, job: Job) -> str:
+    """Análisis de vídeo real (Gemini) con control de presupuesto.
+
+    En modo demo el contenido ya llegó con la fuente, así que este trabajo no
+    necesita llamar a nada de pago.
+    """
+    from .config import get_settings
+    from .providers.video_analysis import call_gemini_video_analysis
+    from .services.sources import _store_content
+
+    source_id = job.payload["source_id"]
+    source = db.get(Source, source_id)
+    if source is None:
+        raise RuntimeError("La fuente ya no existe")
+    settings = get_settings()
+    if settings.demo_mode:
+        return "Modo demo: el análisis simulado ya está incluido en la fuente"
+    try:
+        budget_service.assert_paid_call_allowed(db, "gemini", estimated_cost_eur=0.01)
+    except budget_service.BudgetExceeded as exc:
+        budget_service.record_usage(db, provider="gemini", job_id=job.id, event="blocked")
+        mark_failed(db, job, str(exc))
+        return "bloqueado por presupuesto"
+
+    result = call_gemini_video_analysis(source.canonical_url or "")
+    for draft in result.contents:
+        _store_content(db, source, draft)
+    source.status = "READY"
+    budget_service.record_usage(
+        db,
+        provider="gemini",
+        model=settings.llm_model,
+        job_id=job.id,
+        event="call",
+        cost_estimate=0.01,
+    )
+    return "Análisis del vídeo guardado (no es transcripción literal)"
+
+
+@handler(RESEARCH_STORY)
+def handle_research_story(db: Session, job: Job) -> str:
+    story_id = job.payload["story_id"]
+    story = db.get(Story, story_id)
+    if story is None:
+        raise RuntimeError("La noticia ya no existe")
+    from .providers.research import ResearchSearchProvider
+
+    provider = ResearchSearchProvider()
+    if not provider.demo:
+        try:
+            budget_service.assert_paid_call_allowed(db, "search", estimated_cost_eur=0.005)
+        except budget_service.BudgetExceeded as exc:
+            budget_service.record_usage(db, provider="search", job_id=job.id, event="blocked")
+            mark_failed(db, job, str(exc))
+            return "bloqueado por presupuesto"
+    research_service.research_story(db, story)
+    return "Investigación completada; la noticia queda pendiente de revisión"
+
+
+@handler(DRAFT_SCRIPT)
+def handle_draft_script(db: Session, job: Job) -> str:
+    story_id = job.payload["story_id"]
+    story = db.get(Story, story_id)
+    if story is None:
+        raise RuntimeError("La noticia ya no existe")
+    script_service.create_draft_version(db, story)
+    return "Borrador de guion creado"
+
+
+@handler(EXPORT_BATCH)
+def handle_export_batch(db: Session, job: Job) -> str:
+    batch_id = job.payload["batch_id"]
+    batch = db.get(batch_service.Batch, batch_id)
+    if batch is None:
+        raise RuntimeError("El lote ya no existe")
+    package = batch_service.export_batch(db, batch)
+    return f"Paquete exportado (v{package.package_version}, sha256 {package.sha256[:12]})"
+
+
+def run_job(db: Session, job: Job) -> None:
+    fn = HANDLERS.get(job.type)
+    if fn is None:
+        mark_failed(db, job, f"Tipo de trabajo desconocido: {job.type}")
+        return
+    try:
+        summary = fn(db, job)
+        if job.status == "RUNNING":
+            job.progress = summary
+            mark_done(db, job)
+    except budget_service.BudgetExceeded as exc:
+        mark_failed(db, job, str(exc))
+    except Exception as exc:  # noqa: BLE001 — el worker registra y decide reintento
+        mark_retryable(db, job, f"{exc.__class__.__name__}: {exc}")

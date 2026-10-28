@@ -39,6 +39,8 @@ export const api = {
     ),
   listSources: (query = "") => request<{ total: number; items: import("./types").SourceListItem[] }>(`/v1/sources${query}`),
   getSource: (id: number) => request<import("./types").SourceDetail>(`/v1/sources/${id}`),
+  processSource: (id: number) => request<{ job_id: number; created: boolean }>(`/v1/sources/${id}/process`, { method: "POST", body: JSON.stringify({}) }),
+  analyzeVideo: (id: number) => request<{ job_id: number; created: boolean }>(`/v1/sources/${id}/analyze`, { method: "POST" }),
   addTranscript: (id: number, transcript: string) =>
     request<{ ok: boolean }>(`/v1/sources/${id}/transcript`, { method: "POST", body: JSON.stringify({ transcript }) }),
 
@@ -55,6 +57,7 @@ export const api = {
     request<{ ok: boolean }>(`/v1/stories/${id}/approve`, { method: "POST", body: JSON.stringify({ script_version_id: scriptVersionId }) }),
   reject: (id: number, reason: string) =>
     request<{ ok: boolean }>(`/v1/stories/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
+  getStoryboard: (id: number) => request<import("./types").Storyboard>(`/v1/stories/${id}/storyboard`),
 
   createBatch: (payload: { name: string; target_size: number; story_ids: number[] }) =>
     request<{ id: number }>("/v1/batches", { method: "POST", body: JSON.stringify(payload) }),

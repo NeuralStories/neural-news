@@ -12,7 +12,7 @@ from ..schemas import ProcessRequest, SourceCreate, SourceDetailOut, SourceOut
 from ..security import get_current_actor
 from ..services.sources import DuplicateSource, create_source
 from ..states import CONTENT_TYPE_LABELS, SOURCE_LABELS, STORY_LABELS
-from ..worker_tasks import ANALYZE_VIDEO, PROCESS_SOURCE
+from ..worker_tasks import ANALYZE_VIDEO, PROCESS_SOURCE  # noqa: F401  (ANALYZE_VIDEO usado)
 
 router = APIRouter(prefix="/api/v1/sources", tags=["sources"])
 
@@ -75,8 +75,9 @@ def add_source(
         db,
         PROCESS_SOURCE,
         {"source_id": source.id},
-        dedupe_key=(f"process:{source.id}:{idempotency_key}" if idempotency_key else None)
-        or f"process:{source.id}:auto",
+        dedupe_key=(
+            f"process:{source.id}:{idempotency_key}" if idempotency_key else f"process:{source.id}"
+        ),
     )
     db.flush()
     return {
@@ -159,6 +160,7 @@ def process_source(
     db=Depends(get_db),
     actor=Depends(get_current_actor),
 ) -> dict:
+    """Reprocesa la fuente. Es idempotente: si ya hay un trabajo vivo, se reutiliza."""
     source = db.get(Source, source_id)
     if source is None:
         raise HTTPException(status_code=404, detail="Esa fuente no existe")
@@ -166,7 +168,33 @@ def process_source(
         db,
         PROCESS_SOURCE,
         {"source_id": source.id},
-        dedupe_key=f"process:{source.id}:{source.metadata_json.get('last_fetch', 'auto')}",
+        dedupe_key=f"process:{source.id}",
+    )
+    db.flush()
+    return {"job_id": job.id, "created": created}
+
+
+@router.post("/{source_id}/analyze")
+def analyze_video(
+    source_id: int,
+    db=Depends(get_db),
+    actor=Depends(get_current_actor),
+) -> dict:
+    """Pide el análisis del vídeo de la fuente (adaptador Gemini; requiere clave, salvo demo)."""
+    source = db.get(Source, source_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Esa fuente no existe")
+    if source.provider != "youtube":
+        raise HTTPException(
+            status_code=400,
+            detail="El análisis de vídeo sólo aplica a fuentes de YouTube; para otros tipos, "
+            "aporta el texto o una transcripción",
+        )
+    job, created = enqueue(
+        db,
+        ANALYZE_VIDEO,
+        {"source_id": source.id},
+        dedupe_key=f"analyze:{source.id}",
     )
     db.flush()
     return {"job_id": job.id, "created": created}

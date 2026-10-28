@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
-import type { StoryDetail } from "@/lib/types";
+import type { StoryDetail, Storyboard } from "@/lib/types";
 
 const STATUS_BADGE: Record<string, string> = {
   CANDIDATE: "badge-neutral",
@@ -41,6 +41,7 @@ export default function StoryDetailPage() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [wordsPerMinute, setWordsPerMinute] = useState(150);
+  const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
   const { waiting, poll } = useJobPolling();
 
   const refresh = useCallback(async () => {
@@ -109,6 +110,23 @@ export default function StoryDetailPage() {
       await refresh();
     } catch (e) {
       setError((e as Error).message);
+    }
+  };
+
+  const loadStoryboard = async () => {
+    try {
+      setStoryboard(await api.getStoryboard(story!.id));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const copyPrompt = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice("Prompt copiado al portapapeles");
+    } catch {
+      setError("No se ha podido copiar; selecciona el texto del prompt manualmente");
     }
   };
 
@@ -303,6 +321,58 @@ export default function StoryDetailPage() {
                 Ir a lotes
               </Link>
             </div>
+          </>
+        )}
+      </section>
+
+      <section className="card space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-neutral-300">Preparación visual (storyboard)</h2>
+          <button className="btn px-2 py-1 text-xs" onClick={loadStoryboard} disabled={!latest}>
+                {storyboard ? "Actualizar" : "Preparar escenas"}
+          </button>
+        </div>
+
+        {!storyboard ? (
+          <p className="text-sm text-neutral-500">
+            Genera el storyboard del guion vigente: escenas, duración orientativa, rótulos y un prompt de imagen
+            preliminar por escena. No se genera ninguna imagen ni vídeo.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-neutral-500">
+              Guion v{storyboard.script_version} · {storyboard.approved ? "aprobado" : "sin aprobar"} · {storyboard.note}
+            </p>
+            <ol className="space-y-2">
+              {storyboard.scenes.map((scene, index) => (
+                <li key={index} className="rounded border border-neutral-800 bg-neutral-900 p-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="badge-info">Escena {index + 1}</span>
+                    <span className="badge-neutral">≈{scene.seconds} s</span>
+                  </div>
+                  <p className="mt-1">{scene.message}</p>
+                  <p className="mt-1 text-xs text-neutral-400">Visual: {scene.visual}</p>
+                  {scene.overlay_text && (
+                    <p className="mt-1 text-xs text-neutral-400">Rótulo: {scene.overlay_text}</p>
+                  )}
+                  {scene.data_source && (
+                    <p className="mt-1 text-xs text-neutral-500">Origen del dato: {scene.data_source}</p>
+                  )}
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-xs text-sky-400">Prompt de imagen</summary>
+                    <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-neutral-950 p-2 text-xs text-neutral-300">
+                      {scene.image_prompt}
+                    </pre>
+                    <button
+                      className="btn mt-1 px-2 py-0.5 text-xs"
+                      onClick={() => copyPrompt(scene.image_prompt)}
+                    >
+                      Copiar prompt
+                    </button>
+                  </details>
+                </li>
+              ))}
+            </ol>
           </>
         )}
       </section>

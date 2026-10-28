@@ -69,12 +69,37 @@ En desarrollo SQLite la API también crea el esquema automáticamente si falta (
 
 ## 5. Pruebas
 
+**Suite Python (unitarias + integración + E2E de API):**
+
 ```powershell
 cd apps\api
 python -m pytest ../../tests -q
 ```
 
-Resultado de referencia en este entorno: **52 passed** (ver informe final).
+Resultado de referencia en este entorno: **64 passed**.
+
+**Suite E2E en navegador real (Playwright + Edge/Chrome del sistema):**
+
+```powershell
+# Requiere la API (:8000), el worker y la web (:3000) en marcha.
+cd apps\web
+npm run e2e            # o: npx playwright test
+npm run e2e:ui         # con interfaz visual
+```
+
+Resultado de referencia en este entorno: **5 passed** (recorrido crítico completo, columnas de la tabla
+de noticias, reintento seguro y análisis de vídeo, diseño móvil a 390 px y redirección sin sesión).
+
+El E2E usa el navegador ya instalado (`channel: msedge`; configurable con `NEURAL_E2E_CHANNEL=chrome`),
+así que **no hace falta descargar navegadores de Playwright**. La web debe estar recién compilada
+(`npm run build`) antes de `npm start`: un servidor `next start` con el build anterior sirve chunks
+obsoletos y la aplicación se queda en «Cargando…».
+
+**Regenerar el contrato OpenAPI:**
+
+```powershell
+python apps/api/scripts/export_openapi.py   # → packages/contracts/openapi.json
+```
 
 ## 6. Operación diaria
 

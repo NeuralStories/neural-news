@@ -136,12 +136,13 @@ export default function FuentesPage() {
                 <th>Estado</th>
                 <th>Fecha original</th>
                 <th>Enlace</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-neutral-500">
+                  <td colSpan={6} className="px-3 py-6 text-center text-neutral-500">
                     Todavía no hay fuentes. Registra la primera arriba.
                   </td>
                 </tr>
@@ -161,6 +162,8 @@ function SourceRow({ source }: { source: SourceListItem }) {
   const [detail, setDetail] = useState<SourceDetail | null>(null);
   const [transcript, setTranscript] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const { poll } = useJobPolling();
 
   const toggle = async () => {
     if (detail) return setDetail(null);
@@ -177,6 +180,40 @@ function SourceRow({ source }: { source: SourceListItem }) {
       setDetail(await api.getSource(source.id));
     } catch (e) {
       setMsg((e as Error).message);
+    }
+  };
+
+  const reprocess = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await api.processSource(source.id);
+      setMsg(res.created ? "Volver a analizar la fuente…" : "Ya había un análisis en marcha; se reutiliza.");
+      await poll(res.job_id, async () => {
+        setDetail(await api.getSource(source.id));
+      });
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const analyzeVideo = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await api.analyzeVideo(source.id);
+      setMsg("Pidiendo el análisis del vídeo…");
+      await poll(res.job_id, async () => {
+        setDetail(await api.getSource(source.id));
+      });
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -204,10 +241,22 @@ function SourceRow({ source }: { source: SourceListItem }) {
             "—"
           )}
         </td>
+        <td onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap gap-1">
+            <button className="btn px-2 py-1 text-xs" onClick={reprocess} disabled={busy}>
+              {busy ? "Trabajando…" : "Volver a analizar"}
+            </button>
+            {source.provider === "youtube" && (
+              <button className="btn px-2 py-1 text-xs" onClick={analyzeVideo} disabled={busy}>
+                Analizar vídeo
+              </button>
+            )}
+          </div>
+        </td>
       </tr>
       {detail && (
         <tr className="bg-neutral-900/40">
-          <td colSpan={5}>
+          <td colSpan={6}>
             <div className="space-y-3 p-2">
               {detail.contents.length === 0 && <p className="text-sm text-neutral-400">Sin contenido todavía.</p>}
               {detail.contents.map((c) => (

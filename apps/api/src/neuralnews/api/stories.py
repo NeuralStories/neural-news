@@ -6,9 +6,11 @@ from sqlalchemy import select
 
 from ..db import get_db
 from ..models import Approval, Claim, Evidence, Job, ScriptVersion, Source, Story, StorySource
+from ..providers.image_prompt import build_storyboard
 from ..queue import enqueue
 from ..schemas import ApproveRequest, RejectRequest, ScriptPatch, ScriptVersionOut
 from ..security import get_current_actor
+from ..services.dedupe import duplicates_for_all, find_possible_duplicates
 from ..services.research import score_story
 from ..services.scripts import (
     ScriptConflict,
@@ -55,6 +57,7 @@ def list_stories(
     rows = db.scalars(query).all()
     total = len(rows)
     rows = rows[offset : offset + min(limit, 200)]
+    duplicates = duplicates_for_all(db)
     items = []
     for story in rows:
         out = story_to_out(story)
@@ -62,6 +65,7 @@ def list_stories(
         out["source_count"] = len(sources)
         claims = db.scalars(select(Claim).where(Claim.story_id == story.id)).all()
         out["unverified_claims"] = sum(1 for c in claims if c.verification_status == "UNVERIFIED")
+        out["possible_duplicates"] = duplicates.get(story.id, [])
         items.append(out)
     return {"total": total, "items": items}
 
@@ -144,7 +148,34 @@ def get_story(story_id: int, db=Depends(get_db), actor=Depends(get_current_actor
         else None
     )
     out["pending_approval_flag"] = approval is None or approval.status != "ACTIVE"
+    out["possible_duplicates"] = find_possible_duplicates(db, story)
     return out
+
+
+@router.get("/{story_id}/storyboard")
+def get_storyboard(story_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Preparación visual: escenas orientativas y prompts de imagen del guion vigente.
+
+    No genera imágenes ni vídeo: sólo prepara lo que se puede copiar a la herramienta elegida.
+    """
+    story = db.get(Story, story_id)
+    if story is None:
+        raise HTTPException(status_code=404, detail="Esa noticia no existe")
+    version = latest_version(db, story.id)
+    if version is None:
+        raise HTTPException(status_code=404, detail="Todavía no hay guion para preparar la escena")
+    approval = active_approval(db, story.id)
+    storyboard = build_storyboard(story, version, approval)
+    return {
+        "story_id": story.id,
+        "script_version": version.version,
+        "approved": bool(approval and approval.status == "ACTIVE"),
+        **storyboard.model_dump(mode="json"),
+        "note": (
+            "Prompts preliminares para usar manualmente en la herramienta de vídeo elegida. "
+            "No se han generado imágenes ni vídeo."
+        ),
+    }
 
 
 @router.post("/{story_id}/research")

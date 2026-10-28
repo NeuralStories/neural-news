@@ -72,16 +72,19 @@ export default function NoticiasPage() {
           <thead>
             <tr>
               <th>Tema</th>
+              <th>Fecha real</th>
               <th>Estado</th>
               <th>Puntuación</th>
-              <th>Fuentes</th>
+              <th>Origen</th>
+              <th>Verificación</th>
+              <th>Duplicados</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {shown.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-neutral-500">
+                <td colSpan={8} className="px-3 py-6 text-center text-neutral-500">
                   No hay noticias todavía. Registra fuentes y el sistema propondrá candidatas.
                 </td>
               </tr>
@@ -100,11 +103,48 @@ export default function NoticiasPage() {
                   ) : null}
                   <div className="mt-0.5 line-clamp-2 text-xs text-neutral-500">{s.summary}</div>
                 </td>
+                <td className="whitespace-nowrap text-neutral-400">
+                  {s.original_event_date ? (
+                    <span title="Fecha del acontecimiento">{fmtDate(s.original_event_date)}</span>
+                  ) : (
+                    <span className="text-neutral-600" title="No consta la fecha del acontecimiento">
+                      sin fecha
+                    </span>
+                  )}
+                </td>
                 <td>
                   <span className={STATUS_BADGE[s.status] || "badge-neutral"}>{s.status_label}</span>
                 </td>
                 <td className="tabular-nums text-neutral-300">{s.editorial_score ?? "—"}</td>
                 <td className="text-neutral-400">{s.source_count ?? "—"}</td>
+                <td>
+                  {s.unverified_claims ? (
+                    <span className="badge-warn">Parcial</span>
+                  ) : (
+                    <span className="badge-ok">Sin huecos</span>
+                  )}
+                </td>
+                <td>
+                  {s.possible_duplicates && s.possible_duplicates.length > 0 ? (
+                    <details className="relative">
+                      <summary className="badge-warn cursor-pointer">
+                        {s.possible_duplicates.length} posible(s)
+                      </summary>
+                      <ul className="absolute z-10 mt-1 w-72 rounded border border-neutral-700 bg-neutral-900 p-2 text-xs text-neutral-300 shadow-lg">
+                        {s.possible_duplicates.map((d) => (
+                          <li key={d.story_id} className="mb-1">
+                            <Link href={`/noticias/${d.story_id}`} className="text-sky-400 hover:underline">
+                              {d.title}
+                            </Link>
+                            <span className="block text-neutral-500">{d.reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : (
+                    <span className="text-neutral-600">—</span>
+                  )}
+                </td>
                 <td>
                   <div className="flex flex-wrap gap-1">
                     <button className="btn px-2 py-1 text-xs" onClick={() => act(s, "research")}>

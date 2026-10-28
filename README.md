@@ -46,7 +46,9 @@ docker compose up --build
 | Investigación con evidencia marcada DEMO | Botón «Investigar»; sin evidencia nada se marca como confirmado |
 | Puntuación editorial orientativa | impacto 35 · verificación 30 · novedad 20 · visual 15 (configurable) |
 | Guiones con versiones y aprobación | Generar borrador → editar → «Aprobar esta versión»; editar después la anula |
+| Preparación visual (storyboard) | En la noticia: «Preparar escenas» genera escenas, duración, rótulos y prompts de imagen copiables |
 | Lotes de 5/10 y exportación | Pendientes claramente marcados; ZIP con manifiesto JSON + guiones MD + storyboard y prompts de imagen |
+| Avisos de duplicados | La tabla de Noticias marca los posibles duplicados (mismo tema o títulos parecidos) |
 
 ## Estructura
 
@@ -66,11 +68,21 @@ neural-news/
 ## Pruebas
 
 ```powershell
+# Suite Python (unitarias + integración + E2E de API)
 cd apps\api
 python -m pytest ../../tests -q
 ```
 
-Última ejecución en este entorno: **53 passed**. Incluye duplicidad e idempotencia, SSRF, contenido malicioso como dato, JSON defectuoso del modelo, conflictos de edición, invalidación de aprobaciones, lotes con pendientes, presupuesto agotado y el recorrido crítico completo de API.
+Última ejecución en este entorno: **64 passed**. Incluye duplicidad e idempotencia, SSRF, contenido malicioso como dato, JSON defectuoso del modelo, conflictos de edición, invalidación de aprobaciones, lotes con pendientes, presupuesto agotado, storyboard, duplicados posibles, contrato OpenAPI y el recorrido crítico completo de API.
+
+```powershell
+# Suite E2E en navegador real (Playwright con el Edge/Chrome del sistema)
+# Requiere API (:8000), worker y web (:3000) en marcha
+cd apps\web
+npm run e2e
+```
+
+Última ejecución en este entorno: **5 passed** — recorrido crítico completo (fuente → noticias → investigación → guion → edición → aprobación → storyboard → lote), columnas de la tabla de noticias, reintento seguro y análisis de vídeo, diseño móvil a 390 px y redirección sin sesión.
 
 ## Claves de proveedores (opcionales)
 

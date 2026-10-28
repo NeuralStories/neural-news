@@ -42,6 +42,14 @@ def handle_process_source(db: Session, job: Job) -> str:
         raise RuntimeError("La fuente ya no existe")
     run_fetch(db, source)
     stories = extract_stories_from_source(db, source)
+    budget_service.record_usage(
+        db,
+        provider="demo_extraction" if source.demo else "extraction",
+        model="demo" if source.demo else None,
+        job_id=job.id,
+        event="call",
+        cost_estimate=0.0,
+    )
     return f"Fuente procesada; {len(stories)} candidato(s) de noticias"
 
 
@@ -102,6 +110,14 @@ def handle_research_story(db: Session, job: Job) -> str:
             mark_failed(db, job, str(exc))
             return "bloqueado por presupuesto"
     research_service.research_story(db, story)
+    budget_service.record_usage(
+        db,
+        provider="demo_search" if provider.demo else "search",
+        model=None,
+        job_id=job.id,
+        event="call",
+        cost_estimate=0.0,
+    )
     return "Investigación completada; la noticia queda pendiente de revisión"
 
 
@@ -112,6 +128,14 @@ def handle_draft_script(db: Session, job: Job) -> str:
     if story is None:
         raise RuntimeError("La noticia ya no existe")
     script_service.create_draft_version(db, story)
+    budget_service.record_usage(
+        db,
+        provider="demo_llm" if get_settings().demo_mode else "editorial_llm",
+        model="demo" if get_settings().demo_mode else get_settings().llm_model,
+        job_id=job.id,
+        event="call",
+        cost_estimate=0.0,
+    )
     return "Borrador de guion creado"
 
 

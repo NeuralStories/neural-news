@@ -79,6 +79,14 @@ export interface ScriptVersionItem {
   content_hash: string;
 }
 
+export interface PossibleDuplicate {
+  story_id: number;
+  title: string;
+  status_label: string;
+  reason: string;
+  similarity: number;
+}
+
 export interface StoryListItem {
   id: number;
   topic_key: string;
@@ -93,6 +101,7 @@ export interface StoryListItem {
   created_at: string;
   source_count?: number;
   unverified_claims?: number;
+  possible_duplicates?: PossibleDuplicate[];
 }
 
 export interface StoryDetail extends StoryListItem {
@@ -114,6 +123,23 @@ export interface StoryDetail extends StoryListItem {
     content_hash: string;
   } | null;
   pending_approval_flag: boolean;
+}
+
+export interface StoryboardScene {
+  message: string;
+  seconds: number;
+  visual: string;
+  data_source: string | null;
+  image_prompt: string;
+  overlay_text: string | null;
+}
+
+export interface Storyboard {
+  story_id: number;
+  script_version: number;
+  approved: boolean;
+  scenes: StoryboardScene[];
+  note: string;
 }
 
 export interface BatchStory {

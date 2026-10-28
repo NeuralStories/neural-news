@@ -116,7 +116,7 @@ def research_story(db: Session, story: Story) -> Story:
                     demo=get_settings().demo_mode or provider.demo,
                 )
             )
-        existing_urls.add((claim.id, ev.url))
+            existing_urls.add((claim.id, ev.url))
 
     score_story(db, story)
     assert_transition("story", story.status, "REVIEW_REQUIRED")

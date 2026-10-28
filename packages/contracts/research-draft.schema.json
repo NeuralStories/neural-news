@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neuralnews/contracts/research-draft.json",
+  "title": "Contrato de investigación (ResearchDraft)",
+  "type": "object",
+  "required": ["claims"],
+  "properties": {
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim", "verification_status"],
+        "properties": {
+          "claim": { "type": "string" },
+          "verification_status": { "enum": ["UNVERIFIED", "SUPPORTED", "CONTRADICTED", "NOT_VERIFIABLE"] },
+          "verification_notes": { "type": ["string", "null"] },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": { "type": ["string", "null"] },
+                "publisher": { "type": ["string", "null"] },
+                "published_at": { "type": ["string", "null"], "format": "date-time" },
+                "excerpt_or_paraphrase": { "type": ["string", "null"] },
+                "kind": { "enum": ["PRIMARY", "CORROBORATION", "CONTRADICTING", "REFERENCE"] },
+                "confidence": { "enum": ["high", "medium", "low"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

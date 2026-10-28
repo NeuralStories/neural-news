@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 
 from .models import Job, utcnow
 from .states import JOB_TRANSITIONS
@@ -19,11 +19,33 @@ class JobConflict(Exception):
 
 
 def enqueue(db, job_type: str, payload: dict, dedupe_key: str | None = None) -> tuple[Job, bool]:
-    """Devuelve (job, created). Si la dedupe_key existe, devuelve el trabajo original."""
+    """Devuelve (job, created). Reutiliza el trabajo más reciente con esa dedupe_key (o sus
+    reintentos «:rN») mientras esté vivo (en cola, en marcha o reintenable); si el último ya
+    terminó (DONE/FAILED), un nuevo uso de la clave crea un trabajo nuevo (reinvestigar,
+    reprocesar), con un sufijo libre que nunca choca."""
     if dedupe_key:
-        existing = db.scalar(select(Job).where(Job.dedupe_key == dedupe_key))
+        existing = db.scalar(
+            select(Job)
+            .where(
+                or_(
+                    Job.dedupe_key == dedupe_key,
+                    Job.dedupe_key.like(f"{dedupe_key}:r%"),
+                )
+            )
+            .order_by(Job.id.desc())
+            .limit(1)
+        )
         if existing is not None:
-            return existing, False
+            if existing.status in ("DONE", "FAILED", "UNKNOWN"):
+                suffix = 1
+                while (
+                    db.scalar(select(Job.id).where(Job.dedupe_key == f"{dedupe_key}:r{suffix}"))
+                    is not None
+                ):
+                    suffix += 1
+                dedupe_key = f"{dedupe_key}:r{suffix}"
+            else:
+                return existing, False
     job = Job(
         type=job_type,
         payload=payload,

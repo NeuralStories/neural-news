@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neuralnews/contracts/editorial-package.json",
+  "title": "Manifiesto del paquete editorial exportado",
+  "type": "object",
+  "required": ["package", "batch", "stories"],
+  "properties": {
+    "package": { "const": "neural.news paquete editorial" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "batch": {
+      "type": "object",
+      "required": ["id", "name", "target_size"],
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "target_size": { "enum": [5, 10] }
+      }
+    },
+    "approved_count": { "type": "integer" },
+    "pending_count": { "type": "integer" },
+    "disclaimer": { "type": "string" },
+    "stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["story_id", "title", "status_label"],
+        "properties": {
+          "story_id": { "type": "integer" },
+          "title": { "type": "string" },
+          "status_label": { "type": "string" },
+          "approval": {
+            "type": ["object", "null"],
+            "properties": {
+              "status": { "enum": ["ACTIVE", "INVALIDATED", "REVOKED"] },
+              "content_hash": { "type": "string" }
+            }
+          },
+          "script": {
+            "type": ["object", "null"],
+            "required": ["version", "content", "content_hash", "approved"],
+            "properties": {
+              "version": { "type": "integer" },
+              "content": { "type": "string" },
+              "content_hash": { "type": "string" },
+              "approved": { "type": "boolean" }
+            }
+          },
+          "sources": { "type": "array" },
+          "claims": { "type": "array" },
+          "storyboard": { "type": ["object", "null"] },
+          "visual_note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

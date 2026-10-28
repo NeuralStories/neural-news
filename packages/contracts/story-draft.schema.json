@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neuralnews/contracts/story-draft.json",
+  "title": "Contrato de extracción (StoryDraft)",
+  "type": "object",
+  "required": ["provisional_title", "neutral_summary", "topic_key"],
+  "additionalProperties": false,
+  "properties": {
+    "provisional_title": { "type": "string" },
+    "neutral_summary": { "type": ["string", "null"] },
+    "topic_key": { "type": "string" },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["statement"],
+        "properties": {
+          "statement": { "type": "string" },
+          "quote_or_reference": { "type": ["string", "null"] },
+          "segment_sequence": { "type": ["integer", "null"] },
+          "start_ms": { "type": ["integer", "null"] }
+        }
+      }
+    },
+    "source_published_at": { "type": ["string", "null"], "format": "date-time" },
+    "event_date": { "type": ["string", "null"], "format": "date-time" },
+    "entities": { "type": "array", "items": { "type": "string" } },
+    "questions_to_verify": { "type": "array", "items": { "type": "string" } },
+    "evidence_state": { "enum": ["WITHOUT_CONFIRMATION", "PARTIAL", "CONFIRMED"] },
+    "is_opinion": { "type": "boolean" },
+    "novelty": { "enum": ["NEW_EVENT", "UPDATE", "ANALYSIS", "OPINION"] }
+  }
+}

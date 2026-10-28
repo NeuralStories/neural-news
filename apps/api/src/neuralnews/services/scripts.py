@@ -48,14 +48,14 @@ def active_approval(db: Session, story_id: int) -> Approval | None:
 
 
 def create_draft_version(db: Session, story: Story, actor_id: str = "system") -> ScriptVersion:
-    """Genera el primer borrador automático (o uno nuevo por petición explícita)."""
+    """Genera el primer borrador automático. Si ya existe uno idéntico, garantiza sólo el estado."""
     claims = db.scalars(select(Claim).where(Claim.story_id == story.id)).all()
     llm = EditorialLLMProvider()
     try:
         draft = llm.draft_script(story, [c.statement for c in claims], target_duration_s=40)
     except EditorialLLMError as exc:
         raise RuntimeError(str(exc)) from exc
-    return _add_version(db, story, content=draft.content, author_type="AI", actor_id=actor_id)
+    return _add_version(db, story, content=draft.content, author_type="AI", actor_id=actor_id, allow_identical=True)
 
 
 def _add_version(
@@ -66,22 +66,41 @@ def _add_version(
     author_type: str,
     actor_id: str,
     target_duration_s: int | None = None,
+    allow_identical: bool = False,
 ) -> ScriptVersion:
     if not content or not content.strip():
         raise ValueError("El guion está vacío; escribe algún texto antes de guardar")
     current = latest_version(db, story.id)
     if current and current.content_hash == content_hash(content.strip()):
+        if allow_identical:
+            _ensure_script_draft_state(db, story)
+            return current
         raise ValueError("Ese texto es idéntico a la versión actual; no se crea una versión repetida")
+    return _create_version(db, story, content=content, author_type=author_type, actor_id=actor_id, target_duration_s=target_duration_s)
+
+
+def _ensure_script_draft_state(db: Session, story: Story) -> None:
+    if story.status in ("APPROVED", "REVIEW_REQUIRED", "CANDIDATE", "RESEARCHING"):
+        if story.status == "APPROVED":
+            approval = active_approval(db, story.id)
+            if approval is not None:
+                approval.status = "INVALIDATED"
+        assert_transition("story", story.status, "SCRIPT_DRAFT")
+        story.status = "SCRIPT_DRAFT"
+
+
+def _create_version(
+    db: Session,
+    story: Story,
+    *,
+    content: str,
+    author_type: str,
+    actor_id: str,
+    target_duration_s: int | None,
+) -> ScriptVersion:
+    current = latest_version(db, story.id)
     version_number = (current.version if current else 0) + 1
-    if story.status == "APPROVED":
-        approval = active_approval(db, story.id)
-        if approval is not None:
-            approval.status = "INVALIDATED"
-        assert_transition("story", story.status, "SCRIPT_DRAFT")
-        story.status = "SCRIPT_DRAFT"
-    elif story.status == "REVIEW_REQUIRED":
-        assert_transition("story", story.status, "SCRIPT_DRAFT")
-        story.status = "SCRIPT_DRAFT"
+    _ensure_script_draft_state(db, story)
     version = ScriptVersion(
         story_id=story.id,
         version=version_number,

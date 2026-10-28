@@ -1,0 +1,69 @@
+version: "3.9"
+
+# Arranque local completo: PostgreSQL + API + worker + web.
+#   docker compose up --build
+# La API queda en http://localhost:8000 (documentación en /docs) y la web en http://localhost:3000.
+# Sin claves externas: el modo demo está activado por defecto (NEURAL_DEMO_MODE=true).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: neural
+      POSTGRES_PASSWORD: neural-local
+      POSTGRES_DB: neuralnews
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neural -d neuralnews"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      NEURAL_DATABASE_URL: postgresql+psycopg://neural:neural-local@db:5432/neuralnews
+      NEURAL_DEMO_MODE: "true"
+      NEURAL_ADMIN_USERNAME: editor
+      NEURAL_ADMIN_PASSWORD: neural-demo
+      NEURAL_PAID_SERVICES_ENABLED: "false"
+      NEURAL_BUDGET_DAILY_EUR: "0"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "cd /opt/app/infra/migrations && NEURAL_DATABASE_URL=postgresql+psycopg://neural:neural-local@db:5432/neuralnews python -m alembic upgrade head && python -m uvicorn neuralnews.main:app --host 0.0.0.0 --port 8000"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      NEURAL_DATABASE_URL: postgresql+psycopg://neural:neural-local@db:5432/neuralnews
+      NEURAL_DEMO_MODE: "true"
+      NEURAL_PAID_SERVICES_ENABLED: "false"
+      NEURAL_BUDGET_DAILY_EUR: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m neuralnews.worker
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: ../../infra/Dockerfile.web
+    environment:
+      NEXT_PUBLIC_APP_NAME: neural.news
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

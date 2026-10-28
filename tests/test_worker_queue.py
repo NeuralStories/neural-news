@@ -103,3 +103,18 @@ def test_unknown_job_type_fails_cleanly(app_env):
         run_job(db, job)
         assert job.status == "FAILED"
         assert "desconocido" in job.error
+
+
+def test_retry_after_permanent_failure_creates_new_job(app_env):
+    """Repetir una clave cuyo trabajo ya falló debe permitir un trabajo nuevo, no bloquearse."""
+    with session_scope() as db:
+        job1, created1 = enqueue(db, "tipo", {}, dedupe_key="retry-after-fail")
+        job1 = claim_next_job(db, 60)
+        from neuralnews.queue import mark_failed
+
+        mark_failed(db, job1, "fallo definitivo simulado")
+        job2, created2 = enqueue(db, "tipo", {}, dedupe_key="retry-after-fail")
+        assert created2 is True and job2.id != job1.id
+        # Mientras el trabajo sigue vivo (en cola), la clave lo reutiliza.
+        job3, created3 = enqueue(db, "tipo", {}, dedupe_key="retry-after-fail")
+        assert created3 is False and job3.id == job2.id

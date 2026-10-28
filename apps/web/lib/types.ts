@@ -101,6 +101,7 @@ export interface StoryListItem {
   created_at: string;
   source_count?: number;
   unverified_claims?: number;
+  claim_count?: number;
   possible_duplicates?: PossibleDuplicate[];
 }
 

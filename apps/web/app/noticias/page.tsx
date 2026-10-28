@@ -118,7 +118,11 @@ export default function NoticiasPage() {
                 <td className="tabular-nums text-neutral-300">{s.editorial_score ?? "—"}</td>
                 <td className="text-neutral-400">{s.source_count ?? "—"}</td>
                 <td>
-                  {s.unverified_claims ? (
+                  {!s.claim_count ? (
+                    <span className="badge-neutral" title="No hay afirmaciones que comprobar">
+                      Sin afirmaciones
+                    </span>
+                  ) : s.unverified_claims ? (
                     <span className="badge-warn">Parcial</span>
                   ) : (
                     <span className="badge-ok">Sin huecos</span>

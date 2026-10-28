@@ -64,6 +64,7 @@ def list_stories(
         sources = db.scalars(select(StorySource).where(StorySource.story_id == story.id)).all()
         out["source_count"] = len(sources)
         claims = db.scalars(select(Claim).where(Claim.story_id == story.id)).all()
+        out["claim_count"] = len(claims)
         out["unverified_claims"] = sum(1 for c in claims if c.verification_status == "UNVERIFIED")
         out["possible_duplicates"] = duplicates.get(story.id, [])
         items.append(out)

@@ -49,6 +49,13 @@ docker compose up --build
 
 Las migraciones Alembic se aplican automáticamente al arrancar el contenedor `api`.
 
+> **Nota de verificación (28-10-2026):** en la máquina de desarrollo, Docker Desktop no llegó a arrancar
+> («Docker Desktop is unable to start», problema local de instalación/WSL). El `docker-compose.yml` y los
+> Dockerfiles están preparados pero **la construcción en contenedor NO ha podido verificarse**. El camino
+> principal verificado es el arranque local sin Docker (sección 2), que cubre el mismo flujo con SQLite.
+> Si Docker funciona en tu máquina, el compose debería levantar los cuatro servicios; revísalo antes de
+> depender de él.
+
 ## 4. Migraciones
 
 ```powershell

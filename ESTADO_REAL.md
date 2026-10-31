@@ -32,7 +32,7 @@
 ## PENDIENTE_POR_API
 
 - Generación programática de imágenes/vídeo: requiere integración externa autorizada y comprobada (futuro adaptador con prueba real); fuera del editor todo queda BLOCKED con paquete manual.
-- Prueba real contra PostgreSQL: `tests/test_postgres_projects.py` listo con `NEURAL_TEST_POSTGRES`; bloqueada por entorno (motor de Docker Desktop caído en este equipo al 31/10). Toda la capa es SQLAlchemy 2.0 común y el servicio está definido en `infra/docker-compose.yml`.
+- ~~Prueba real contra PostgreSQL~~ → **FUNCIONA sin Docker**: PostgreSQL 16.9 local (binarios nativos sin instalador en `../pglocal/`, servidor en 127.0.0.1:5433, BD `neuralnews`). `tests/test_postgres_projects.py` PASSED (ciclo crear→editar→CAS→MP4→reiniciar→recuperar sobre PG real) y migraciones Alembic `d38b9d62cb47 ↔ d4ce8c95781e` verificadas en PG. Arranque: `../pglocal/pgsql/bin/pg_ctl.exe -D ../pglocal/data -l ../pglocal/logfile.log -o "-p 5433" start`.
 
 ## NO_IMPLEMENTADO (Etapa B/C, declarado)
 
@@ -40,6 +40,6 @@
 
 ## Pruebas totales al cierre
 
-- API: **107 passed, 0 fallos, 1 skip** (PostgreSQL condicionado a entorno).
+- API: **107 passed, 0 fallos** (+ `test_postgres_projects.py` PASSED contra PostgreSQL 16.9 local).
 - E2E navegador real (Edge): **2 passed** (`studio-reintegration`, `vertical-production`).
 - `tsc --noEmit` y `next build` limpios.

@@ -105,6 +105,28 @@ test("producción vertical: director → prompt → paquete Flow → importar MP
   await expect(takesAfter.getByText(/estado: APROBADA/)).toBeVisible();
   await expect(takesAfter.locator("video")).toHaveCount(1);
 
+  // F4: dossier editorial (una sola redacción) y gráfico programático con SVG.
+  const dossier = await (await page.request.get(`/api/v1/projects/${pid}/dossier`)).json();
+  expect(dossier.linked).toBe(true);
+  const graphic = await (
+    await page.request.post(`/api/v1/projects/${pid}/graphics`, {
+      data: {
+        title: `Cifra ${marca}`,
+        series: [{ label: "Radar", value: 12, unit: "%" }],
+      },
+    })
+  ).json();
+  const svg = await page.request.get(`/api/v1/projects/${pid}/graphics/${graphic.id}/svg`);
+  expect(svg.ok()).toBeTruthy();
+  expect(await svg.text()).toContain("12");
+
+  // Recargar para que el Studio monte de nuevo el panel y traiga los gráficos.
+  await page.reload();
+  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await page.getByRole("button", { name: /Producción y Vídeo/ }).first().click();
+  await expect(page.getByText(/Gráficos programáticos/)).toBeVisible();
+  await expect(page.locator('img[alt*="Gráfico"]').first()).toBeVisible();
+
   // El backend confirma el estado final (toma aprobada, prompt versionado, ratio intacto).
   const state = await (await page.request.get(`/api/v1/projects/${pid}`)).json();
   expect(state.ratio).toBe("16:9");

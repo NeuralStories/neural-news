@@ -264,7 +264,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         {/* Acciones de exportación */}
         <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <p className="text-[11px] text-slate-400 font-mono">
-            Destino: <code>neural_news_full_source_backup.json</code>
+            Destino: <code>neural_news_full_source_backup.json</code> — <strong>exportación de ajustes y contenido del Studio (JSON); no es un backup de la base de datos</strong>, que se restaura con copias de PostgreSQL
           </p>
 
           <div className="flex items-center gap-2">

@@ -60,7 +60,9 @@ function calculateJaccardSimilarity(textA: string, textB: string): number {
 
 /**
  * Evalúa si una noticia candidata ya existe en la colección activa
- * considerando ID/UUID, coincidencia de fuentes y similitud semántica de titular.
+ * considerando ID/UUID y URL canónica/fuente primero (capa canónica) y, solo
+ * después, similitud léxica de titular (heurística Jaccard: NUNCA equivale a
+ * misma noticia; el resultado exige revisión humana y expone su puntuación).
  */
 export function checkArticleDuplicate(
   candidate: Partial<NewsArticle>,

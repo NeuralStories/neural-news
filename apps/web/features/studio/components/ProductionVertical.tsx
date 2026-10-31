@@ -6,7 +6,7 @@
  * exportable → importación del MP4 generado externamente → revisión y
  * aprobación humana. Nada simula generación ni conexión con Flow.
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ProjectConflict,
   projectApi,
@@ -75,6 +75,11 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [planNote, setPlanNote] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<Record<number, File>>({});
+  const [graphics, setGraphics] = useState<Array<{ id: number; title: string; status: string }>>([]);
+  const [graphicTitle, setGraphicTitle] = useState('Cifra destacada');
+  const [graphicLabel, setGraphicLabel] = useState('Valor');
+  const [graphicValue, setGraphicValue] = useState('');
+  const [graphicUnit, setGraphicUnit] = useState('%');
   const fileInputs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const takesByShot = useMemo(() => {
@@ -153,6 +158,35 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
       const file = selectedFile[take.id];
       if (!file) throw new Error('Selecciona antes el MP4 generado en Flow');
       await projectApi.uploadTakeMedia(projectId, take.id, file);
+    });
+
+  const loadGraphics = async () => {
+    const res = await fetch(`/api/v1/projects/${projectId}/graphics`, { credentials: 'same-origin' });
+    if (res.ok) setGraphics((await res.json()).items ?? []);
+  };
+  useEffect(() => {
+    void loadGraphics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  const createGraphic = () =>
+    run('graphic', async () => {
+      const res = await fetch(`/api/v1/projects/${projectId}/graphics`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: graphicTitle,
+          chart_type: 'BAR',
+          series: [{ label: graphicLabel, value: Number(graphicValue.replace(',', '.')), unit: graphicUnit }],
+        }),
+      });
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => null))?.detail;
+        throw new Error(typeof detail === 'string' ? detail : 'No se pudo crear el gráfico');
+      }
+      setGraphicValue('');
+      await loadGraphics();
     });
 
   const approveTake = (take: TakeOut, status: 'APROBADA' | 'RECHAZADA') =>
@@ -300,6 +334,59 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           );
         })}
       </ul>
+      <div className="space-y-2 rounded-lg border border-sky-900/60 bg-slate-900/70 p-3">
+        <h4 className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-[16px]">bar_chart</span>
+          Gráficos programáticos (datos verificados, nunca inventados)
+        </h4>
+        <div className="flex flex-wrap items-end gap-2 text-[11px]">
+          <label className="space-y-0.5">
+            <span className="text-slate-500">Título</span>
+            <input value={graphicTitle} onChange={(e) => setGraphicTitle(e.target.value)}
+              className="block w-40 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+          </label>
+          <label className="space-y-0.5">
+            <span className="text-slate-500">Etiqueta</span>
+            <input value={graphicLabel} onChange={(e) => setGraphicLabel(e.target.value)}
+              className="block w-28 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+          </label>
+          <label className="space-y-0.5">
+            <span className="text-slate-500">Valor</span>
+            <input value={graphicValue} onChange={(e) => setGraphicValue(e.target.value)} inputMode="decimal"
+              className="block w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+          </label>
+          <label className="space-y-0.5">
+            <span className="text-slate-500">Unidad</span>
+            <input value={graphicUnit} onChange={(e) => setGraphicUnit(e.target.value)}
+              className="block w-16 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+          </label>
+          <button onClick={createGraphic} disabled={busy !== null || graphicValue === ''}
+            className="rounded bg-sky-700 px-2 py-1 font-semibold text-white hover:bg-sky-600 disabled:opacity-50 cursor-pointer">
+            {busy === 'graphic' ? 'Creando…' : 'Crear gráfico'}
+          </button>
+        </div>
+        {graphics.length === 0 && (
+          <p className="text-[10px] text-slate-500">
+            Sin gráficos aún. Si el guion cambia, los gráficos derivados se marcan INVALIDADO para revisión (cap. 13).
+          </p>
+        )}
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {graphics.map((g) => (
+            <li key={g.id} className="space-y-1">
+              <p className="text-[11px] font-mono text-slate-300">
+                #{g.id} {g.title} · <strong className={g.status === 'INVALIDADO' ? 'text-rose-400' : 'text-emerald-400'}>{g.status}</strong>
+              </p>
+              {g.status !== 'INVALIDADO' && (
+                <img
+                  alt={`Gráfico ${g.title}`}
+                  className="w-full rounded border border-slate-800"
+                  src={`/api/v1/projects/${projectId}/graphics/${g.id}/svg`}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

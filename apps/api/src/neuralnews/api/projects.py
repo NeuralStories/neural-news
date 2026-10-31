@@ -20,7 +20,10 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..models import (
+    AuditLog,
+    Claim,
     GeneratedTake,
+    GraphicSpec,
     MediaAsset,
     MediaApproval,
     NarrationBeat,
@@ -36,6 +39,7 @@ from ..models import (
 )
 from ..security import get_current_actor
 from ..services.director import build_plan
+from ..services.graphics import render_bar_svg
 from ..services.media_library import MediaUploadError, asset_to_out, upload_media
 
 router = APIRouter(prefix="/api/v1", tags=["projects"])
@@ -119,6 +123,20 @@ class LinkStory(BaseModel):
 class DirectorPlanIn(BaseModel):
     provider_max_clip_s: float = 8.0
     script_text: str | None = None
+
+
+class GraphicSeriesItem(BaseModel):
+    label: str = Field(min_length=1, max_length=64)
+    value: float
+    unit: str = ""
+
+
+class GraphicCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    claim_id: int | None = None
+    chart_type: str = "BAR"
+    series: list[GraphicSeriesItem]
+    source_note: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -309,6 +327,26 @@ def save_step(
             },
         )
     payload = dict(body.payload)
+    invalidated_graphics: list[int] = []
+    if step == "guion" and isinstance(payload.get("scriptText"), str):
+        # Invalidación dirigida (cap. 13): cambiar el guion invalida los gráficos
+        # derivados del texto anterior; las tomas y prompts ya son revisiones.
+        new_hash = content_hash(payload["scriptText"])
+        for graphic in db.scalars(
+            select(GraphicSpec).where(GraphicSpec.project_id == project.id)
+        ).all():
+            if (graphic.data or {}).get("source_script_hash") not in (None, new_hash):
+                if graphic.status != "INVALIDADO":
+                    graphic.status = "INVALIDADO"
+                    invalidated_graphics.append(graphic.id)
+        if invalidated_graphics:
+            db.add(
+                AuditLog(
+                    event="graphics_invalidated",
+                    actor_id=actor["actor_id"],
+                    detail={"project_id": project.id, "graphics": invalidated_graphics},
+                )
+            )
     if step == "noticias" and "story_id" in payload:
         # R-BUG-1: elegir/importar una noticia en el Studio la activa de verdad.
         story = db.get(Story, int(payload["story_id"]))
@@ -326,7 +364,12 @@ def save_step(
         )
     )
     db.flush()
-    return {"step": step, "revision": current + 1, "story_id": project.story_id}
+    return {
+        "step": step,
+        "revision": current + 1,
+        "story_id": project.story_id,
+        "invalidated_graphics": invalidated_graphics,
+    }
 
 
 @router.get("/projects/{project_id}/studio/{step}/history")
@@ -747,3 +790,144 @@ def flow_manual_package(
     if sheet is None and take.status in ("PLANIFICADA", "PROMPT_LISTO"):
         warnings.append("La toma aún no tiene MP4 importado; tras generar en Flow, impórtalo en Resultado.")
     return package
+
+
+# ---------------------------------------------------------------------------
+# F4 — Dossier editorial (una sola redacción) y gráficos programáticos
+# ---------------------------------------------------------------------------
+
+
+@router.get("/projects/{project_id}/dossier")
+def project_dossier(project_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Dossier de la historia vinculada desde el dominio editorial (D7): las
+    mismas fuentes, afirmaciones y estados que las páginas de noticias."""
+    project = _get_project(db, project_id)
+    if project.story_id is None:
+        return {"linked": False, "message": "El proyecto no tiene noticia vinculada"}
+    story = db.get(Story, project.story_id)
+    if story is None:
+        raise HTTPException(status_code=404, detail="La noticia vinculada ya no existe")
+    sources_out = []
+    from ..models import Source, StorySource
+
+    for link in db.scalars(select(StorySource).where(StorySource.story_id == story.id)).all():
+        source = db.get(Source, link.source_id)
+        if source is not None:
+            sources_out.append(
+                {
+                    "source_id": source.id,
+                    "title": source.title,
+                    "canonical_url": source.canonical_url,
+                    "provider": source.provider,
+                    "relevance": link.relevance,
+                }
+            )
+    claims_out = []
+    for claim in db.scalars(select(Claim).where(Claim.story_id == story.id)).all():
+        claims_out.append(
+            {
+                "claim_id": claim.id,
+                "statement": claim.statement,
+                "verification_status": claim.verification_status,
+            }
+        )
+    return {
+        "linked": True,
+        "story": {"id": story.id, "title": story.title, "status": story.status},
+        "sources": sources_out,
+        "claims": claims_out,
+    }
+
+
+@router.post("/projects/{project_id}/graphics")
+def create_graphic(
+    project_id: int, body: GraphicCreate, db=Depends(get_db), actor=Depends(get_current_actor)
+) -> dict:
+    """GraphicSpec con valores verificados por el editor; si vincula un claim,
+    debe pertenecer a la historia del proyecto (trazabilidad cap. 11)."""
+    project = _get_project(db, project_id)
+    if not body.series:
+        raise HTTPException(status_code=422, detail="El gráfico necesita al menos una serie de datos")
+    claim = None
+    if body.claim_id is not None:
+        claim = db.get(Claim, body.claim_id)
+        if claim is None or (project.story_id is None or claim.story_id != project.story_id):
+            raise HTTPException(
+                status_code=422,
+                detail="El claim debe pertenecer a la noticia vinculada al proyecto",
+            )
+    if body.chart_type != "BAR":
+        raise HTTPException(status_code=422, detail="En la primera ventana solo está implementado BAR")
+    guion_rev = (project.step_revisions or {}).get("guion", 0)
+    source_hash = None
+    if guion_rev:
+        row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "guion",
+                StudioStepRevision.revision == guion_rev,
+            )
+            .limit(1)
+        ).first()
+        text = ((row.payload or {}).get("scriptText") or "") if row else ""
+        if text:
+            source_hash = content_hash(text)
+    graphic = GraphicSpec(
+        project_id=project.id,
+        claim_id=claim.id if claim else None,
+        title=body.title,
+        chart_type="BAR",
+        data={
+            "series": [item.model_dump() for item in body.series],
+            "source_note": body.source_note
+            or (f"Claim #{claim.id} del dossier editorial" if claim else "Datos verificados por el editor"),
+            "source_script_hash": source_hash,
+        },
+        spec={"template": "BAR_SVG_V1"},
+        status="DRAFT",
+    )
+    db.add(graphic)
+    db.flush()
+    return {"id": graphic.id, "status": graphic.status, "title": graphic.title}
+
+
+@router.get("/projects/{project_id}/graphics")
+def list_graphics(project_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    project = _get_project(db, project_id)
+    rows = db.scalars(select(GraphicSpec).where(GraphicSpec.project_id == project.id)).all()
+    return {
+        "total": len(rows),
+        "items": [
+            {
+                "id": g.id,
+                "title": g.title,
+                "status": g.status,
+                "claim_id": g.claim_id,
+                "series": (g.data or {}).get("series", []),
+                "source_note": (g.data or {}).get("source_note"),
+            }
+            for g in rows
+        ],
+    }
+
+
+@router.get("/projects/{project_id}/graphics/{graphic_id}/svg")
+def graphic_svg(project_id: int, graphic_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> object:
+    """SVG determinista con los valores exactos del spec (nunca inventados)."""
+    from fastapi.responses import Response
+
+    project = _get_project(db, project_id)
+    graphic = db.get(GraphicSpec, graphic_id)
+    if graphic is None or graphic.project_id != project.id:
+        raise HTTPException(status_code=404, detail="Ese gráfico no pertenece al proyecto")
+    if graphic.status == "INVALIDADO":
+        raise HTTPException(
+            status_code=409,
+            detail="El gráfico está invalidado por un cambio del guion: revisa los datos y vuelve a crearlo",
+        )
+    try:
+        svg = render_bar_svg({"title": graphic.title, **(graphic.data or {})})
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return Response(content=svg, media_type="image/svg+xml")

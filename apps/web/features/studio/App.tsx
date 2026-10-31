@@ -31,6 +31,7 @@ import { checkArticleDuplicate } from './utils/newsDeduplication';
 import { HandoffImport } from './integration/components/HandoffImport';
 import { ProductionPlanPanel } from './integration/components/ProductionPlanPanel';
 import { ProductionVertical } from './components/ProductionVertical';
+import { DossierPanel } from './components/DossierPanel';
 import { TopNavigation } from './components/TopNavigation';
 import { NewsEditorialTab } from './components/NewsEditorialTab';
 import { CharacterSheetTab } from './components/CharacterSheetTab';
@@ -968,6 +969,7 @@ export default function App({ projectId }: { projectId: number | null }) { /* Or
 
         {currentTab === 'noticias' && (
           <>
+            {projectId && <DossierPanel projectId={projectId} />}
             <HandoffImport onImportArticles={handleImportHandoffArticles} />
             <NewsEditorialTab
             articles={articles}

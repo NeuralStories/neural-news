@@ -1,6 +1,8 @@
 # NN-107 — Implementación realizada: la lógica de Flow vuelve a neural.news (operativa)
 
-**Fecha:** 31/10/2026 · **Rama:** `nn-107-reintegracion-flow` · **Estado: OPERATIVA en local, sin Docker**
+**Fecha:** 31/10/2026 · **Rama:** `nn-107-reintegracion-flow` · **Estado: OPERATIVA en local, 100 % sin Docker**
+
+> **NO APROBADO — PENDIENTE DE REVISIÓN DEL PROPIETARIO.** Instantánea inmutable entregada para revisión; nada se fusiona a `main` ni se da por definitivo hasta aprobación explícita. **Todo el desarrollo y la operación son sin Docker**, con PostgreSQL local de binarios nativos.
 
 Este documento resume qué se implementó, cómo arrancarlo y qué evidencia lo respalda. El detalle
 fase a fase está en `TASK_NN-107_REINTEGRACION_FLOW.md` (newsV2) y el estado honesto módulo a
@@ -127,4 +129,4 @@ Ejecutada por HTTP contra `localhost:3000` con PostgreSQL local:
 - **Etapa B/C:** render real, animática, TTS, episodios 5/10, director LLM, gráficos
   line/timeline/percentage, publicación.
 - Nota: `probe_status` de los MP4 será `OK` instalando FFmpeg y añadiéndolo al PATH.
-- Docker queda fuera del camino; `infra/docker-compose.yml` sigue válido si se repara.
+- **Docker: eliminado del flujo por decisión del propietario.** La base de datos es PostgreSQL local de binarios nativos (§4.1); el `infra/docker-compose.yml` del repositorio queda sin uso.

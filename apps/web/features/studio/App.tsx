@@ -30,6 +30,7 @@ import { splitScriptIntoScenes } from './utils/scriptAnalyzer';
 import { checkArticleDuplicate } from './utils/newsDeduplication';
 import { HandoffImport } from './integration/components/HandoffImport';
 import { ProductionPlanPanel } from './integration/components/ProductionPlanPanel';
+import { ProductionVertical } from './components/ProductionVertical';
 import { TopNavigation } from './components/TopNavigation';
 import { NewsEditorialTab } from './components/NewsEditorialTab';
 import { CharacterSheetTab } from './components/CharacterSheetTab';
@@ -48,7 +49,7 @@ export default function App({ projectId }: { projectId: number | null }) {
   const [backupOpen, setBackupOpen] = useState(false);
 
   // Persistencia real (F1): el estado vive en la base de datos vía API; sin localStorage.
-  const { project, loading: projectLoading, loadError: projectLoadError, saveStates, saveStep } =
+  const { project, loading: projectLoading, loadError: projectLoadError, saveStates, saveStep, reload } =
     useStudioProject(projectId);
   const [hydrated, setHydrated] = useState(false);
   const savedSnapshotsRef = useRef<Record<string, string>>({});
@@ -1049,6 +1050,14 @@ export default function App({ projectId }: { projectId: number | null }) { /* Or
 
         {currentTab === 'resultado' && (
           <>
+            {projectId && (
+              <ProductionVertical
+                projectId={projectId}
+                shots={(project?.shots ?? []) as unknown[] as never}
+                takes={(project?.takes ?? []) as unknown[] as never}
+                onChanged={() => void reload()}
+              />
+            )}
             <ProductionPlanPanel article={activeArticle} />
             <ResultTab
             finalPrompt={finalPrompt}

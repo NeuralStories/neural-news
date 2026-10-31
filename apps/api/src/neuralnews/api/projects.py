@@ -11,6 +11,8 @@ Reglas del cap. 13 de la especificación rectora:
 """
 from __future__ import annotations
 
+import datetime as _dt
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -24,6 +26,7 @@ from ..models import (
     NarrationBeat,
     ProductionProject,
     PromptPackage,
+    ScriptVersion,
     Shot,
     StudioStepRevision,
     Story,
@@ -32,6 +35,7 @@ from ..models import (
     content_hash,
 )
 from ..security import get_current_actor
+from ..services.director import build_plan
 from ..services.media_library import MediaUploadError, asset_to_out, upload_media
 
 router = APIRouter(prefix="/api/v1", tags=["projects"])
@@ -110,6 +114,11 @@ class MediaApprovalIn(BaseModel):
 
 class LinkStory(BaseModel):
     story_id: int
+
+
+class DirectorPlanIn(BaseModel):
+    provider_max_clip_s: float = 8.0
+    script_text: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -549,3 +558,192 @@ def approve_media(
     asset.license_state = body.status
     db.flush()
     return asset_to_out(asset)
+
+
+# ---------------------------------------------------------------------------
+# F3 — Director audiovisual determinista y FlowManualPackage
+# ---------------------------------------------------------------------------
+
+
+def _project_script(db: Session, project: ProductionProject, override: str | None) -> str:
+    """Guion con una sola fuente de verdad: el paso Guion del proyecto; si no
+    hay, la última revisión de guion de la historia vinculada."""
+    if override and override.strip():
+        return override.strip()
+    guion = (project.step_revisions or {}).get("guion", 0)
+    if guion:
+        row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "guion",
+                StudioStepRevision.revision == guion,
+            )
+            .order_by(StudioStepRevision.revision.desc())
+            .limit(1)
+        ).first()
+        text = ((row.payload or {}).get("scriptText") or "") if row else ""
+        if text.strip():
+            return text.strip()
+    if project.story_id:
+        version = db.scalars(
+            select(ScriptVersion)
+            .where(ScriptVersion.story_id == project.story_id)
+            .order_by(ScriptVersion.version.desc())
+            .limit(1)
+        ).first()
+        if version is not None and version.content.strip():
+            return version.content.strip()
+    return ""
+
+
+@router.post("/projects/{project_id}/director/plan")
+def run_director(
+    project_id: int, body: DirectorPlanIn, db=Depends(get_db), actor=Depends(get_current_actor)
+) -> dict:
+    """Director audiovisual determinista (cap. 7): beats de locución continua y
+    tomas por capacidad del proveedor. Misma entrada → mismo plan."""
+    project = _get_project(db, project_id)
+    script = _project_script(db, project, body.script_text)
+    if not script:
+        raise HTTPException(
+            status_code=409,
+            detail="No hay guion todavía: escribe el guion del proyecto o vincula una historia con revisión de guion",
+        )
+    if body.provider_max_clip_s <= 0 or body.provider_max_clip_s > 60:
+        raise HTTPException(status_code=422, detail="provider_max_clip_s debe estar entre 0 y 60 segundos")
+    plan = build_plan(script, provider_max_clip_s=body.provider_max_clip_s)
+
+    project.beats.clear()
+    for beat in plan.beats:
+        project.beats.append(
+            NarrationBeat(
+                sequence=beat["sequence"],
+                text=beat["text"],
+                est_seconds=beat["est_seconds"],
+                claim_ids=beat["claim_ids"],
+            )
+        )
+    project.shots.clear()
+    for shot in plan.shots:
+        project.shots.append(
+            Shot(
+                sequence=shot["sequence"],
+                shot_kind=shot["shot_kind"],
+                rationale=shot["rationale"],
+                start_s=shot["start_s"],
+                end_s=shot["end_s"],
+                max_duration_s=shot["max_duration_s"],
+                data=shot["data"],
+            )
+        )
+    db.flush()
+    return {
+        "beats": plan.beats,
+        "shots": plan.shots,
+        "total_seconds": round(sum(b["est_seconds"] for b in plan.beats), 2),
+        "provider_max_clip_s": body.provider_max_clip_s,
+        "note": "Locución continua: los cortes solo responden a la capacidad del proveedor, no al texto.",
+    }
+
+
+@router.get("/projects/{project_id}/takes/{take_id}/flow-package")
+def flow_manual_package(
+    project_id: int, take_id: int, db=Depends(get_db), actor=Depends(get_current_actor)
+) -> dict:
+    """FlowManualPackage (cap. 9, modo manual): instrucciones completas para
+    generar la toma en Flow a mano. Descarga JSON; jamás llama a Flow."""
+    project = _get_project(db, project_id)
+    take = db.get(GeneratedTake, take_id)
+    if take is None or take.project_id != project.id:
+        raise HTTPException(status_code=404, detail="Esa toma no pertenece al proyecto")
+
+    prompt = db.scalars(
+        select(PromptPackage)
+        .where(PromptPackage.take_id == take.id)
+        .order_by(PromptPackage.version.desc())
+        .limit(1)
+    ).first()
+    if prompt is None:
+        raise HTTPException(
+            status_code=409,
+            detail="La toma no tiene prompt todavía: genera el prompt de la toma antes de exportar el paquete",
+        )
+
+    shot = db.get(Shot, take.shot_id) if take.shot_id else None
+    media_refs: list[dict] = []
+    prompt_only: list[dict] = []
+    referencias_rev = (project.step_revisions or {}).get("referencias", 0)
+    if referencias_rev:
+        ref_row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "referencias",
+                StudioStepRevision.revision == referencias_rev,
+            )
+            .order_by(StudioStepRevision.revision.desc())
+            .limit(1)
+        ).first()
+        if ref_row is not None:
+            for ref in (ref_row.payload or {}).get("visualReferences", []) or []:
+                if not isinstance(ref, dict):
+                    continue
+                if ref.get("status") != "aprobado":
+                    continue  # F-02: solo se adjunta lo aprobado por el usuario
+                entry = {
+                    "identifier": ref.get("identifier"),
+                    "name": ref.get("name"),
+                    "category": ref.get("category"),
+                }
+                if ref.get("mediaId"):
+                    entry["media_id"] = ref["mediaId"]
+                    media_refs.append(entry)
+                else:
+                    entry["uso"] = "PROMPT_ONLY"
+                    prompt_only.append(entry)
+
+    warnings: list[str] = []
+    sheet = db.get(MediaAsset, take.imported_media_id) if take.imported_media_id else None
+
+    package = {
+        "package": "FlowManualPackage.v1",
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "take": {"id": take.id, "take_number": take.take_number, "status": take.status,
+                 "shot_id": take.shot_id,
+                 "shot_kind": shot.shot_kind if shot else None,
+                 "rationale": shot.rationale if shot else None,
+                 "est_duration_s": (shot.data or {}).get("est_duration_s") if shot else None},
+        "project": {"id": project.id, "name": project.name, "ratio": project.ratio},
+        "personaje": {
+            "a_escoger_en_flow": "maxDotAi",
+            "handle": "@maxDotAi (pendiente de confirmar en cuenta)",
+            "estado_vinculo": "PENDIENTE_DE_VINCULAR",
+            "nota": "No describas un personaje nuevo: usa la ficha canónica guardada en Flow.",
+        },
+        "referencias": {
+            "adjuntables_con_mediaid": media_refs,
+            "solo_textuales_prompt_only": prompt_only,  # PROMPT_ONLY: nunca adjunto (F-07)
+            "regla": "mediaId solo vale en la galería de Flow; lo textual nunca se presenta como adjunto (F-07).",
+        },
+        "prompt": {
+            "version": prompt.version,
+            "prompt_en": prompt.prompt_en,
+            "explanation_es": prompt.explanation_es,
+            "constraints": prompt.constraints or [],
+            "content_hash": prompt.content_hash,
+        },
+        "ratio": project.ratio,
+        "checklist": {
+            "1_personaje_seleccionado": "maxDotAi",
+            "2_referencias_adjuntadas": "según el manifiesto de referencias",
+            "3_prompt_copiado_literal": True,
+            "4_ratio": project.ratio,
+            "5_importar_mp4_resultado": "Resultado → Importar MP4 (queda asociado a esta toma y revisión)",
+        },
+        "warnings": warnings,
+        "descargo": "Prompt preparado ≠ vídeo generado. Este paquete no llama a Flow ni simula conexión.",
+    }
+    if sheet is None and take.status in ("PLANIFICADA", "PROMPT_LISTO"):
+        warnings.append("La toma aún no tiene MP4 importado; tras generar en Flow, impórtalo en Resultado.")
+    return package

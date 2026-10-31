@@ -122,4 +122,17 @@ export const projectApi = {
     ),
   importTakeMediaFile: (id: number, takeId: number, file: File) =>
     projectApi.uploadTakeMedia(id, takeId, file),
+  directorPlan: (id: number, providerMaxClipS = 8) =>
+    call<{
+      beats: Array<Record<string, unknown>>;
+      shots: Array<Record<string, unknown>>;
+      total_seconds: number;
+      provider_max_clip_s: number;
+      note: string;
+    }>(`/api/v1/projects/${id}/director/plan`, {
+      method: "POST",
+      body: JSON.stringify({ provider_max_clip_s: providerMaxClipS }),
+    }),
+  flowPackage: (id: number, takeId: number) =>
+    call<Record<string, unknown>>(`/api/v1/projects/${id}/takes/${takeId}/flow-package`),
 };

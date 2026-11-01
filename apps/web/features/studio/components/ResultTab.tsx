@@ -69,52 +69,46 @@ export const ResultTab: React.FC<ResultTabProps> = ({
     <div className="space-y-6">
       {/* Resumen del paquete de producción */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">Noticia Editorial</span>
+        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+          <span className="text-[10px] uppercase font-mono text-neutral-500 block">Noticia Editorial</span>
           <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1 truncate" title={activeArticle?.title}>
-            <span className="material-symbols-outlined text-[14px] text-amber-400">newspaper</span>
             {activeArticle ? activeArticle.title : 'Guion Manual'}
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">Escenario & Ratio</span>
+        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+          <span className="text-[10px] uppercase font-mono text-neutral-500 block">Escenario & Ratio</span>
           <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1">
-            <span className="material-symbols-outlined text-[14px] text-amber-400">tv</span>
             CRT {aspectRatio}
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">Voz Algenib</span>
+        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+          <span className="text-[10px] uppercase font-mono text-neutral-500 block">Voz Algenib</span>
           <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1">
-            <span className="material-symbols-outlined text-[14px] text-amber-400">mic</span>
             {voiceConfig.speedMultiplier.toFixed(2)}x (+18%)
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">Refs Canónicas</span>
-          <span className="text-xs font-semibold text-amber-400 flex items-center gap-1 mt-1 font-mono">
-            <span className="material-symbols-outlined text-[14px]">collections</span>
+        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+          <span className="text-[10px] uppercase font-mono text-neutral-500 block">Refs Canónicas</span>
+          <span className="text-xs font-semibold text-sky-400 flex items-center gap-1 mt-1 font-mono">
             {selectedReferences.length} activas
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 col-span-2 sm:col-span-1">
-          <span className="text-[10px] uppercase font-mono text-slate-500 block">Escenas Generables</span>
+        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 col-span-2 sm:col-span-1">
+          <span className="text-[10px] uppercase font-mono text-neutral-500 block">Escenas Generables</span>
           <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 mt-1 font-mono">
-            <span className="material-symbols-outlined text-[14px]">movie</span>
             {multiSceneAnalysis.scenes.length || 1} tomas (≈{multiSceneAnalysis.scenes.length > 0 ? Math.round(multiSceneAnalysis.scenes.reduce((acc, sc) => acc + sc.estDurationSeconds, 0) / multiSceneAnalysis.scenes.length * 10) / 10 : 0}s c/u)
           </span>
         </div>
       </div>
 
       {/* Auditoría de Referencias Transmitidas a Google Flow */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
-          <span className="material-symbols-outlined text-[16px] text-amber-400">verified</span>
           Auditoría de Insumos para Omni 1.1 Flash (Google Flow)
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 rounded bg-slate-950 border border-slate-800/80 space-y-1.5">
+          <div className="p-3 rounded bg-neutral-950 border border-neutral-800/80 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-emerald-300 font-mono text-[11px]">
                 ✓ Referencias Visuales Reales (mediaId):
@@ -123,7 +117,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
                 {mediaIdRefs.length + (sheetState.mediaId ? 1 : 0)} activas
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
               Transmitidas a <code>Flow.generate.video()</code> en <code>referenceImageMediaIds</code>.
             </p>
             <div className="space-y-1 pt-1 font-mono text-[10px]">
@@ -132,7 +126,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
                   • Hoja Maestra @neuraldotai: ID <code>{sheetState.mediaId}</code>
                 </div>
               ) : (
-                <div className="text-amber-400/90">
+                <div className="text-sky-400/90">
                   • Hoja Maestra: Sin mediaId de galería (se usa descripción de prompt)
                 </div>
               )}
@@ -144,19 +138,19 @@ export const ResultTab: React.FC<ResultTabProps> = ({
             </div>
           </div>
 
-          <div className="p-3 rounded bg-slate-950 border border-slate-800/80 space-y-1.5">
+          <div className="p-3 rounded bg-neutral-950 border border-neutral-800/80 space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-amber-300 font-mono text-[11px]">
+              <span className="font-semibold text-sky-300 font-mono text-[11px]">
                 ⚠ Directivas Textuales en Prompt:
               </span>
-              <span className="text-[10px] font-mono text-amber-400">
+              <span className="text-[10px] font-mono text-sky-400">
                 {promptOnlyRefs.length} elementos
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
               No cuentan con mediaId en la galería de Flow. Su estilo e identidad se garantizan mediante el descriptor textual detallado.
             </p>
-            <div className="space-y-1 pt-1 font-mono text-[10px] text-slate-400">
+            <div className="space-y-1 pt-1 font-mono text-[10px] text-neutral-400">
               {promptOnlyRefs.map(r => (
                 <div key={r.id} className="truncate">
                   • [{r.identifier}] {r.name} (Directriz prompt)
@@ -169,17 +163,15 @@ export const ResultTab: React.FC<ResultTabProps> = ({
 
       {/* Selector de Escenas Audiovisuales para render */}
       {multiSceneAnalysis.scenes.length > 1 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-amber-400">view_carousel</span>
               Secuencia de Escenas del Noticiero ({multiSceneAnalysis.scenes.length} fragmentos, duración calculada por palabras)
             </span>
             <button
               onClick={onExportProductionPackage}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded text-xs font-mono border border-slate-700 transition cursor-pointer flex items-center gap-1"
+              className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-sky-400 rounded text-xs font-mono border border-neutral-700 transition cursor-pointer flex items-center gap-1"
             >
-              <span className="material-symbols-outlined text-[14px]">archive</span>
               Descargar Paquete de Producción JSON
             </button>
           </div>
@@ -191,8 +183,8 @@ export const ResultTab: React.FC<ResultTabProps> = ({
                 onClick={() => setSelectedSceneIndex(idx)}
                 className={`px-3 py-1.5 rounded-md text-xs font-mono transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   selectedSceneIndex === idx
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow'
-                    : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+                    ? 'bg-sky-500 text-neutral-950 font-bold shadow'
+                    : 'bg-neutral-950 text-neutral-400 border border-neutral-800 hover:text-white'
                 }`}
               >
                 <span>Toma {s.sceneIndex}</span>
@@ -207,19 +199,15 @@ export const ResultTab: React.FC<ResultTabProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Lado izquierdo: Prompt de la toma seleccionada */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px] text-amber-400">code</span>
+              <span className="text-xs font-semibold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
                 Prompt de Toma {selectedSceneIndex + 1} (duración calculada)
               </span>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded border border-slate-700 transition cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs rounded border border-neutral-700 transition cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[14px]">
-                  {copied ? 'check' : 'content_copy'}
-                </span>
                 <span>{copied ? 'Copiado al portapapeles' : 'Copiar Prompt de Toma'}</span>
               </button>
             </div>
@@ -228,13 +216,12 @@ export const ResultTab: React.FC<ResultTabProps> = ({
               readOnly
               value={promptToRender}
               rows={8}
-              className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded p-3 text-slate-200 leading-relaxed resize-none focus:outline-none"
+              className="w-full text-xs font-mono bg-neutral-950 border border-neutral-800 rounded p-3 text-neutral-200 leading-relaxed resize-none focus:outline-none"
             />
 
             {!flowHosted && (
-              <div className="p-3 rounded bg-amber-950/70 border border-amber-800 text-amber-200 text-xs space-y-1">
+              <div className="p-3 rounded bg-sky-950/70 border border-sky-800 text-sky-200 text-xs space-y-1">
                 <p className="font-semibold flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px]">block</span>
                   BLOCKED — generación de vídeo no disponible fuera del editor de Flow
                 </p>
                 <p>
@@ -245,26 +232,26 @@ export const ResultTab: React.FC<ResultTabProps> = ({
               </div>
             )}
             {/* Control de Seguridad: Autorización de Gasto de Créditos (solo con runtime hosted) */}
-            <div className={`p-3 rounded bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${flowHosted ? '' : 'hidden'}`}>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+            <div className={`p-3 rounded bg-neutral-950 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${flowHosted ? '' : 'hidden'}`}>
+              <label className="flex items-center gap-2 text-neutral-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={spendAuthorized}
                   onChange={(e) => setSpendAuthorized(e.target.checked)}
-                  className="accent-amber-500 w-4 h-4 rounded cursor-pointer"
+                  className="accent-sky-500 w-4 h-4 rounded cursor-pointer"
                 />
-                <span className="font-semibold text-amber-300">
+                <span className="font-semibold text-sky-300">
                   Autorizo explícitamente el consumo de créditos para renderizar esta toma (duración calculada)
                 </span>
               </label>
 
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-neutral-400">
                 Consumo estimado: <strong>según proveedor</strong> (720p, duración de la toma)
               </span>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
-              <span className="text-[11px] text-slate-400 font-mono">
+              <span className="text-[11px] text-neutral-400 font-mono">
                 Modelo: <strong className="text-white">Omni 1.1 Flash</strong> (T2V / R2V 720p, duración según capacidad del proveedor)
               </span>
               <button
@@ -272,13 +259,10 @@ export const ResultTab: React.FC<ResultTabProps> = ({
                 onClick={() => onGenerateVideo(promptToRender)}
                 className={`px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg ${
                   !spendAuthorized
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
-                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/20'
+                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-60'
+                    : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-neutral-950 shadow-sky-500/20'
                 }`}
               >
-                <span className="material-symbols-outlined text-[18px]">
-                  {isGeneratingVideo ? 'sync' : 'movie'}
-                </span>
                 <span>
                   {isGeneratingVideo 
                     ? 'Renderizando toma (1-2 min)...' 
@@ -293,12 +277,12 @@ export const ResultTab: React.FC<ResultTabProps> = ({
 
         {/* Lado derecho: Monitor de reproducción de vídeo */}
         <div className="lg:col-span-5 space-y-3">
-          <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider block">
+          <span className="text-xs font-semibold text-neutral-200 uppercase tracking-wider block">
             Monitor de Emisión
           </span>
 
           <div
-            className={`w-full rounded-lg border-2 border-slate-800 bg-slate-950 overflow-hidden flex items-center justify-center relative shadow-inner ${
+            className={`w-full rounded-lg border-2 border-neutral-800 bg-neutral-950 overflow-hidden flex items-center justify-center relative shadow-inner ${
               aspectRatio === '9:16' ? 'aspect-[9/16] max-h-[460px] mx-auto' : 'aspect-video'
             }`}
           >
@@ -312,11 +296,8 @@ export const ResultTab: React.FC<ResultTabProps> = ({
               />
             ) : (
               <div className="text-center p-6">
-                <span className="material-symbols-outlined text-[36px] text-slate-600 block mb-2">
-                  videocam_off
-                </span>
-                <p className="text-xs font-medium text-slate-300">Toma lista para producción</p>
-                <p className="text-[11px] text-slate-500 mt-1 max-w-xs leading-relaxed">
+                <p className="text-xs font-medium text-neutral-300">Toma lista para producción</p>
+                <p className="text-[11px] text-neutral-500 mt-1 max-w-xs leading-relaxed">
                   El paquete está compilado con el personaje maxDotAi, el plató CRT y el guion editorial. La generación solo se ejecuta con el runtime de Flow disponible; fuera de él, importa el MP4 generado manualmente.
                 </p>
               </div>

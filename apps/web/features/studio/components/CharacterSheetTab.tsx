@@ -34,19 +34,18 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Banner de regla estricta de identidad */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-neutral-900/90 border border-neutral-800 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-0.5">
-            <span className="material-symbols-outlined text-[20px]">verified_user</span>
-          </div>
+          <div className="p-2 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 mt-0.5">
+            </div>
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               Identidad Canónica: {MAXDOTAI_CANONICAL.name} ({MAXDOTAI_CANONICAL.handle})
-              <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700">
                 Regla inmutable
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
               No se debe alterar el rostro, gafas rectangulares oscuras, pelo castaño, barba recortada ni vestuario corporativo. 
               La hoja maestra aprobada es la <strong>única referencia admisible</strong> para mantener la consistencia en todas las tomas.
             </p>
@@ -57,9 +56,8 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
         <div className="flex items-center gap-2 w-full md:w-auto">
           <button
             onClick={onSelectExistingMedia}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-md text-xs font-medium border border-slate-700 transition cursor-pointer"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 rounded-md text-xs font-medium border border-neutral-700 transition cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">photo_library</span>
             <span>Seleccionar hoja aprobada</span>
           </button>
         </div>
@@ -70,10 +68,10 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
         <div className="lg:col-span-8 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-neutral-200 uppercase tracking-wider">
                 Hoja de Personaje Maestra (16:9)
               </span>
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-neutral-400">
                 Exactamente 3 paneles • 1 sola cara frontal
               </span>
             </div>
@@ -83,18 +81,15 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${
                   sheetState.isApproved
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">
-                  {sheetState.isApproved ? 'check_circle' : 'pending'}
-                </span>
                 <span>{sheetState.isApproved ? 'Hoja Oficial Aprobada' : 'Marcar como Aprobada'}</span>
               </button>
             )}
           </div>
 
-          <div className="aspect-video w-full rounded-lg border-2 border-slate-800 bg-slate-950 overflow-hidden relative flex items-center justify-center group shadow-inner">
+          <div className="aspect-video w-full rounded-lg border-2 border-neutral-800 bg-neutral-950 overflow-hidden relative flex items-center justify-center group shadow-inner">
             {sheetState.base64 ? (
               <img
                 src={`data:${sheetState.mimeType || 'image/jpeg'};base64,${sheetState.base64}`}
@@ -103,17 +98,16 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
               />
             ) : (
               <div className="text-center p-6 max-w-md">
-                <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-3">
-                  <span className="material-symbols-outlined text-[24px]">grid_view</span>
-                </div>
-                <p className="text-sm font-medium text-slate-300">Sin hoja maestra activa</p>
-                <p className="text-xs text-slate-500 mt-1">
+                <div className="w-12 h-12 mx-auto rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500 mb-3">
+                  </div>
+                <p className="text-sm font-medium text-neutral-300">Sin hoja maestra activa</p>
+                <p className="text-xs text-neutral-500 mt-1">
                   Selecciona una hoja de personaje ya aprobada desde la galería o genera una nueva cumpliendo los tres paneles canónicos.
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <button
                     onClick={onSelectExistingMedia}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs rounded transition cursor-pointer"
+                    className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-neutral-950 font-semibold text-xs rounded transition cursor-pointer"
                   >
                     Abrir desde Galería Flow
                   </button>
@@ -122,7 +116,7 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
             )}
 
             {/* Overlay informativo de paneles requeridos */}
-            <div className="absolute bottom-2 left-2 right-2 pointer-events-none flex justify-between gap-1 text-[10px] font-mono text-slate-400 bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded border border-slate-800/80">
+            <div className="absolute bottom-2 left-2 right-2 pointer-events-none flex justify-between gap-1 text-[10px] font-mono text-neutral-400 bg-neutral-950/80 backdrop-blur px-2.5 py-1 rounded border border-neutral-800/80">
               <span className="truncate">Panel 1: Retrato Frontal (única cara)</span>
               <span className="hidden sm:inline">|</span>
               <span className="truncate">Panel 2: Clavículas Abajo</span>
@@ -134,62 +128,57 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
 
         {/* Panel lateral de ficha técnica y generador */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">
-            <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[16px] text-amber-400">tune</span>
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
+            <h4 className="text-xs font-semibold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
               Ficha Canónica
             </h4>
             <div className="space-y-2 text-xs">
-              <div className="p-2 rounded bg-slate-950 border border-slate-800/60">
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">Gafas y Mirada</span>
-                <span className="text-slate-200">{MAXDOTAI_CANONICAL.features.glasses}</span>
+              <div className="p-2 rounded bg-neutral-950 border border-neutral-800/60">
+                <span className="text-neutral-500 block text-[10px] uppercase font-mono">Gafas y Mirada</span>
+                <span className="text-neutral-200">{MAXDOTAI_CANONICAL.features.glasses}</span>
               </div>
-              <div className="p-2 rounded bg-slate-950 border border-slate-800/60">
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">Cabello y Barba</span>
-                <span className="text-slate-200">{MAXDOTAI_CANONICAL.features.hair} • {MAXDOTAI_CANONICAL.features.beard}</span>
+              <div className="p-2 rounded bg-neutral-950 border border-neutral-800/60">
+                <span className="text-neutral-500 block text-[10px] uppercase font-mono">Cabello y Barba</span>
+                <span className="text-neutral-200">{MAXDOTAI_CANONICAL.features.hair} • {MAXDOTAI_CANONICAL.features.beard}</span>
               </div>
-              <div className="p-2 rounded bg-slate-950 border border-slate-800/60">
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">Vestuario</span>
-                <span className="text-slate-200">{MAXDOTAI_CANONICAL.features.wardrobe}</span>
+              <div className="p-2 rounded bg-neutral-950 border border-neutral-800/60">
+                <span className="text-neutral-500 block text-[10px] uppercase font-mono">Vestuario</span>
+                <span className="text-neutral-200">{MAXDOTAI_CANONICAL.features.wardrobe}</span>
               </div>
             </div>
           </div>
 
           {/* Generador de Hoja con Nano Banana Pro */}
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-neutral-200 uppercase tracking-wider">
                 Generar Nueva Hoja (16:9)
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400">
                 🍌 Nano Banana Pro
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-neutral-400">
               Usa este prompt optimizado para producir exactamente la estructura de tres paneles sobre fondo gris.
             </p>
             <textarea
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
               rows={4}
-              className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-amber-500"
+              className="w-full text-xs font-mono bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200 focus:outline-none focus:border-sky-500"
             />
             <div className="flex items-center gap-2 pt-1">
               <button
                 onClick={handleCopyPrompt}
-                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs flex items-center gap-1 transition cursor-pointer"
+                className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-xs flex items-center gap-1 transition cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[14px]">content_copy</span>
                 <span>{copyFeedback ? 'Copiado' : 'Copiar'}</span>
               </button>
               <button
                 disabled={isGenerating}
                 onClick={() => onGenerateSheet(promptText)}
-                className="flex-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/20"
+                className="flex-1 px-3 py-1.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-neutral-950 font-bold rounded text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md shadow-sky-500/20"
               >
-                <span className="material-symbols-outlined text-[16px]">
-                  {isGenerating ? 'sync' : 'auto_fix_high'}
-                </span>
                 <span>{isGenerating ? 'Generando hoja...' : 'Generar Hoja Maestra'}</span>
               </button>
             </div>

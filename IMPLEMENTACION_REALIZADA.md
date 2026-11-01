@@ -181,3 +181,23 @@ Ejecutada por HTTP contra `localhost:3000` con PostgreSQL local:
 - Corrección adicional: `run_director` desvincula tomas/beats antes de sustituir la línea de
   tiempo (FK violations en PostgreSQL al replanificar proyectos con tomas).
 - Pruebas al cierre: **122 passed, 0 fallos, 1 skip** + 2 E2E en verde.
+
+
+## Unificación visual completa (01/11/2026, tras revisión del propietario)
+
+El propietario detectó que el Studio era visualmente otra aplicación. Corregido:
+
+- **Paleta unificada**: slate→neutral y ámbar/naranja→sky en los 15 componentes del Studio
+  (mismos neutros y mismo acento sky que Fuentes/Noticias/Lotes/Configuración).
+- **Iconos Material retirados** (dependencia de Google Fonts eliminada del layout); los estados
+  se comunican con texto y badges del sistema (.badge-* de globals.css).
+- **Cabecera duplicada eliminada**: la identidad la aporta el shell de neural.news; el Studio
+  conserva solo su navegación de 8 pasos por proceso, con el mismo estilo de píldoras.
+- **Herramientas de herencia retiradas de la UI**: «Descargar código completo» y «Manual y
+  Contrato» ( herramientas de desarrollo del prototipo recuperado); el gráfico y el rótulo del
+  montaje y el SVG de la UI derivan ahora del MISMO modelo de diseño (paridad verificada por
+  píxel en tests/test_graphic_design_parity.py).
+- El diseño de los gráficos/tarjetas usa la paleta de la app: fondo neutral-950, barras sky-400.
+
+Verificación: suite 126 passed + 1 skip; 2 E2E Edge en verde; build limpio; revisado en
+navegador (/fuentes vs /estudio, mismas píldoras, acentos y tipografía).

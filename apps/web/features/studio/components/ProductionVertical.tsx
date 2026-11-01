@@ -225,16 +225,15 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
     });
 
   return (
-    <div className="space-y-4 rounded-lg border border-amber-900/60 bg-slate-900/70 p-4">
+    <div className="space-y-4 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-amber-400">theaters</span>
           Producción vertical (director determinista → tomas → paquete Flow → importación)
         </h3>
         <button
           onClick={runDirector}
           disabled={busy !== null}
-          className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 cursor-pointer"
+          className="rounded-md bg-sky-500 px-3 py-1.5 text-xs font-bold text-neutral-950 hover:bg-sky-400 disabled:opacity-50 cursor-pointer"
         >
           {busy === 'director' ? 'Planificando…' : shots.length > 0 ? 'Replanificar con el director' : 'Ejecutar director audiovisual'}
         </button>
@@ -246,7 +245,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
       )}
 
       {shots.length === 0 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-neutral-400">
           Todavía no hay plan: ejecuta el director para descomponer el guion en beats y tomas.
           La locución es continua; los cortes solo responden a la capacidad del proveedor.
         </p>
@@ -256,41 +255,41 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
         {shots.map((shot) => {
           const take = takesByShot.get(shot.id);
           return (
-            <li key={shot.id} className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 space-y-2">
+            <li key={shot.id} className="rounded-lg border border-neutral-800 bg-neutral-950/70 p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-mono font-bold text-amber-300">
+                <span className="font-mono font-bold text-sky-300">
                   Toma {shot.sequence + 1} · {KIND_LABELS[shot.shot_kind] ?? shot.shot_kind}
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-[10px] font-mono text-neutral-500">
                   {shot.start_s}s → {shot.end_s}s (máx. proveedor {shot.max_duration_s}s)
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">{shot.rationale}</p>
+              <p className="text-[11px] text-neutral-400">{shot.rationale}</p>
 
               {!take && (
-                <p className="text-[11px] text-slate-500">Sin toma asociada; replanifica para crearla.</p>
+                <p className="text-[11px] text-neutral-500">Sin toma asociada; replanifica para crearla.</p>
               )}
 
               {take && (
-                <div className="space-y-2 border-t border-slate-800 pt-2">
-                  <p className="text-[11px] font-mono text-slate-300">
+                <div className="space-y-2 border-t border-neutral-800 pt-2">
+                  <p className="text-[11px] font-mono text-neutral-300">
                     Toma #{take.id} · estado: <strong>{take.status}</strong> · prompt: v{take.prompt_versions}
                     {take.needs_review && (
-                      <strong className="ml-2 text-amber-400">⚠ Revisar: el guion cambió</strong>
+                      <strong className="ml-2 text-sky-400">⚠ Revisar: el guion cambió</strong>
                     )}
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px]">
                     <button
                       onClick={() => generatePrompt(take)}
                       disabled={busy !== null}
-                      className="rounded border border-slate-700 px-2 py-1 text-slate-200 hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+                      className="rounded border border-neutral-700 px-2 py-1 text-neutral-200 hover:bg-neutral-800 disabled:opacity-50 cursor-pointer"
                     >
                       {busy === `prompt-${take.id}` ? 'Compilando…' : 'Generar prompt de la toma'}
                     </button>
                     <button
                       onClick={() => downloadPackage(take)}
                       disabled={busy !== null}
-                      className="rounded border border-slate-700 px-2 py-1 text-slate-200 hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+                      className="rounded border border-neutral-700 px-2 py-1 text-neutral-200 hover:bg-neutral-800 disabled:opacity-50 cursor-pointer"
                     >
                       {busy === `package-${take.id}` ? 'Preparando…' : 'Descargar FlowManualPackage'}
                     </button>
@@ -308,14 +307,14 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
                     />
                     <button
                       onClick={() => fileInputs.current[take.id]?.click()}
-                      className="rounded border border-slate-700 px-2 py-1 text-slate-200 hover:bg-slate-800 cursor-pointer"
+                      className="rounded border border-neutral-700 px-2 py-1 text-neutral-200 hover:bg-neutral-800 cursor-pointer"
                     >
                       {selectedFile[take.id]?.name ?? 'Elegir MP4 generado en Flow'}
                     </button>
                     <button
                       onClick={() => importMedia(take)}
                       disabled={busy !== null || !selectedFile[take.id]}
-                      className="rounded bg-slate-800 px-2 py-1 text-slate-100 hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
+                      className="rounded bg-neutral-800 px-2 py-1 text-neutral-100 hover:bg-neutral-700 disabled:opacity-50 cursor-pointer"
                     >
                       {busy === `import-${take.id}` ? 'Importando…' : 'Importar y asociar a la toma'}
                     </button>
@@ -330,7 +329,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
                       </p>
                       <video
                         controls
-                        className="max-h-64 w-full rounded border border-slate-800 bg-black"
+                        className="max-h-64 w-full rounded border border-neutral-800 bg-black"
                         src={`/api/v1/media/${take.imported_media.id}/file`}
                       />
                       {take.status === 'IMPORTADA' && (
@@ -367,10 +366,9 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           );
         })}
       </ul>
-      <div className="space-y-3 rounded-lg border border-emerald-900/60 bg-slate-900/70 p-4">
+      <div className="space-y-3 rounded-lg border border-emerald-900/60 bg-neutral-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[16px]">movie_edit</span>
             Montaje (animática 9:16 con FFmpeg — sin locución, sin Docker)
           </h4>
           <button
@@ -382,7 +380,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           </button>
         </div>
         {montageState?.missing && montageState.missing.length > 0 && (
-          <div className="rounded border border-amber-900/70 bg-amber-950/40 p-2 text-[11px] text-amber-200">
+          <div className="rounded border border-sky-900/70 bg-sky-950/40 p-2 text-[11px] text-sky-200">
             <p className="font-semibold">Materiales pendientes (el montaje no los inventa):</p>
             <ul className="mt-1 space-y-0.5 font-mono">
               {montageState.missing.map((m, i) => (
@@ -396,35 +394,34 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
             <p className="text-[11px] font-mono text-emerald-300">
               Animática construida · {montageState.animatica.duration_s}s · {montageState.animatica.label}
             </p>
-            {montageUrl && <video controls className="max-h-72 w-full rounded border border-slate-800 bg-black" src={montageUrl} />}
+            {montageUrl && <video controls className="max-h-72 w-full rounded border border-neutral-800 bg-black" src={montageUrl} />}
           </div>
         )}
       </div>
-      <div className="space-y-2 rounded-lg border border-sky-900/60 bg-slate-900/70 p-3">
+      <div className="space-y-2 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-3">
         <h4 className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[16px]">bar_chart</span>
           Gráficos programáticos (datos verificados, nunca inventados)
         </h4>
         <div className="flex flex-wrap items-end gap-2 text-[11px]">
           <label className="space-y-0.5">
-            <span className="text-slate-500">Título</span>
+            <span className="text-neutral-500">Título</span>
             <input value={graphicTitle} onChange={(e) => setGraphicTitle(e.target.value)}
-              className="block w-40 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+              className="block w-40 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <label className="space-y-0.5">
-            <span className="text-slate-500">Etiqueta</span>
+            <span className="text-neutral-500">Etiqueta</span>
             <input value={graphicLabel} onChange={(e) => setGraphicLabel(e.target.value)}
-              className="block w-28 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+              className="block w-28 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <label className="space-y-0.5">
-            <span className="text-slate-500">Valor</span>
+            <span className="text-neutral-500">Valor</span>
             <input value={graphicValue} onChange={(e) => setGraphicValue(e.target.value)} inputMode="decimal"
-              className="block w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+              className="block w-20 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <label className="space-y-0.5">
-            <span className="text-slate-500">Unidad</span>
+            <span className="text-neutral-500">Unidad</span>
             <input value={graphicUnit} onChange={(e) => setGraphicUnit(e.target.value)}
-              className="block w-16 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" />
+              className="block w-16 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <button onClick={createGraphic} disabled={busy !== null || graphicValue === ''}
             className="rounded bg-sky-700 px-2 py-1 font-semibold text-white hover:bg-sky-600 disabled:opacity-50 cursor-pointer">
@@ -432,20 +429,20 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           </button>
         </div>
         {graphics.length === 0 && (
-          <p className="text-[10px] text-slate-500">
+          <p className="text-[10px] text-neutral-500">
             Sin gráficos aún. Si el guion cambia, los gráficos derivados se marcan INVALIDADO para revisión (cap. 13).
           </p>
         )}
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {graphics.map((g) => (
             <li key={g.id} className="space-y-1">
-              <p className="text-[11px] font-mono text-slate-300">
+              <p className="text-[11px] font-mono text-neutral-300">
                 #{g.id} {g.title} · <strong className={g.status === 'INVALIDADO' ? 'text-rose-400' : 'text-emerald-400'}>{g.status}</strong>
               </p>
               {g.status !== 'INVALIDADO' && (
                 <img
                   alt={`Gráfico ${g.title}`}
-                  className="w-full rounded border border-slate-800"
+                  className="w-full rounded border border-neutral-800"
                   src={`/api/v1/projects/${projectId}/graphics/${g.id}/svg`}
                 />
               )}

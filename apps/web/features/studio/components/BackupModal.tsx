@@ -134,35 +134,33 @@ export const BackupModal: React.FC<BackupModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-4xl w-full p-5 sm:p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[92vh]">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-4xl w-full p-5 sm:p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[92vh]">
         {/* Cabecera */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
           <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded bg-amber-500 flex items-center justify-center text-slate-950 font-black text-sm">
-              <span className="material-symbols-outlined text-[18px]">verified</span>
-            </span>
+            <span className="w-8 h-8 rounded bg-sky-500 flex items-center justify-center text-neutral-950 font-black text-sm">
+              </span>
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 Auditoría e Integridad de Código Fuente
               </h2>
-              <p className="text-[11px] text-slate-400 font-mono">
+              <p className="text-[11px] text-neutral-400 font-mono">
                 neural.news Studio • Verificación real con hashes SHA-256 independientes
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
+            className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+            </button>
         </div>
 
         {/* Métricas auditadas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-            <span className="text-[10px] uppercase text-slate-500 block">Archivos Reales</span>
-            <span className="text-base font-bold text-amber-400 mt-0.5 block">
+          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
+            <span className="text-[10px] uppercase text-neutral-500 block">Archivos Reales</span>
+            <span className="text-base font-bold text-sky-400 mt-0.5 block">
               {isAuditing ? 'Calculando...' : `${totalFiles} archivos`}
             </span>
             <span className="text-[10px] text-emerald-400">
@@ -170,26 +168,26 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             </span>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-            <span className="text-[10px] uppercase text-slate-500 block">Líneas de Código</span>
+          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
+            <span className="text-[10px] uppercase text-neutral-500 block">Líneas de Código</span>
             <span className="text-base font-bold text-white mt-0.5 block">
               {isAuditing ? '...' : totalLines.toLocaleString()}
             </span>
-            <span className="text-[10px] text-slate-400">Sin fragmentos vacíos</span>
+            <span className="text-[10px] text-neutral-400">Sin fragmentos vacíos</span>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-            <span className="text-[10px] uppercase text-slate-500 block">Caracteres Reales</span>
+          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
+            <span className="text-[10px] uppercase text-neutral-500 block">Caracteres Reales</span>
             <span className="text-base font-bold text-white mt-0.5 block">
               {isAuditing ? '...' : `${(totalChars / 1024).toFixed(1)} KB`}
             </span>
-            <span className="text-[10px] text-slate-400">{totalChars.toLocaleString()} caracteres</span>
+            <span className="text-[10px] text-neutral-400">{totalChars.toLocaleString()} caracteres</span>
           </div>
 
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-            <span className="text-[10px] uppercase text-slate-500 block">Validación Cripto</span>
+          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
+            <span className="text-[10px] uppercase text-neutral-500 block">Validación Cripto</span>
             <span className="text-base font-bold text-emerald-400 mt-0.5 block">SHA-256 OK</span>
-            <span className="text-[10px] text-slate-400">crypto.subtle</span>
+            <span className="text-[10px] text-neutral-400">crypto.subtle</span>
           </div>
         </div>
 
@@ -201,28 +199,25 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                 ? 'bg-emerald-950/80 border-emerald-800 text-emerald-200'
                 : downloadStatus === 'error'
                 ? 'bg-rose-950/80 border-rose-800 text-rose-200'
-                : 'bg-amber-950/60 border-amber-800 text-amber-200'
+                : 'bg-sky-950/60 border-sky-800 text-sky-200'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">
-              {downloadStatus === 'done' ? 'check_circle' : downloadStatus === 'error' ? 'error' : 'sync'}
-            </span>
             <span>{statusMessage}</span>
           </div>
         )}
 
         {/* Tabla de Manifiesto con SHA-256 */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-200 uppercase tracking-wider">
+          <div className="flex items-center justify-between text-xs font-semibold text-neutral-200 uppercase tracking-wider">
             <span>Manifiesto de Archivos y Verificación SHA-256</span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-[10px] font-mono text-neutral-400">
               {isAuditing ? 'Calculando firmas...' : `${totalFiles} / ${totalFiles} comprobados`}
             </span>
           </div>
 
-          <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden max-h-64 overflow-y-auto font-mono text-xs">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden max-h-64 overflow-y-auto font-mono text-xs">
             <table className="w-full text-left">
-              <thead className="bg-slate-900/90 text-slate-400 text-[10px] uppercase tracking-wider sticky top-0 border-b border-slate-800">
+              <thead className="bg-neutral-900/90 text-neutral-400 text-[10px] uppercase tracking-wider sticky top-0 border-b border-neutral-800">
                 <tr>
                   <th className="py-2 px-3">Ruta</th>
                   <th className="py-2 px-3">Líneas</th>
@@ -231,16 +226,15 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                   <th className="py-2 px-3 text-center">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300 text-[11px]">
+              <tbody className="divide-y divide-neutral-800/60 text-neutral-300 text-[11px]">
                 {auditList.map((file) => (
-                  <tr key={file.path} className="hover:bg-slate-900/40">
-                    <td className="py-1.5 px-3 font-semibold text-amber-300/90 flex items-center gap-1.5 truncate">
-                      <span className="material-symbols-outlined text-[14px] text-slate-500">code</span>
+                  <tr key={file.path} className="hover:bg-neutral-900/40">
+                    <td className="py-1.5 px-3 font-semibold text-sky-300/90 flex items-center gap-1.5 truncate">
                       {file.path}
                     </td>
-                    <td className="py-1.5 px-3 text-slate-400">{file.lineCount}</td>
-                    <td className="py-1.5 px-3 text-slate-400">{file.charCount.toLocaleString()}</td>
-                    <td className="py-1.5 px-3 text-slate-400 text-[10px] font-mono" title={file.sha256}>
+                    <td className="py-1.5 px-3 text-neutral-400">{file.lineCount}</td>
+                    <td className="py-1.5 px-3 text-neutral-400">{file.charCount.toLocaleString()}</td>
+                    <td className="py-1.5 px-3 text-neutral-400 text-[10px] font-mono" title={file.sha256}>
                       <code>{file.sha256.slice(0, 12)}...</code>
                     </td>
                     <td className="py-1.5 px-3 text-center">
@@ -262,26 +256,23 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         </div>
 
         {/* Acciones de exportación */}
-        <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <p className="text-[11px] text-slate-400 font-mono">
+        <div className="pt-3 border-t border-neutral-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <p className="text-[11px] text-neutral-400 font-mono">
             Destino: <code>neural_news_full_source_backup.json</code> — <strong>exportación de ajustes y contenido del Studio (JSON); no es un backup de la base de datos</strong>, que se restaura con copias de PostgreSQL
           </p>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition cursor-pointer"
+              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded text-xs transition cursor-pointer"
             >
               Cerrar
             </button>
             <button
               onClick={handleDownloadFullSource}
               disabled={downloadStatus === 'exporting' || isAuditing || !allComplete}
-              className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 text-slate-950 font-bold rounded text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-amber-500/20"
+              className="px-5 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 disabled:opacity-50 text-neutral-950 font-bold rounded text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-sky-500/20"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                {downloadStatus === 'exporting' ? 'sync' : 'download_for_offline'}
-              </span>
               <span>
                 {downloadStatus === 'exporting' ? 'Descargando...' : 'Descargar JSON con Manifiesto'}
               </span>

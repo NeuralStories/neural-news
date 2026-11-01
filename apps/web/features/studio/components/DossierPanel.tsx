@@ -50,26 +50,26 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
     );
   }
   if (!dossier) {
-    return <p className="text-[11px] text-slate-500">Cargando dossier editorial…</p>;
+    return <p className="text-[11px] text-neutral-500">Cargando dossier editorial…</p>;
   }
   if (!dossier.linked) {
     return (
-      <p className="rounded border border-slate-800 bg-slate-900/70 p-2 text-[11px] text-slate-400">
+      <p className="rounded border border-neutral-800 bg-neutral-900/70 p-2 text-[11px] text-neutral-400">
         Dossier editorial: sin noticia vinculada. Vincula una historia del motor para traer sus
         fuentes y afirmaciones verificadas (una sola redacción).
       </p>
     );
   }
   return (
-    <div className="space-y-2 rounded-lg border border-sky-900/60 bg-slate-900/70 p-3">
+    <div className="space-y-2 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-3">
       <p className="text-xs font-bold text-sky-300">
         Dossier editorial vinculado · historia #{dossier.story?.id} · {dossier.story?.status}
       </p>
       {dossier.sources && dossier.sources.length > 0 && (
-        <ul className="space-y-1 text-[11px] text-slate-300">
+        <ul className="space-y-1 text-[11px] text-neutral-300">
           {dossier.sources.map((s) => (
             <li key={s.source_id}>
-              <span className="text-slate-500">[{s.provider}]</span> {s.title}
+              <span className="text-neutral-500">[{s.provider}]</span> {s.title}
               {s.canonical_url ? ` · ${s.canonical_url}` : ''}
             </li>
           ))}
@@ -85,7 +85,7 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
                     ? 'font-mono text-rose-400'
                     : c.verification_status === 'SUPPORTED' || c.verification_status === 'CONFIRMED'
                       ? 'font-mono text-emerald-400'
-                      : 'font-mono text-amber-400'
+                      : 'font-mono text-sky-400'
                 }
               >
                 {STATUS_LABELS[c.verification_status] ?? c.verification_status}
@@ -95,7 +95,7 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
           ))}
         </ul>
       )}
-      <p className="text-[10px] text-slate-500">
+      <p className="text-[10px] text-neutral-500">
         El estado de verificación lo decide el motor editorial; importar o traspasar nunca verifica (F-08).
       </p>
     </div>

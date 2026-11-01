@@ -447,6 +447,8 @@ def save_beats(
     """Sustituye los beats del proyecto. El audio es continuo: aquí no hay cortes
     forzados de 8 s (F-05); `est_seconds` es solo estimación editable."""
     project = _get_project(db, project_id)
+    for shot in project.shots:  # desvincular antes de sustituir (FK shot.beat_id)
+        shot.beat_id = None
     project.beats.clear()
     for i, beat in enumerate(body.beats):
         project.beats.append(
@@ -470,6 +472,10 @@ def save_shots(
         "USER_VIDEO", "FLOW_MAXDOTAI", "DOCUMENTARY", "DATA_GRAPHIC",
         "GENERATIVE_BROLL", "TITLE_CARD", "PENDING",
     }
+    # Replanificar conserva las tomas existentes (son activos): solo se
+    # desvinculan de la ventana anterior para que el operador las reasigne.
+    for take in project.takes:
+        take.shot_id = None
     project.shots.clear()
     for i, shot in enumerate(body.shots):
         if shot.shot_kind not in valid_kinds:

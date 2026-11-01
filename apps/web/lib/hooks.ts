@@ -20,9 +20,13 @@ export function useJobPolling() {
       const check = async () => {
         try {
           const job = await api.getJob(jobId);
-          if (["DONE", "FAILED", "UNKNOWN"].includes(job.status)) {
+          const terminales = ["DONE", "FAILED", "UNKNOWN", "RETRYABLE_FAILED"];
+          if (terminales.includes(job.status)) {
             setWaiting(null);
             if (job.status === "FAILED") setError(job.error || "El trabajo ha terminado con error");
+            if (job.status === "RETRYABLE_FAILED") {
+              setError(job.error || "El trabajo se ha quedado a medias; se reintentará automáticamente");
+            }
             onDone?.({ status: job.status, error: job.error ?? null });
             return;
           }

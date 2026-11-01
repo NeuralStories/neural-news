@@ -105,6 +105,72 @@ def test_unknown_job_type_fails_cleanly(app_env):
         assert "desconocido" in job.error
 
 
+def test_metadata_only_source_is_not_retried(app_env, demo_client, worker):
+    """Una fuente sin transcripción termina el trabajo con un mensaje claro, sin reintentos."""
+    from neuralnews.models import Source, SourceContent
+
+    with session_scope() as db:
+        source = Source(
+            provider="spotify",
+            external_id="ep-demo-sin-transcripcion",
+            canonical_url="https://open.spotify.com/episode/ep-demo-sin-transcripcion",
+            title="Episodio de ejemplo (DEMO)",
+            status="NEW",
+            demo=True,
+            metadata_json={},
+        )
+        db.add(source)
+        db.flush()
+        db.add(
+            SourceContent(
+                source_id=source.id,
+                content_type="METADATA_ONLY",
+                is_verbatim=False,
+                provider="demo",
+                text="Descripción del episodio de ejemplo, sin transcripción.",
+                content_hash="f" * 64,
+            )
+        )
+        db.flush()
+        source_id = source.id
+        job, _ = enqueue(db, "process_source", {"source_id": source_id}, dedupe_key="meta-only-1")
+        job_id = job.id
+
+    with session_scope() as db:
+        job = claim_next_job(db, lease_seconds=60)  # el worker reclama antes de ejecutar
+        assert job is not None and job.id == job_id
+        run_job(db, job)
+        assert job.status == "DONE", "no debe fallar ni reintentarse"
+        assert job.attempt == 1, "no debe reintentar"
+        assert "información básica" in (job.progress or "")
+        assert job.error is None
+
+
+def test_all_job_handlers_execute_without_name_errors(app_env, demo_client, worker):
+    """Cada handler del worker debe ejecutarse sin errores de nombre (p. ej. imports olvidados)."""
+    from neuralnews.worker_tasks import HANDLERS
+
+    for job_type in HANDLERS:
+        assert job_type, "no debe haber handlers vacíos"
+
+    # guion: ejercita handle_draft_script (registra consumo y crea versión)
+    payload = demo_client.post(
+        "/api/v1/sources", json={"text": "Acme Instruments ha lanzado hoy el chip Z9 con un 30 por ciento mas de potencia."}
+    ).json()
+    worker()
+    detail = demo_client.get(f"/api/v1/sources/{payload['source']['id']}").json()
+    story_id = detail["stories"][0]["id"]
+
+    demo_client.post(f"/api/v1/stories/{story_id}/research")
+    demo_client.post(f"/api/v1/stories/{story_id}/draft")
+    worker()
+
+    jobs = demo_client.get("/api/v1/jobs").json()["items"]
+    fallidos = [j for j in jobs if j["status"] in ("FAILED", "RETRYABLE_FAILED")]
+    assert not fallidos, f"trabajos con error: {[(j['id'], j['type'], j.get('error')) for j in fallidos]}"
+    assert demo_client.get(f"/api/v1/stories/{story_id}").json()["script_versions"], "debe haber guion"
+
+
 def test_retry_after_permanent_failure_creates_new_job(app_env):
     """Repetir una clave cuyo trabajo ya falló debe permitir un trabajo nuevo, no bloquearse."""
     with session_scope() as db:

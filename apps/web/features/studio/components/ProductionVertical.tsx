@@ -6,7 +6,7 @@
  * exportable → importación del MP4 generado externamente → revisión y
  * aprobación humana. Nada simula generación ni conexión con Flow.
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ProjectConflict,
   projectApi,
@@ -77,6 +77,11 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
   const [planNote, setPlanNote] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<Record<number, File>>({});
   const [graphics, setGraphics] = useState<Array<{ id: number; title: string; status: string }>>([]);
+  const [montageState, setMontageState] = useState<{
+    missing: Array<{ shot_kind: string; window: string; reason: string }>;
+    animatica: { duration_s: number; label: string; built_at: string } | null;
+  } | null>(null);
+  const [montageUrl, setMontageUrl] = useState<string | null>(null);
   const [graphicTitle, setGraphicTitle] = useState('Cifra destacada');
   const [graphicLabel, setGraphicLabel] = useState('Valor');
   const [graphicValue, setGraphicValue] = useState('');
@@ -165,8 +170,13 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
     const res = await fetch(`/api/v1/projects/${projectId}/graphics`, { credentials: 'same-origin' });
     if (res.ok) setGraphics((await res.json()).items ?? []);
   };
+  const loadMontage = async () => {
+    const res = await fetch(`/api/v1/projects/${projectId}/montage`, { credentials: 'same-origin' });
+    if (res.ok) setMontageState(await res.json());
+  };
   useEffect(() => {
     void loadGraphics();
+    void loadMontage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
@@ -188,6 +198,25 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
       }
       setGraphicValue('');
       await loadGraphics();
+    });
+
+  const buildMontage = () =>
+    run('montage', async () => {
+      const res = await fetch(`/api/v1/projects/${projectId}/montage`, {
+        method: 'POST', credentials: 'same-origin',
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body?.detail?.message ?? 'El montaje no puede construirse aún');
+        setMontageState({ missing: body?.detail?.missing ?? [], animatica: null });
+        onChanged();
+        return;
+      }
+      setMontageState({ missing: body.missing ?? [], animatica: {
+        duration_s: body.duration_s, label: body.label, built_at: new Date().toISOString(),
+      } });
+      setMontageUrl(`/api/v1/projects/${projectId}/montage.mp4?ts=${Date.now()}`);
+      await loadMontage();
     });
 
   const approveTake = (take: TakeOut, status: 'APROBADA' | 'RECHAZADA') =>
@@ -338,6 +367,39 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           );
         })}
       </ul>
+      <div className="space-y-3 rounded-lg border border-emerald-900/60 bg-slate-900/70 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[16px]">movie_edit</span>
+            Montaje (animática 9:16 con FFmpeg — sin locución, sin Docker)
+          </h4>
+          <button
+            onClick={buildMontage}
+            disabled={busy !== null}
+            className="rounded bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
+          >
+            {busy === 'montage' ? 'Montando…' : 'Validar y montar lo disponible'}
+          </button>
+        </div>
+        {montageState?.missing && montageState.missing.length > 0 && (
+          <div className="rounded border border-amber-900/70 bg-amber-950/40 p-2 text-[11px] text-amber-200">
+            <p className="font-semibold">Materiales pendientes (el montaje no los inventa):</p>
+            <ul className="mt-1 space-y-0.5 font-mono">
+              {montageState.missing.map((m, i) => (
+                <li key={i}>· {m.window} — {m.shot_kind}: {m.reason}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {montageState?.animatica && (
+          <div className="space-y-1">
+            <p className="text-[11px] font-mono text-emerald-300">
+              Animática construida · {montageState.animatica.duration_s}s · {montageState.animatica.label}
+            </p>
+            {montageUrl && <video controls className="max-h-72 w-full rounded border border-slate-800 bg-black" src={montageUrl} />}
+          </div>
+        )}
+      </div>
       <div className="space-y-2 rounded-lg border border-sky-900/60 bg-slate-900/70 p-3">
         <h4 className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[16px]">bar_chart</span>

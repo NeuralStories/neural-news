@@ -560,6 +560,10 @@ class PromptPackage(Base):
     attachments_manifest: Mapped[list] = mapped_column(JSON, default=list)
     checklist: Mapped[dict] = mapped_column(JSON, default=dict)
     content_hash: Mapped[str] = mapped_column(String(64))
+    """Hash del propio texto del prompt."""
+    source_script_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    """Hash del guion del proyecto al compilar: permite invalidación exclusiva
+    (solo los prompts que dependían del texto cambiado requieren revisión)."""
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     take: Mapped[GeneratedTake | None] = relationship(back_populates="prompts")
@@ -595,6 +599,8 @@ class GeneratedTake(Base):
     shot_id: Mapped[int | None] = mapped_column(ForeignKey("shots.id"), nullable=True, index=True)
     take_number: Mapped[int] = mapped_column(Integer, default=1)
     status: Mapped[str] = mapped_column(String(24), default="PLANIFICADA", index=True)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    """El guion cambió tras compilarse su prompt: requiere revisión sin regenerar."""
     imported_media_id: Mapped[int | None] = mapped_column(
         ForeignKey("media_assets.id"), nullable=True, index=True
     )

@@ -106,11 +106,14 @@ def test_changes_do_not_regenerate_independent_assets(demo_client):
     assert graphic["id"] in changed["invalidated_graphics"]  # el derivado sí se marca
 
     after = demo_client.get(f"/api/v1/projects/{pid}").json()
-    # …pero los activos independientes NO se regeneran ni se pierden
-    assert after["takes"] == before["takes"]
-    assert after["beats"] == before["beats"] or len(after["beats"]) == len(before["beats"])
+    # …pero los activos independientes NO se regeneran ni se pierden: el MP4
+    # importado sigue vinculado y el estado IMPORTADA se conserva; solo se pide
+    # revisión del prompt dependiente (needs_review) sin borrar nada.
     media_before = before["takes"][0]["imported_media"]["sha256"]
     assert after["takes"][0]["imported_media"]["sha256"] == media_before
+    assert after["takes"][0]["status"] == "IMPORTADA"
+    assert after["takes"][0]["needs_review"] is True
+    assert len(after["beats"]) == len(before["beats"])
 
     # Y un cambio en el paso Personaje no invalida los gráficos (regla dirigida:
     # solo afecta a tomas de presentador, que son revisiones, no borrados)

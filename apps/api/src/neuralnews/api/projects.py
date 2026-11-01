@@ -144,6 +144,12 @@ class GraphicCreate(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+def _project_script_hash(db: Session, project: ProductionProject) -> str | None:
+    """Hash del guion vigente (paso Guion o última revisión de la historia)."""
+    text = _project_script(db, project, None)
+    return content_hash(text) if text else None
+
+
 def _get_project(db: Session, project_id: int) -> ProductionProject:
     project = db.get(ProductionProject, project_id)
     if project is None:
@@ -221,6 +227,7 @@ def project_to_out(db: Session, project: ProductionProject, full: bool = False) 
                 "shot_id": take.shot_id,
                 "take_number": take.take_number,
                 "status": take.status,
+                "needs_review": take.needs_review,
                 "imported_media": (
                     asset_to_out(take.imported_media) if take.imported_media else None
                 ),
@@ -328,10 +335,12 @@ def save_step(
         )
     payload = dict(body.payload)
     invalidated_graphics: list[int] = []
+    takes_needing_review: list[int] = []
     if step == "guion" and isinstance(payload.get("scriptText"), str):
         # Invalidación dirigida (cap. 13): cambiar el guion invalida los gráficos
         # derivados del texto anterior; las tomas y prompts ya son revisiones.
         new_hash = content_hash(payload["scriptText"])
+        assert new_hash  # texto no vacío garantizado por la rama
         for graphic in db.scalars(
             select(GraphicSpec).where(GraphicSpec.project_id == project.id)
         ).all():
@@ -347,6 +356,29 @@ def save_step(
                     detail={"project_id": project.id, "graphics": invalidated_graphics},
                 )
             )
+        if new_hash is not None:
+            for take in db.scalars(
+                select(GeneratedTake).where(GeneratedTake.project_id == project.id)
+            ).all():
+                latest = db.scalars(
+                    select(PromptPackage)
+                    .where(PromptPackage.take_id == take.id)
+                    .order_by(PromptPackage.version.desc())
+                    .limit(1)
+                ).first()
+                if latest is None or latest.source_script_hash in (None, new_hash):
+                    continue  # sin prompt o ya compilado contra el guion vigente
+                if not take.needs_review:
+                    take.needs_review = True
+                    takes_needing_review.append(take.id)
+            if takes_needing_review:
+                db.add(
+                    AuditLog(
+                        event="takes_needing_review",
+                        actor_id=actor["actor_id"],
+                        detail={"project_id": project.id, "takes": takes_needing_review},
+                    )
+                )
     if step == "noticias" and "story_id" in payload:
         # R-BUG-1: elegir/importar una noticia en el Studio la activa de verdad.
         story = db.get(Story, int(payload["story_id"]))
@@ -369,6 +401,7 @@ def save_step(
         "revision": current + 1,
         "story_id": project.story_id,
         "invalidated_graphics": invalidated_graphics,
+        "takes_needing_review": takes_needing_review,
     }
 
 
@@ -545,8 +578,11 @@ def save_prompt(
         attachments_manifest=body.attachments_manifest,
         checklist=body.checklist,
         content_hash=content_hash(body.prompt_en),
+        source_script_hash=_project_script_hash(db, project),
     )
     db.add(pkg)
+    if take is not None:
+        take.needs_review = False  # compila contra el guion vigente
     if take is not None and take.status == "PLANIFICADA":
         take.status = "PROMPT_LISTO"
     db.flush()

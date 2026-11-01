@@ -9,13 +9,14 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .config import get_settings
 from .models import Job, Source, Story
 from .queue import mark_done, mark_failed, mark_retryable
 from .services import budget as budget_service
 from .services import batches as batch_service
 from .services import research as research_service
 from .services import scripts as script_service
-from .services.sources import extract_stories_from_source, run_fetch
+from .services.sources import SourceNotAnalyzable, extract_stories_from_source, run_fetch
 
 PROCESS_SOURCE = "process_source"
 ANALYZE_VIDEO = "analyze_video"
@@ -41,7 +42,12 @@ def handle_process_source(db: Session, job: Job) -> str:
     if source is None:
         raise RuntimeError("La fuente ya no existe")
     run_fetch(db, source)
-    stories = extract_stories_from_source(db, source)
+    try:
+        stories = extract_stories_from_source(db, source)
+    except SourceNotAnalyzable as exc:
+        # Resultado esperado (fuente sin transcripción), no un fallo: no se reintenta.
+        job.progress = str(exc)
+        return str(exc)
     budget_service.record_usage(
         db,
         provider="demo_extraction" if source.demo else "extraction",
@@ -156,7 +162,7 @@ def run_job(db: Session, job: Job) -> None:
         return
     try:
         summary = fn(db, job)
-        if job.status == "RUNNING":
+        if job.status not in ("DONE", "FAILED"):
             job.progress = summary
             mark_done(db, job)
     except budget_service.BudgetExceeded as exc:

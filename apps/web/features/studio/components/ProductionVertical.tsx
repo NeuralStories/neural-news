@@ -28,6 +28,7 @@ interface TakeOut {
   shot_id: number | null;
   take_number: number;
   status: string;
+  needs_review: boolean;
   imported_media: { id: number; sha256: string; duration_s: number | null; orientation: string | null } | null;
   prompt_versions: number;
 }
@@ -245,6 +246,9 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
                 <div className="space-y-2 border-t border-slate-800 pt-2">
                   <p className="text-[11px] font-mono text-slate-300">
                     Toma #{take.id} · estado: <strong>{take.status}</strong> · prompt: v{take.prompt_versions}
+                    {take.needs_review && (
+                      <strong className="ml-2 text-amber-400">⚠ Revisar: el guion cambió</strong>
+                    )}
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px]">
                     <button

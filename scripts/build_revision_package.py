@@ -17,9 +17,11 @@ REPO = BASE / "neural-news"
 OUT = BASE / "REVISION_NN107_FLOW"
 ZIP_PATH = BASE / "REVISION_NN107_FLOW.zip"
 
+# Patrones construidos por concatenación para que este propio script no
+# aparezca como coincidencia en su propio escaneo.
 SECRET_PATTERNS = (
-    "sk-", "BEGIN RSA PRIVATE KEY", "BEGIN OPENSSH PRIVATE KEY",
-    "password = \"", "api_key = \"", "apikey=\"", "SECRET_TOKEN=",
+    "sk" + "-", "BEGIN RSA PRIVATE" + " KEY", "BEGIN OPENSSH PRIVATE" + " KEY",
+    "password" + ' = "', "api_key" + ' = "', "apikey" + "=" + chr(34), "SECRET_TOKEN" + "=",
 )
 
 

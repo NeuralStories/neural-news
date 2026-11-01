@@ -2,8 +2,9 @@
 
 Compone las tomas del proyecto en una línea de tiempo continua:
   - Tomas con MP4 importado → clip real (recortado/extendido a su ventana).
-  - DATA_GRAPHIC / TITLE_CARD → tarjeta programática renderizada con Pillow
-    (valores exactos del GraphicSpec; nunca cifras inventadas).
+  - DATA_GRAPHIC / TITLE_CARD → tarjeta programática renderizada con el
+    diseño único de graphics.py (valores exactos del GraphicSpec; nunca
+    cifras inventadas; misma paleta y geometría que el SVG de la UI).
   - Tomas sin material → hueco: el montaje NO se construye y se lista
     exactamente qué falta (voz, clips, autorizaciones).
 
@@ -12,15 +13,18 @@ final: se etiqueta como tal en el propio fichero y en la API.
 """
 from __future__ import annotations
 
+import hashlib
 import shutil
 import subprocess
 import time
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont
+from sqlalchemy import select
 
 from .. import config
+from ..models import GraphicSpec
+from .graphics import render_chart_png_1080x1920, render_title_png_1080x1920
 
 W, H, FPS = 1080, 1920, 30
 
@@ -51,50 +55,6 @@ def _run(bin_dir: Path, args: list[str], timeout: int = 300) -> subprocess.Compl
                           capture_output=True, timeout=timeout)
 
 
-def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    for cand in ("C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf"):
-        if Path(cand).exists():
-            return ImageFont.truetype(cand, size)
-    return ImageFont.load_default()
-
-
-def _render_card(title: str, lines: list[str], series: list[dict] | None = None,
-                 source_note: str = "") -> Path:
-    """Tarjeta programática 1080x1920: rótulo/titular o barras con valores exactos."""
-    out_dir = Path(config.STORAGE_DIR) / "montage" / "cards"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    import hashlib
-    name = hashlib.sha256((title + str(lines) + str(series)).encode()).hexdigest()[:16] + ".png"
-    dest = out_dir / name
-    if dest.exists():
-        return dest
-    img = Image.new("RGB", (W, H), (2, 6, 23))
-    d = ImageDraw.Draw(img)
-    f_title = _font(72)
-    f_big = _font(96)
-    f_small = _font(34)
-    d.text((80, 120), title[:34], font=f_title, fill=(251, 191, 36))
-    y = 420
-    if series:
-        max_v = max(float(s.get("value", 0)) for s in series) or 1.0
-        for i, item in enumerate(series):
-            value = float(item.get("value", 0))
-            unit = str(item.get("unit", "")).strip()
-            label = str(item.get("label", ""))
-            bar_w = int(860 * (value / max_v))
-            y0 = y + i * 320
-            d.rectangle([80, y0, 80 + bar_w, y0 + 140], fill=(56, 189, 248))
-            d.text((80, y0 - 90), f"{value:g} {unit}".strip(), font=f_big, fill=(226, 232, 240))
-            d.text((80, y0 + 160), label, font=f_small, fill=(148, 163, 184))
-    else:
-        for i, line in enumerate(lines):
-            d.text((80, y + i * 140), line[:30], font=f_big, fill=(226, 232, 240))
-    if source_note:
-        d.text((80, H - 160), source_note[:60], font=f_small, fill=(100, 116, 139))
-    dest.write_bytes(b"")
-    img.save(dest, format="PNG")
-    return dest
-
 
 def timeline(db: Any, project: Any) -> tuple[list[dict], list[dict]]:
     """Construye la línea de tiempo desde shots/takes persistidos y calcula
@@ -123,8 +83,26 @@ def timeline(db: Any, project: Any) -> tuple[list[dict], list[dict]]:
             segments.append(entry)
             continue
         if shot.shot_kind in ("DATA_GRAPHIC", "TITLE_CARD"):
+            graphic = db.scalars(
+                select(GraphicSpec)
+                .where(GraphicSpec.project_id == project.id, GraphicSpec.status != "INVALIDADO")
+                .order_by(GraphicSpec.id.desc())
+                .limit(1)
+            ).first()
+            if graphic is None:
+                missing.append({
+                    "shot_id": shot.id,
+                    "shot_kind": shot.shot_kind,
+                    "window": f"{shot.start_s}s→{shot.end_s}s",
+                    "reason": "gráfico programático no definido: crea el gráfico con los valores verificados",
+                })
+                continue
             entry["segment_type"] = "CARD"
-            entry["title"] = (shot.data or {}).get("beat_texts", ["Titular"])[0] if shot.data else "Titular"
+            entry["graphic_spec"] = {
+                "title": graphic.title,
+                "series": (graphic.data or {}).get("series", []),
+                "source_note": (graphic.data or {}).get("source_note", ""),
+            }
             segments.append(entry)
             continue
         missing.append({
@@ -186,8 +164,23 @@ def build_animatica(db: Any, project: Any) -> dict:
             )
             input_args += ["-i", src]
         else:
-            card = _render_card(seg.get("title", "neural.news"), seg.get("beat_texts", []),
-                                series=None, source_note="ANIMÁTICA — previsualización sin locución")
+            # Tarjetas desde el DISEÑO ÚNICO de graphics.py (misma paleta y
+            # geometría que el SVG de la UI): gráfico de datos o rótulo.
+            if seg.get("graphic_spec"):
+                spec = dict(seg["graphic_spec"])
+                spec.setdefault("source_note", "ANIMÁTICA — previsualización sin locución")
+                png_bytes = render_chart_png_1080x1920(spec)
+            else:
+                beat_texts = seg.get("beat_texts", [])
+                title = beat_texts[0] if beat_texts else seg.get("title", "neural.news")
+                lines = beat_texts[1:] or ["neural.news"]
+                png_bytes = render_title_png_1080x1920(title, lines,
+                                                       "ANIMÁTICA — previsualización sin locución")
+            card_dir = Path(config.STORAGE_DIR) / "montage" / "cards"
+            card_dir.mkdir(parents=True, exist_ok=True)
+            card = card_dir / f"{hashlib.sha256(png_bytes).hexdigest()[:16]}.png"
+            if not card.exists():
+                card.write_bytes(png_bytes)
             filter_parts.append(
                 f"[{index}:v]scale={W}:{H},fps={FPS},trim=duration={dur + extra:.2f},setpts=PTS-STARTPTS[v{index}]"
             )

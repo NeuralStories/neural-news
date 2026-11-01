@@ -58,11 +58,18 @@ def enqueue(db, job_type: str, payload: dict, dedupe_key: str | None = None) -> 
     return job, True
 
 
-def recover_stale_jobs(db, lease_seconds: int) -> list[int]:
-    """Al arrancar el worker: marca como reintenables los trabajos con lease caducado.
+def recover_stale_jobs(
+    db, lease_seconds: int, skip_ids: set[int] | None = None
+) -> list[int]:
+    """Marca como reintenables los trabajos con lease caducado.
 
     Los reintentos son seguros porque los handlers son idempotentes y las
     llamadas de pago no se repiten automáticamente (ver presupuesto/handlers).
+
+    `skip_ids` son los trabajos que el worker actual tiene en marcha: no se
+    tocan aunque su lease haya caducado. En SQLite las escrituras se serializan
+    y la renovación del lease puede quedar bloqueada mientras el manejador
+    escribe; sin esta salvedad, un trabajo largo se recuperaría a sí mismo.
     """
     now = utcnow()
     stale = db.scalars(
@@ -70,6 +77,8 @@ def recover_stale_jobs(db, lease_seconds: int) -> list[int]:
     ).all()
     recovered: list[int] = []
     for job in stale:
+        if skip_ids and job.id in skip_ids:
+            continue
         job.status = "RETRYABLE_FAILED"
         job.error = "El trabajo se interrumpió (reinicio o caída); quedará en cola de reintento"
         job.lease_until = None
@@ -78,8 +87,32 @@ def recover_stale_jobs(db, lease_seconds: int) -> list[int]:
     return recovered
 
 
+def renew_lease(db, job_id: int, lease_seconds: int) -> bool:
+    """Renueva el lease de un trabajo en marcha.
+
+    Devuelve `False` si el trabajo ya no está en `RUNNING` (terminó o fue
+    recuperado): en ese caso no hay nada que renovar.
+    """
+    now = utcnow()
+    result = db.execute(
+        update(Job)
+        .where(Job.id == job_id, Job.status == "RUNNING")
+        .values(lease_until=now + timedelta(seconds=lease_seconds))
+        .execution_options(synchronize_session=False)
+    )
+    return bool(result.rowcount)
+
+
 def claim_next_job(db, lease_seconds: int) -> Job | None:
-    """Reserva el siguiente trabajo disponible (QUEUED o reintento vencido)."""
+    """Reserva el siguiente trabajo disponible (QUEUED o reintento vencido).
+
+    La reserva se CONFIRMA dentro de la función: el trabajo pasa a `RUNNING` con
+    su lease antes de ejecutar nada. Antes la reserva y la finalización se
+    confirmaban juntas, así que mientras el trabajo se ejecutaba seguía
+    pareciendo `QUEUED` para el resto del sistema: el lease no significaba
+    nada, la recuperación no encontraba nada que recuperar y un trabajo largo
+    perdía el lease a mitad sin que nada lo renovara.
+    """
     now = utcnow()
     job = db.scalar(
         select(Job)
@@ -98,6 +131,7 @@ def claim_next_job(db, lease_seconds: int) -> Job | None:
     job.started_at = job.started_at or now
     job.lease_until = now + timedelta(seconds=lease_seconds)
     job.error = None
+    db.commit()
     return job
 
 
@@ -129,4 +163,15 @@ def mark_failed(db, job: Job, error: str) -> None:
 
 
 def release_job(db, job_id: int) -> None:
-    db.execute(update(Job).where(Job.id == job_id).values(status="QUEUED"))
+    """Devuelve un trabajo a la cola.
+
+    Se limpian el lease y el intento acumulado: un trabajo re-encolado no puede
+    arrastrar un lease viejo (que lo dejaría «vencido» al instante) ni un
+    contador de intentos que lo empujaría a `FAILED` sin haberlo intentado.
+    """
+    db.execute(
+        update(Job)
+        .where(Job.id == job_id)
+        .values(status="QUEUED", lease_until=None, next_run_at=None, attempt=0)
+        .execution_options(synchronize_session=False)
+    )

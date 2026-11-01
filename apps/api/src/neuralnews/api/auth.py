@@ -1,7 +1,9 @@
 """Autenticación: entrada normal, salida y acceso rápido en modo demo (sólo local)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+import hashlib
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
 
 from ..config import get_settings
@@ -9,6 +11,7 @@ from ..db import get_db
 from ..models import Session as DbSession
 from ..schemas import LoginRequest, MeResponse
 from ..security import (
+    COOKIE_NAME,
     clear_session_cookie,
     create_session,
     get_current_actor,
@@ -52,11 +55,22 @@ def demo_login(response: Response, db=Depends(get_db)) -> MeResponse:
 
 
 @router.post("/logout")
-def logout(response: Response, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
-    # La sesión se elimina buscando su hash; el actor no guarda el token en claro.
-    sessions = db.scalars(select(DbSession).where(DbSession.actor_id == actor["actor_id"])).all()
-    for s in sessions:
-        db.delete(s)
+def logout(
+    request: Request,
+    response: Response,
+    db=Depends(get_db),
+    actor=Depends(get_current_actor),
+) -> dict:
+    # Solo se cierra la SESIÓN ACTUAL. Antes se borraban todas las del actor,
+    # lo que expulsaba también de otras pestañas abiertas (hallazgo B15).
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        session = db.scalar(
+            select(DbSession).where(DbSession.token_hash == token_hash)
+        )
+        if session is not None:
+            db.delete(session)
     clear_session_cookie(response)
     return {"ok": True}
 

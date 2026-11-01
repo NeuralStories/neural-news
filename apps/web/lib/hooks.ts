@@ -43,7 +43,7 @@ export function useJobPolling() {
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  return { waiting, error, poll, setError, setError_clear: () => setError(null), stop };
+  return { waiting, error, poll, setError, stop };
 }
 
 export function fmtDate(value: string | null | undefined): string {

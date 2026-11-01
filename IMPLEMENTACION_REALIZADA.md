@@ -114,12 +114,21 @@ Ejecutada por HTTP contra `localhost:3000` con PostgreSQL local:
 
 ## 6. Pruebas (evidencia)
 
-- **API:** 107 passed, 0 fallos (+ `test_postgres_projects.py` PASSED contra PG 16.9 real:
+- **API (01/11/2026, tras NN-109):** **154 passed, 1 skipped, 0 fallos** (antes de NN-109: 139 passed, 1 skipped).
+  Las 15 pruebas nuevas de `tests/test_nn109_defectos.py` se han verificado **rojas sobre el código original**
+  (8 de 15 fallaban) y **verdes** después del arreglo.
+- **API (antes):** 107 passed, 0 fallos (+ `test_postgres_projects.py` PASSED contra PG 16.9 real:
   ciclo crear → editar → CAS → MP4 → reiniciar → recuperar).
+- **Tipos y build (web):** `tsc --noEmit` sin errores; `next build` compila (9 páginas estáticas) con
+  `NEURAL_ENV=local` y **falla a propósito** sin `NEURAL_API_URL` fuera de local (hallazgo B9).
 - **E2E navegador real (Edge):** `studio-reintegration.spec.ts` (8 etapas + persistencia tras
   recargar) y `vertical-production.spec.ts` (director → prompt → paquete → importar → aprobar).
 - **Migraciones:** ciclo `upgrade → downgrade → upgrade` verificado en SQLite y PostgreSQL.
 - **Regresiones de auditoría:** F-01…F-10 consolidadas en `tests/test_regressions_f01_f10.py`.
+  La comprobación de identidad F-01 se ha ampliado para recorrer **todo** el árbol del Studio:
+  al hacerlo ha aparecido una regresión real (la identidad «NeuralDotAI» en 5 componentes, que la
+  lista fija de ficheros no cubría). Ver `ESTADO_REAL.md` B17.
+- **Integridad de activos:** las 17/17 fuentes de Flow contrastan con `reports/manifest.json` (SHA-256).
 
 ## 7. Pendientes honestos
 
@@ -201,3 +210,93 @@ El propietario detectó que el Studio era visualmente otra aplicación. Corregid
 
 Verificación: suite 126 passed + 1 skip; 2 E2E Edge en verde; build limpio; revisado en
 navegador (/fuentes vs /estudio, mismas píldoras, acentos y tipografía).
+
+
+## FASE 5 — Transcripción automática de cualquier fuente (01/11/2026)
+
+Commits `4b9ec04` (buscar o crear la transcripción), `d9f89f6` (ASR de cualquier vídeo),
+`ef01bd0` (transcripción COMPLETA vía yt-dlp).
+
+- **Cadena de 3 proveedores, sin Docker ni claves de API:** `yt-dlp` (principal, binario local de
+  23,6 MB en `tools/`) → `timedtext` (pistas manuales publicadas) → reproductor interno (pistas ASR).
+- **Desempate de idioma por variante regional:** se prefiere `es-419` antes que `es`, porque YouTube
+  puede no tener la pista genérica; se descartan las variantes encadenadas (`es-es-419`), que son
+  traducciones automáticas de otra lengua.
+- **Reintento con backoff ante el 429 de YouTube** (3 intentos, una sola pista por intento).
+- **Verificación real ejecutada:** `tools/sub5/x.en.json3` descargado con `yt-dlp`; la fuente #22
+  transcrita vía HTTP (`POST /api/v1/sources/22/transcribe` → 200) con el contenido almacenado.
+- **Pruebas:** `test_transcribe_sources.py` (5), `test_transcribe_auto.py` (3), `test_transcribe_ytdlp.py` (5).
+- **Estado honesto: PARCIAL.** La cadena funciona, pero el recorrido de usuario tiene defectos
+  abiertos: la transcripción pegada en el alta se descarta (B2), los errores se pintan en verde (B4)
+  y la ruta de pódcast lanza `AttributeError` por `source.metadata` (B1). Ver `ESTADO_REAL.md` §5.
+
+## FASE 6 — Preparación de la beta (01/11/2026) — NN-108 / NN-119
+
+- **Consolidación del repositorio.** El hermano `neuralnews` queda **archivado y sellado** en
+  `archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto), con manifiesto
+  SHA-256 de sus 121 ficheros versionados. Se detiene **solo** su pila (API `:8800`, web `:3100`);
+  la pila principal sigue en marcha.
+- **Remoto local + backups verificados.** `.remotes/neural-news.git` (3 ramas + tag) y
+  `.remotes/neuralnews.git`; dos bundles git verificados; dump de PostgreSQL **restaurado en base
+  limpia con recuento idéntico en 20 tablas**; backup previo a NN-107 con SHA-256 coincidente.
+- **Artefactos sueltos fuera del árbol** (13 MB de ZIP/RAR + 2 directorios) → `storage/`, con
+  manifiesto de sellado. Las **17/17 fuentes de Flow** contrastan con `reports/manifest.json`.
+- **Rama `beta/v1`** creada desde `main` (`ef01bd0`). Un clon limpio desde el remoto reproduce
+  27 commits y un árbol de 141 ficheros **idéntico**.
+- **Base de pruebas verificada:** **139 passed, 1 skipped, 0 fallos** (E) desde la raíz del
+  repositorio. Se detecta una fragilidad: desde `apps/api` fallan 3 tests por el `sys.path`.
+- **Documentación actualizada:** `ESTADO_REAL.md` reescrito con la FASE 4, los 15 defectos y los
+  8 riesgos de plataforma verificados, y `BACKLOG.csv` reconstruido con el estado real.
+- **Siguiente:** NN-109 (corrección de los 9 defectos bloqueantes) sobre `beta/v1`.
+
+## FASE 7 — NN-109: corrección de los defectos verificados (01/11/2026)
+
+Rama `beta/v1`. **15 pruebas de regresión nuevas** en `tests/test_nn109_defectos.py`, verificadas
+**rojas sobre el código original** (8 de 15 fallaban) y **verdes** tras el arreglo.
+
+### Cerrados
+
+| # | Qué se corrigió | Dónde |
+|---|---|---|
+| B1 | `source.metadata` → `source.metadata_json`: la ruta de pódcast lanzaba `AttributeError` y lo enmascaraba un `except Exception` | `api/sources.py` |
+| B16 | `podcast:transcript` se leía del atributo `href`; feedparser lo expone como `url`. **La transcripción de pódcast nunca funcionó, por dos motivos independientes** (B1 y B16) | `providers/transcript.py` |
+| B2 | La transcripción pegada se perdía en **dos** puntos: la interfaz no la enviaba y `create_source` la ignoraba en la rama de texto. Ahora se guarda como `TRANSCRIPT` | `app/fuentes/page.tsx`, `services/sources.py` |
+| B3 | El paso **«Resultado»** era el único de los ocho que no se persistía. Ahora se guarda, se hidrata y sobrevive a la recarga | `features/studio/App.tsx`, `components/ResultTab.tsx` |
+| B4 | Los mensajes de la interfaz llevan **severidad explícita** (`ok`/`warn`/`error`): «el vídeo no tiene subtítulos» ya no se pinta en verde | `app/fuentes/page.tsx` |
+| B7 | Nuevo módulo `neuralnews/errors.py` con `safe_error()`: rutas, secretos y correos se ocultan; el detalle completo va al log. Afecta a la transcripción, el montaje, el trabajo en cola y los metadatos de la fuente | `errors.py`, `api/sources.py`, `api/projects.py`, `services/sources.py`, `worker_tasks.py` |
+| B8 | La caché de transcripciones automáticas pasa a tener TTL (3600 s; 300 s para resultados negativos) y tope de 64 entradas. Los negativos también se cachean: un vídeo sin subtítulos no se vuelve a preguntar en cada intento | `api/sources.py` |
+| B9 | `NEURAL_API_URL` es **obligatoria** fuera de local: **el build de la web falla con un mensaje explícito** en vez de compilar una aplicación que se quedaría sin datos al desplegar | `apps/web/next.config.ts` |
+| B10, B11, B12 | Código muerto (`tracks`), URL sin codificar (`quote`) y docstring del director alineado con su comportamiento real | `providers/transcript.py`, `services/director.py` |
+| B13, B14 | `HelpModal.tsx` **eliminado** (es el «Manual y Contrato», retirado de la UI por decisión del propietario; queda en el historial) y `setError_clear` eliminado | `features/studio/components/`, `lib/hooks.ts` |
+| B15 | `logout` cierra **solo la sesión actual** (antes borraba todas las del actor y expulsaba de otras pestañas) | `api/auth.py` |
+| B17 | La identidad «NeuralDotAI» aparecía en **5 componentes visibles**, violando la regla F-01 del propio proyecto. El test original solo miraba 4 ficheros y no lo detectaba: la comprobación ahora recorre todo el árbol | `BackupModal.tsx`, `ReferencesTab.tsx`, `ResultTab.tsx`, `VoiceTab.tsx`, `test_regressions_f01_f10.py` |
+
+### Decisión de alcance
+
+`BackupModal.tsx` (Centro de mantenimiento: SHA-256 + descarga JSON) **se conserva**: no es código
+muerto sino una capacidad real que la auditoría F-10 guarda. Cablearlo en la interfaz es NN-113.
+
+### Verificación
+
+- `python -m pytest tests -q` → **154 passed, 1 skipped, 0 fallos** (E).
+- `npx tsc --noEmit` → 0 errores (E).
+- `next build` → compila con `NEURAL_ENV=local`; **falla a propósito** sin `NEURAL_API_URL` (E).
+- Prueba de rojo→verde: con el código original restaurado, 8 de las 15 pruebas nuevas fallan (E).
+
+### Arranque (sin Docker, todo local)
+```bash
+# PostgreSQL 16.9 nativo (si no está en marcha)
+../pglocal/pgsql/bin/pg_ctl.exe -D ../pglocal/data -l ../pglocal/logfile.log -o "-p 5433" start
+
+# API + worker (FastAPI) contra PostgreSQL
+export NEURAL_DATABASE_URL="postgresql+psycopg://neural@127.0.0.1:5433/neuralnews"
+python -m uvicorn neuralnews.main:app --host 127.0.0.1 --port 8000
+python -c "from neuralnews.worker import run; run()"
+
+# Web (Next.js) — http://localhost:3000
+cd apps/web && npm run build && npm run start
+
+# Pruebas (desde la raíz del repositorio)
+python -m pytest tests -q
+```
+

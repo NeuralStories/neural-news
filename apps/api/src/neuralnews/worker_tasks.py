@@ -6,10 +6,13 @@ definitiva con un mensaje claro.
 """
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .config import get_settings
+from .errors import safe_error
 from .models import Job, Source, Story
 from .queue import mark_done, mark_failed, mark_retryable
 from .services import budget as budget_service
@@ -17,6 +20,8 @@ from .services import batches as batch_service
 from .services import research as research_service
 from .services import scripts as script_service
 from .services.sources import SourceNotAnalyzable, extract_stories_from_source, run_fetch
+
+logger = logging.getLogger(__name__)
 
 PROCESS_SOURCE = "process_source"
 ANALYZE_VIDEO = "analyze_video"
@@ -168,4 +173,7 @@ def run_job(db: Session, job: Job) -> None:
     except budget_service.BudgetExceeded as exc:
         mark_failed(db, job, str(exc))
     except Exception as exc:  # noqa: BLE001 — el worker registra y decide reintento
-        mark_retryable(db, job, f"{exc.__class__.__name__}: {exc}")
+        # `job.error` se devuelve al cliente en GET /api/v1/jobs: se guarda un
+        # resumen sin rutas ni secretos, y el detalle completo queda en el log.
+        logger.exception("Fallo el trabajo %s (%s)", job.id, job.type)
+        mark_retryable(db, job, safe_error(exc))

@@ -28,6 +28,13 @@ interface ResultTabProps {
   onExportProductionPackage: () => Promise<void>;
   /** Runtime de Flow disponible (solo dentro del editor); fuera, render = BLOCKED. */
   flowHosted?: boolean;
+  /**
+   * Toma seleccionada en el paso Resultado. Se controla desde el Studio para que
+   * el paso se persista y sobreviva a una recarga (hallazgo B3: el paso
+   * «resultado» era el único de los ocho que no se guardaba).
+   */
+  selectedSceneIndex?: number;
+  onSelectSceneIndex?: (index: number) => void;
 }
 
 export const ResultTab: React.FC<ResultTabProps> = ({
@@ -47,9 +54,18 @@ export const ResultTab: React.FC<ResultTabProps> = ({
   activeArticle,
   onExportProductionPackage,
   flowHosted = false,
+  selectedSceneIndex: selectedSceneIndexProp,
+  onSelectSceneIndex,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [selectedSceneIndex, setSelectedSceneIndex] = useState(0);
+  // Estado controlado desde el Studio (persistencia del paso «resultado»),
+  // con valor interno como respaldo si el Studio no lo controla.
+  const [internalSceneIndex, setInternalSceneIndex] = useState(0);
+  const selectedSceneIndex = selectedSceneIndexProp ?? internalSceneIndex;
+  const setSelectedSceneIndex = (index: number) => {
+    setInternalSceneIndex(index);
+    onSelectSceneIndex?.(index);
+  };
   const [spendAuthorized, setSpendAuthorized] = useState(false);
 
   const activeScene: SceneProductionPlan | undefined = multiSceneAnalysis.scenes[selectedSceneIndex];
@@ -123,7 +139,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
             <div className="space-y-1 pt-1 font-mono text-[10px]">
               {sheetState.mediaId ? (
                 <div className="text-emerald-400">
-                  • Hoja Maestra @neuraldotai: ID <code>{sheetState.mediaId}</code>
+                  • Hoja Maestra maxDotAi: ID <code>{sheetState.mediaId}</code>
                 </div>
               ) : (
                 <div className="text-sky-400/90">

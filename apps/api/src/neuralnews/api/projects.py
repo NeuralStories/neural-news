@@ -12,6 +12,7 @@ Reglas del cap. 13 de la especificación rectora:
 from __future__ import annotations
 
 import datetime as _dt
+import logging
 
 from pathlib import Path
 
@@ -46,6 +47,8 @@ from ..services.graphics import render_bar_svg
 from ..services.media_library import MediaUploadError, asset_to_out, upload_media
 
 router = APIRouter(prefix="/api/v1", tags=["projects"])
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -1025,8 +1028,15 @@ def build_montage(project_id: int, db=Depends(get_db), actor=Depends(get_current
     project = _get_project(db, project_id)
     try:
         result = montage_service.build_animatica(db, project)
-    except Exception as exc:  # diagnóstico explícito en la respuesta
-        raise HTTPException(status_code=500, detail=f"Error de montaje: {exc}") from exc
+    except Exception as exc:  # noqa: BLE001 — el fallo se registra; al cliente solo un motivo seguro
+        # No se filtra el texto crudo de la excepción: puede contener rutas del
+        # sistema o el stderr de FFmpeg. El detalle completo queda en el log.
+        logger.exception("Fallo al construir el montaje del proyecto %s", project_id)
+        raise HTTPException(
+            status_code=500,
+            detail="No se ha podido construir el montaje por un fallo del motor de render; "
+                   "revisa el registro del servidor",
+        ) from exc
     if not result.get("ok"):
         raise HTTPException(status_code=409, detail={
             "message": result.get("error", "El montaje no puede construirse"),

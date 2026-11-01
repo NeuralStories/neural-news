@@ -10,8 +10,11 @@ Reglas de selección de recurso (cap. 7, deterministas y auditables):
      programático; nunca se pide a un generativo que invente cifras).
   3. Apertura y cierre con el presentador → FLOW_MAXDOTAI (ficha canónica).
   4. Contenido abstracto de relleno → GENERATIVE_BROLL etiquetado ilustrativo.
-  5. Por defecto → PENDING si faltan activos; el cheapest válido prevalece
-     salvo veracidad/continuidad.
+  5. La selección de recurso no depende de qué material haya disponible: la
+     falta de material se expresa en el ESTADO de la toma (PENDING / vacía),
+     no inventando un tipo de toma distinto. Ver `_shot_kind`, que aplica
+     estas cuatro reglas en este orden y, si ninguna encaja, devuelve
+     GENERATIVE_BROLL etiquetado como ilustrativo.
 
 Devuelve dicts listos para persistir en NarrationBeat y Shot (endpoints F1).
 El mismo guion produce siempre el mismo plan (determinista).

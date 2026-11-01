@@ -92,7 +92,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       const exportPayload = {
         manifestVersion: '2.0-verified',
         exportedAt: new Date().toISOString(),
-        studio: 'neural.news Studio (@neuraldotai)',
+        studio: 'neural.news Studio (maxDotAi)',
         integritySummary: {
           totalFiles,
           totalLines,

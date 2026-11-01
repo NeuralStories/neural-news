@@ -1,6 +1,9 @@
 """Aplicación FastAPI principal. Arranque: `neuralnews-api` o `uvicorn neuralnews.main:app`."""
 from __future__ import annotations
 
+import logging
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,6 +12,13 @@ from .api import auth, batches, ops, projects, sources, stories
 from .config import get_settings
 from .db import get_engine
 from .models import Base
+
+# Los errores del servidor se registran en el log en vez de filtrarse al cliente
+# (hallazgo B7) y en vez de perderse por stderr (hallazgo P5).
+logging.basicConfig(
+    level=os.getenv("NEURAL_LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)-8s %(name)s %(message)s",
+)
 
 
 def create_app() -> FastAPI:

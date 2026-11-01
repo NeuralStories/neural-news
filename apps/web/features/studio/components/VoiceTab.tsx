@@ -19,7 +19,7 @@ export const VoiceTab: React.FC<VoiceTabProps> = ({
             Aviso de Transparencia de Capacidades
           </p>
           <p className="text-sky-300/90 leading-relaxed">
-            Esta sección <strong>prepara la ficha técnica y directrices de locución</strong> para la voz de NeuralDotAI. 
+            Esta sección <strong>prepara la ficha técnica y directrices de locución</strong> para la voz de maxDotAi. 
             El modelo de vídeo actual genera tomas visuales de 8 segundos. No se simula ni se genera audio falso si el motor de síntesis de voz no está acoplado.
           </p>
         </div>

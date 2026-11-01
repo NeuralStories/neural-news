@@ -14,6 +14,22 @@ const STATUS_BADGE: Record<string, string> = {
   FAILED: "badge-err",
 };
 
+/**
+ * Severidad explícita de un mensaje de la interfaz (hallazgo B4).
+ * Antes, el mismo `msg` pintaba en verde tanto un éxito como un error: «el vídeo
+ * no tiene subtítulos» se leía como una operación correcta. La severidad la
+ * decide la acción, nunca el color.
+ */
+type MsgKind = "ok" | "warn" | "error";
+
+const MSG_CLASS: Record<MsgKind, string> = {
+  ok: "text-emerald-400",
+  warn: "text-amber-400",
+  error: "text-red-400",
+};
+
+type Msg = { text: string; kind: MsgKind } | null;
+
 export default function FuentesPage() {
   const [items, setItems] = useState<SourceListItem[]>([]);
   const [url, setUrl] = useState("");
@@ -87,7 +103,19 @@ export default function FuentesPage() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <button className="btn-primary shrink-0" disabled={loading || (!url && !text)} onClick={() => submit({ url: url || undefined, text: text || undefined })}>
+          <button
+            className="btn-primary shrink-0"
+            disabled={loading || (!url && !text)}
+            onClick={() =>
+              submit({
+                url: url || undefined,
+                text: text || undefined,
+                // La transcripción pegada se envía con el alta: antes se perdía en
+                // silencio (hallazgo B2). El backend la guarda como TRANSCRIPT.
+                transcript: transcript.trim() || undefined,
+              })
+            }
+          >
             Registrar y analizar
           </button>
         </div>
@@ -172,7 +200,7 @@ type TranscriptInfo = {
 function SourceRow({ source }: { source: SourceListItem }) {
   const [detail, setDetail] = useState<SourceDetail | null>(null);
   const [transcript, setTranscript] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<Msg>(null);
   const [busy, setBusy] = useState(false);
   const [transcriptData, setTranscriptData] = useState<TranscriptInfo | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
@@ -189,7 +217,7 @@ function SourceRow({ source }: { source: SourceListItem }) {
     try {
       setTranscriptData(await api.getTranscript(source.id));
     } catch (e) {
-      setMsg((e as Error).message);
+      setMsg({ text: (e as Error).message, kind: "error" });
     }
   };
 
@@ -199,11 +227,15 @@ function SourceRow({ source }: { source: SourceListItem }) {
     setMsg(null);
     try {
       const body = await api.transcribeSource(source.id);
-      setMsg(body.message ?? (body.created ? "Transcripción creada y almacenada." : "Transcripción encontrada."));
+      // `found: false` NO es un error: es una respuesta honesta con su motivo.
+      setMsg({
+        text: body.message ?? (body.created ? "Transcripción creada y almacenada." : "Transcripción encontrada."),
+        kind: body.found ? "ok" : "warn",
+      });
       setTranscriptData(await api.getTranscript(source.id));
       setDetail(await api.getSource(source.id));
     } catch (e) {
-      setMsg((e as Error).message);
+      setMsg({ text: (e as Error).message, kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -213,11 +245,14 @@ function SourceRow({ source }: { source: SourceListItem }) {
     if (!transcript.trim()) return;
     try {
       await api.addTranscript(source.id, transcript);
-      setMsg("Transcripción guardada. Vuelve a procesar la fuente para extraer noticias.");
+      setMsg({
+        text: "Transcripción guardada. Vuelve a procesar la fuente para extraer noticias.",
+        kind: "ok",
+      });
       setTranscript("");
       setDetail(await api.getSource(source.id));
     } catch (e) {
-      setMsg((e as Error).message);
+      setMsg({ text: (e as Error).message, kind: "error" });
     }
   };
 
@@ -227,12 +262,15 @@ function SourceRow({ source }: { source: SourceListItem }) {
     setMsg(null);
     try {
       const res = await api.processSource(source.id);
-      setMsg(res.created ? "Volver a analizar la fuente…" : "Ya había un análisis en marcha; se reutiliza.");
+      setMsg({
+        text: res.created ? "Volver a analizar la fuente…" : "Ya había un análisis en marcha; se reutiliza.",
+        kind: "ok",
+      });
       await poll(res.job_id, async () => {
         setDetail(await api.getSource(source.id));
       });
     } catch (e) {
-      setMsg((e as Error).message);
+      setMsg({ text: (e as Error).message, kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -244,12 +282,12 @@ function SourceRow({ source }: { source: SourceListItem }) {
     setMsg(null);
     try {
       const res = await api.analyzeVideo(source.id);
-      setMsg("Pidiendo el análisis del vídeo…");
+      setMsg({ text: "Pidiendo el análisis del vídeo…", kind: "ok" });
       await poll(res.job_id, async () => {
         setDetail(await api.getSource(source.id));
       });
     } catch (e) {
-      setMsg((e as Error).message);
+      setMsg({ text: (e as Error).message, kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -371,7 +409,14 @@ function SourceRow({ source }: { source: SourceListItem }) {
                   </button>
                 </div>
               )}
-              {msg && <p className="text-sm text-emerald-400">{msg}</p>}
+              {msg && (
+                <p
+                  className={`text-sm ${MSG_CLASS[msg.kind]}`}
+                  role={msg.kind === "error" ? "alert" : "status"}
+                >
+                  {msg.text}
+                </p>
+              )}
             </div>
           </td>
         </tr>

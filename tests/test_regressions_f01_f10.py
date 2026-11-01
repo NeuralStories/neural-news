@@ -21,11 +21,17 @@ def test_f01_identity_is_maxdotai_only():
     assert "NeuralDotAI" not in constants
     assert "@neuraldotai" not in constants
     assert "pendiente de confirmar" in constants  # handle aún sin confirmar en cuenta
-    # Ningún componente revierte la identidad (ni la cabecera del Studio)
-    for rel in ("App.tsx", "components/CharacterSheetTab.tsx", "components/TopNavigation.tsx",
-                "components/HelpModal.tsx"):
-        assert "NeuralDotAI" not in read(rel), rel
-        assert "@neuraldotai" not in read(rel), rel
+    # Ningún componente revierte la identidad. Se recorre TODO el árbol del
+    # Studio en vez de una lista fija: así la comprobación no se debilita si un
+    # componente se retira (p. ej. el «Manual y Contrato», eliminado en NN-109.11)
+    # y además cubre los componentes que la lista no mencionaba.
+    revisados = 0
+    for ts in sorted(STUDIO.rglob("*.ts*")):
+        texto = ts.read_text(encoding="utf-8")
+        revisados += 1
+        assert "NeuralDotAI" not in texto, str(ts)
+        assert "@neuraldotai" not in texto, str(ts)
+    assert revisados > 10, "el recorrido debe seguir cubriendo el árbol del Studio"
 
 
 def test_f02_no_initial_reference_is_preapproved():

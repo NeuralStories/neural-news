@@ -1,3 +1,14 @@
+/**
+ * Catálogo de procedencia de las 17 fuentes originales de Flow (NeuralStories
+ * Studio) recuperadas el 29/10/2026: ruta, categoría y descripción de cada una.
+ *
+ * Es documentación de origen, no código de ejecución: la herramienta que lo
+ * consumía («Centro de mantenimiento») se retiró de la UI por decisión del
+ * propietario (ver IMPLEMENTACION_REALIZADA.md, unificación visual del 01/11),
+ * pero el catálogo se conserva como registro de qué se recuperó y de dónde.
+ * La verificación de hashes de las 17 está en
+ * neural-news/storage/FLOW_RECOVERY_2026-11-01_DIR/reports/manifest.json.
+ */
 export interface SourceFileMetadata {
   path: string;
   category: 'core' | 'types' | 'constants' | 'component' | 'util';

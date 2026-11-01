@@ -6,12 +6,14 @@ duplica trabajos ni candidatos (topic_key + dedupe_key).
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
+from ..errors import safe_error
 from ..models import (
     Claim,
     Source,
@@ -29,6 +31,8 @@ from ..providers.manual import fetch_manual, normalize_input
 from ..providers.spotify import fetch_spotify
 from ..providers.web_rss import fetch_web
 from ..states import SOURCE_TRANSITIONS, STORY_TRANSITIONS, assert_transition
+
+logger = logging.getLogger(__name__)
 
 
 class DuplicateSource(ValueError):
@@ -151,6 +155,17 @@ def create_source(
             coverage=1.0,
             confidence="high",
         ))
+        # Una transcripción aportada se guarda TAMBIÉN como TRANSCRIPT: antes se
+        # perdía en silencio en esta rama (hallazgo B2, NN-109.2).
+        if transcript and transcript.strip():
+            _store_content(db, source, ContentDraft(
+                content_type="TRANSCRIPT",
+                text=transcript.strip(),
+                is_verbatim=True,
+                provider="manual",
+                coverage=1.0,
+                confidence="high",
+            ))
         return source
 
     raise ValueError("Aporta una URL o pega un texto para registrar la fuente")
@@ -209,7 +224,11 @@ def run_fetch(db: Session, source: Source) -> Source:
             )
     except Exception as exc:  # error del conector: se registra, la fuente no se pierde
         source.status = "FAILED"
-        source.metadata_json = {**source.metadata_json, "last_error": str(exc)[:500]}
+        # `metadata_json` se devuelve al cliente en GET /sources, así que NO se guarda
+        # ahí el texto crudo de la excepción: puede contener rutas del sistema o
+        # stderr de herramientas. El detalle completo queda en el log (hallazgo B7).
+        logger.exception("Fallo del conector al procesar la fuente %s", source.id)
+        source.metadata_json = {**source.metadata_json, "last_error": safe_error(exc)}
         raise
 
     if result.title and not source.title:

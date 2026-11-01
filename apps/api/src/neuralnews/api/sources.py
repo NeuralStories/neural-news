@@ -1,6 +1,9 @@
 """Fuentes: alta con idempotencia, consulta, reprocesado y transcripciones aportadas."""
 from __future__ import annotations
 
+import logging
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 
@@ -15,7 +18,35 @@ from ..services.sources import DuplicateSource, create_source
 from ..states import CONTENT_TYPE_LABELS, SOURCE_LABELS, STORY_LABELS
 from ..worker_tasks import ANALYZE_VIDEO, PROCESS_SOURCE  # noqa: F401  (ANALYZE_VIDEO usado)
 
-_auto_transcript_cache: dict = {}
+logger = logging.getLogger(__name__)
+
+# Caché de transcripciones automáticas: acotada en tiempo y en tamaño para que no
+# crezca sin límite en un proceso de larga vida (NN-109.8, hallazgo B8).
+_AUTO_TRANSCRIPT_TTL_S = 3600.0
+_AUTO_TRANSCRIPT_NEGATIVE_TTL_S = 300.0
+_AUTO_TRANSCRIPT_MAX_ENTRIES = 64
+_auto_transcript_cache: dict[str, tuple[float, object]] = {}
+
+
+def _cache_get(video_id: str):
+    """Devuelve (acierto, valor) del valor cacheado, vencida la entrada."""
+    entry = _auto_transcript_cache.get(video_id)
+    if entry is None:
+        return False, None
+    expires_at, value = entry
+    if expires_at <= time.monotonic():
+        _auto_transcript_cache.pop(video_id, None)
+        return False, None
+    return True, value
+
+
+def _cache_put(video_id: str, value) -> None:
+    if len(_auto_transcript_cache) >= _AUTO_TRANSCRIPT_MAX_ENTRIES:
+        # Se descarta la entrada más antigua: el límite es de tamaño, no de tiempo.
+        oldest = min(_auto_transcript_cache.items(), key=lambda item: item[1][0])
+        _auto_transcript_cache.pop(oldest[0], None)
+    ttl = _AUTO_TRANSCRIPT_TTL_S if value is not None else _AUTO_TRANSCRIPT_NEGATIVE_TTL_S
+    _auto_transcript_cache[video_id] = (time.monotonic() + ttl, value)
 
 
 def _auto_transcript(video_id: str):
@@ -24,12 +55,12 @@ def _auto_transcript(video_id: str):
       1) yt-dlp (subtítulos automáticos y manuales, cualquier vídeo);
       2) timedtext (pistas manuales publicadas);
       3) reproductor interno (pistas ASR)."""
-    if video_id in _auto_transcript_cache:
-        return _auto_transcript_cache[video_id]
+    hit, cached = _cache_get(video_id)
+    if hit:
+        return cached
     from ..providers.transcript import fetch_youtube_transcript_auto
     draft = fetch_youtube_transcript_auto(video_id)
-    if draft is not None:
-        _auto_transcript_cache[video_id] = draft
+    _cache_put(video_id, draft)
     return draft
 
 router = APIRouter(prefix="/api/v1/sources", tags=["sources"])
@@ -213,7 +244,8 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
     if source is None:
         raise HTTPException(status_code=404, detail="Esa fuente no existe")
 
-    def out(found: bool, created: bool, draft=None, message: str | None = None) -> dict:
+    def out(found: bool, created: bool, draft=None, message: str | None = None,
+            transcript: dict | None = None) -> dict:
         body: dict = {"found": found, "created": created}
         if message:
             body["message"] = message
@@ -223,18 +255,11 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
                 "provider": draft.provider,
                 "segments": len(draft.segments),
             }
+        elif transcript is not None:
+            body["transcript"] = transcript
         return body
 
-    settings = get_settings()
     from ..services.sources import _store_content
-    existing = [
-        c for c in db.scalars(
-            select(SourceContent)
-            .where(SourceContent.source_id == source.id)
-            .order_by(SourceContent.id.desc())
-        ).all()
-        if c.content_type == "TRANSCRIPT"
-    ]
     try:
         if source.provider == "youtube":
             # Búsqueda automática para CUALQUIER vídeo: pistas manuales
@@ -246,20 +271,32 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
                 _store_content(db, source, draft)
                 db.flush()
                 return out(True, True, draft, "Transcripción encontrada automáticamente y almacenada")
-            existing_demo = next((c for c in db.scalars(
+            existing_demo = db.scalar(
                 select(SourceContent)
                 .where(SourceContent.source_id == source.id,
                        SourceContent.content_type == "TRANSCRIPT")
-            ).all()), None)
+                .order_by(SourceContent.id.desc())
+            )
             if existing_demo is not None:
-                return out(True, False, type("D", (), {
-                    "text": existing_demo.text, "provider": existing_demo.provider, "segments": [],
-                })(), "Fuente de demostración: la transcripción simulada ya está almacenada")
+                return out(
+                    True,
+                    False,
+                    message="Fuente de demostración: la transcripción simulada ya está almacenada",
+                    transcript={
+                        "text": existing_demo.text,
+                        "provider": existing_demo.provider,
+                        "segments": len(existing_demo.segments),
+                    },
+                )
             return out(False, False, None,
                        "El vídeo no tiene subtítulos (ni manuales ni automáticos) accesibles; "
                        "aporta la transcripción manualmente")
         elif source.provider == "spotify":
-            feed_url = (source.metadata or {}).get("feed_url")
+            # El feed RSS lo aporta el operador en los metadatos de la fuente.
+            # La columna del modelo es `metadata_json` (no `metadata`): leerla con
+            # el nombre equivocado lanzaba AttributeError y lo enmascaraba el
+            # `except Exception` de más abajo (hallazgo B1, NN-109.1).
+            feed_url = (source.metadata_json or {}).get("feed_url")
             if not feed_url:
                 return out(False, False, None,
                            "Spotify no expone la transcripción sin el feed RSS del programa: "
@@ -272,7 +309,6 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
                            "El feed no incluye podcast:transcript para este episodio")
         elif source.provider in ("web_rss", "manual") and source.canonical_url:
             from ..providers.web_rss import fetch_web
-            from ..services.sources import _store_content
             result = fetch_web(source.canonical_url)
             if result.status in ("READY", "PARTIAL") and result.contents:
                 for draft in result.contents:
@@ -287,8 +323,17 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
                        "guárdalo con «Guardar transcripción»")
     except FetchBlocked as exc:
         return out(False, False, None, f"Bloqueado por seguridad: {exc}")
-    except Exception as exc:  # red u otro fallo real: se reporta, no se inventa
-        return out(False, False, None, f"No se ha podido obtener la transcripción: {exc}")
+    except Exception as exc:  # noqa: BLE001 — el fallo se registra; al cliente solo un motivo seguro
+        # No se filtra el texto crudo de la excepción al cliente: puede contener rutas
+        # del sistema o stderr de herramientas. El detalle completo queda en el log.
+        logger.exception("Fallo al obtener la transcripción de la fuente %s", source.id)
+        return out(
+            False,
+            False,
+            None,
+            "No se ha podido obtener la transcripción por un fallo del conector; "
+            "inténtalo de nuevo o aporta la transcripción manualmente",
+        )
 
     _store_content(db, source, draft)
     db.flush()

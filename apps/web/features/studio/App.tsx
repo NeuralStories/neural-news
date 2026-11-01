@@ -42,8 +42,6 @@ import { ResultTab } from './components/ResultTab';
 
 export default function App({ projectId }: { projectId: number | null }) {
   const [currentTab, setCurrentTab] = useState<StudioTab>('noticias');
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [backupOpen, setBackupOpen] = useState(false);
 
   // Persistencia real (F1): el estado vive en la base de datos vía API; sin localStorage.
   const { project, loading: projectLoading, loadError: projectLoadError, saveStates, saveStep, reload } =
@@ -110,6 +108,9 @@ export default function App({ projectId }: { projectId: number | null }) {
   const [videoResult, setVideoResult] = useState<{ base64?: string; mimeType?: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  // Toma seleccionada en el paso Resultado: es el estado propio de ese paso y
+  // se persiste con él (antes el paso «resultado» no se guardaba: hallazgo B3).
+  const [resultSceneIndex, setResultSceneIndex] = useState(0);
 
   // Hidratación: el estado guardado en el servidor manda en la primera carga.
   // Los valores objetivo se calculan una sola vez y alimentan tanto el estado
@@ -179,6 +180,11 @@ export default function App({ projectId }: { projectId: number | null }) {
       Array.isArray(referencias.editorialReferences) && referencias.editorialReferences.length > 0
         ? referencias.editorialReferences
         : editorialReferences;
+    const resultado = (project.steps['resultado']?.payload ?? {}) as { selectedSceneIndex?: number };
+    const nextResultSceneIndex =
+      typeof resultado.selectedSceneIndex === 'number' && resultado.selectedSceneIndex >= 0
+        ? resultado.selectedSceneIndex
+        : resultSceneIndex;
 
     setArticles(nextArticles);
     setEpisodeBlocks(nextBlocks);
@@ -192,6 +198,7 @@ export default function App({ projectId }: { projectId: number | null }) {
     setMovements(nextMovements);
     setVisualReferences(nextVisual);
     setEditorialReferences(nextEditorial);
+    setResultSceneIndex(nextResultSceneIndex);
 
     snap['noticias'] = JSON.stringify({ articles: nextArticles, episodeBlocks: nextBlocks, activeArticleId: nextActiveId });
     snap['personaje'] = JSON.stringify({ sheetState: nextSheet });
@@ -200,6 +207,7 @@ export default function App({ projectId }: { projectId: number | null }) {
     snap['voz'] = JSON.stringify({ voiceSpeed: nextSpeed });
     snap['movimiento'] = JSON.stringify({ selectedMovementIds: nextMovements.filter((m) => m.selected).map((m) => m.id) });
     snap['referencias'] = JSON.stringify({ visualReferences: nextVisual, editorialReferences: nextEditorial });
+    snap['resultado'] = JSON.stringify({ selectedSceneIndex: nextResultSceneIndex });
     setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
@@ -243,6 +251,12 @@ export default function App({ projectId }: { projectId: number | null }) {
     if (!hydrated) return;
     saveIfChanged('referencias', { visualReferences, editorialReferences });
   }, [hydrated, visualReferences, editorialReferences, saveIfChanged]);
+  // Octavo paso: «resultado». Antes solo se persistían siete de los ocho
+  // (hallazgo B3): el estado del paso Resultado se perdía al recargar.
+  useEffect(() => {
+    if (!hydrated) return;
+    saveIfChanged('resultado', { selectedSceneIndex: resultSceneIndex });
+  }, [hydrated, resultSceneIndex, saveIfChanged]);
 
   // Noticia activa actual
   const activeArticle = useMemo(() => {
@@ -901,6 +915,8 @@ export default function App({ projectId }: { projectId: number | null }) {
             activeArticle={activeArticle}
             onExportProductionPackage={handleExportFullPackage}
             flowHosted={flowRuntime.hosted}
+            selectedSceneIndex={resultSceneIndex}
+            onSelectSceneIndex={setResultSceneIndex}
           />
           </>
         )}

@@ -14,6 +14,22 @@ from .queue import claim_next_job, recover_stale_jobs
 from .worker_tasks import run_job
 
 
+def configure_streams() -> None:
+    """Deja los flujos del worker en UTF-8 con sustitución.
+
+    En Windows la salida redirigida a un fichero usa la codificación ANSI
+    (cp1252) y un carácter como «→» provoca UnicodeEncodeError. Como el
+    mensaje se escribía DENTRO de la transacción, el error la revertía entera:
+    el trabajo se ejecutaba, pero nunca se marcaba como terminado y el bucle
+    lo reclamaba otra vez para siempre (hallazgo B19).
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):  # flujos no reconfigurables
+            pass
+
+
 def tick() -> int:
     """Reclama y ejecuta un trabajo. Devuelve 1 si hubo trabajo, 0 si la cola está vacía."""
     with session_scope() as db:
@@ -22,15 +38,21 @@ def tick() -> int:
             return 0
         print(f"[worker] job #{job.id} tipo={job.type} intento={job.attempt}", flush=True)
         run_job(db, job)
+        job_id, status, error = job.id, job.status, job.error
+    # Fuera de la transacción: escribir el estado no puede revertir un trabajo
+    # que ya ha terminado.
+    try:
         print(
-            f"[worker] job #{job.id} → {job.status}"
-            + (f" — {job.error}" if job.error else ""),
+            f"[worker] job #{job_id} → {status}" + (f" — {error}" if error else ""),
             flush=True,
         )
-        return 1
+    except Exception:  # noqa: BLE001 — el log nunca puede tumbar el bucle
+        pass
+    return 1
 
 
 def run(poll_seconds: float = 1.0, once: bool = False) -> None:
+    configure_streams()
     settings = get_settings()
     with session_scope() as db:
         recovered = recover_stale_jobs(db, settings.job_lease_seconds)
@@ -48,7 +70,10 @@ def run(poll_seconds: float = 1.0, once: bool = False) -> None:
             print("[worker] parando por interrupción del usuario", flush=True)
             return
         except Exception as exc:  # noqa: BLE001 — el bucle nunca muere por un trabajo
-            print(f"[worker] error fuera del trabajo: {exc}", file=sys.stderr, flush=True)
+            try:
+                print(f"[worker] error fuera del trabajo: {exc}", file=sys.stderr, flush=True)
+            except Exception:  # noqa: BLE001 — ni el log puede tumbar el bucle
+                pass
             worked = 0
         if once and worked == 0:
             return

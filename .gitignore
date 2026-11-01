@@ -2,12 +2,37 @@ __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
 storage/
 node_modules/
 .next/
+out/
+*.tsbuildinfo
 .env
+.env.local
+.env*.local
+*.pem
+*.key
 *.db
 *.db-wal
 *.db-shm
 test-results/
 playwright-report/
+.vscode/
+.idea/
+
+# Entregas, paquetes y fuentes recuperadas: nunca en el árbol versionado.
+# Se sellan en storage/_entregas/ con manifiesto SHA-256 (backups/MANIFIESTO_SELLADO_*.txt).
+*.zip
+*.rar
+*.7z
+flow-recovery/
+*ENTREGA_UNICA*/
+
+# Herramientas locales del workspace (viven fuera de este repositorio).
+ffmpeg-local/
+pglocal/
+tools/
+archive/
+backups/
+.remotes/

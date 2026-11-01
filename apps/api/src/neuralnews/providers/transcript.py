@@ -19,6 +19,7 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import quote
 
 import httpx
 import feedparser
@@ -120,10 +121,7 @@ def fetch_youtube_transcript(video_id: str, langs: tuple[str, ...] = PREFERRED_L
     ContentDraft con marcas de tiempo. None si no hay pista accesible."""
     try:
         listing = _fetch_text(f"https://video.google.com/timedtext?type=list&v={video_id}")
-        tracks = re.findall(
-            r'<track[^>]*lang="([^"]+)"[^>]*name="([^"]*)"', listing
-        ) or re.findall(r"<track[^>]*lang=\"([^\"]+)\"[^>]*>", listing)
-        # (lang, name) o (lang, lang) según el orden de atributos
+        # (lang, name) por etiqueta, sea cual sea el orden de los atributos.
         parsed: list[tuple[str, str]] = []
         for match in re.finditer(r"<track[^>]*>", listing):
             tag = match.group(0)
@@ -142,9 +140,11 @@ def fetch_youtube_transcript(video_id: str, langs: tuple[str, ...] = PREFERRED_L
     ordered += [(l, n) for l, n in parsed if (l, n) not in ordered]
 
     for lang, name in ordered:
-        url = f"https://www.youtube.com/api/timedtext?lang={lang}&v={video_id}"
+        url = f"https://www.youtube.com/api/timedtext?lang={quote(lang)}&v={quote(video_id)}"
         if name:
-            url += f"&name={name}"
+            # El nombre de la pista puede llevar espacios y acentos: se codifica
+            # para no romper la URL (hallazgo B11).
+            url += f"&name={quote(name)}"
         try:
             xml_text = _fetch_text(url)
         except ValueError:
@@ -187,7 +187,13 @@ def fetch_podcast_transcript_from_feed(feed_url: str, episode_external_id: str |
     if not isinstance(links, list):
         links = [links]
     for link in links:
-        href = link.get("href") if isinstance(link, dict) else None
+        # feedparser expone el atributo de `podcast:transcript` como `url`; el
+        # estándar Podcasting 2.0 usa `href`. Se aceptan ambos (hallazgo B16).
+        href = None
+        if isinstance(link, dict):
+            href = link.get("href") or link.get("url")
+        elif isinstance(link, str):
+            href = link
         if not href:
             continue
         try:

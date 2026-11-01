@@ -135,7 +135,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
             </div>
             <p className="text-xs text-neutral-400 mt-1 max-w-3xl leading-relaxed">
               Distingue rigurosamente entre <strong>referencias editoriales</strong> (documentos, transcripciones de YouTube/Spotify, citas) 
-              y <strong>referencias audiovisuales</strong> (hojas del presentador @neuraldotai, plató CRT, estilos de 8s). 
+              y <strong>referencias audiovisuales</strong> (hojas del presentador maxDotAi, plató CRT, estilos de 8s). 
               Las referencias aprobadas del personaje y fondo pueden fijarse permanentemente en todos los episodios.
             </p>
           </div>
@@ -362,7 +362,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
             <div className="space-y-3 text-xs">
               <input
                 type="text"
-                placeholder="Nombre (ej: NeuralDotAI - Perfil 3/4)"
+                placeholder="Nombre (ej: maxDotAi - Perfil 3/4)"
                 value={vName}
                 onChange={(e) => setVName(e.target.value)}
                 className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200"

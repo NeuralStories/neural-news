@@ -14,8 +14,11 @@ exacto en lugar de fabricar texto.
 from __future__ import annotations
 
 import html
+import json
 import re
+import subprocess
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import httpx
 import feedparser
@@ -261,7 +264,13 @@ def fetch_youtube_transcript_auto(video_id: str, langs: tuple[str, ...] = PREFER
     if not _valid_video_id(video_id):
         raise ValueError("Identificador de vídeo de YouTube no válido")
 
-    # 1) Pistas manuales publicadas (canal más fiable)
+    # 0) yt-dlp: vía que hoy descarga los subtítulos automáticos de cualquier
+    # vídeo (incluidos los ASR). Es el proveedor principal.
+    via_ytdlp = fetch_youtube_transcript_ytdlp(video_id, langs)
+    if via_ytdlp is not None:
+        return via_ytdlp
+
+    # 1) Pistas manuales publicadas (timedtext)
     manual = fetch_youtube_transcript(video_id, langs)
     if manual is not None:
         return manual
@@ -294,3 +303,200 @@ def fetch_youtube_transcript_auto(video_id: str, langs: tuple[str, ...] = PREFER
             segments=segments,
         )
     return None
+
+
+# ---------------------------------------------------------------------------
+# Proveedor yt-dlp (binario autónomo, sin dependencias de Python):
+# es la vía que hoy lista y descarga los subtítulos AUTOMÁTICOS de cualquier
+# vídeo. Se usa como proveedor principal; innertube queda como alternativa.
+# ---------------------------------------------------------------------------
+# El binario puede vivir en tools/ dentro del repo o junto a él (herramientas
+# locales del proyecto); se buscan ambos, sin depender del PATH.
+_REPO_ROOT = Path(__file__).resolve().parents[5]
+YTDLP_CANDIDATES = (
+    _REPO_ROOT / "tools" / "yt-dlp.exe",
+    _REPO_ROOT / "tools" / "yt-dlp",
+    _REPO_ROOT.parent / "tools" / "yt-dlp.exe",
+    _REPO_ROOT.parent / "tools" / "yt-dlp",
+)
+
+
+def yt_dlp_binary() -> Path | None:
+    """Localiza el binario de yt-dlp (herramienta local o variable de entorno)."""
+    import os
+    import shutil as _shutil
+    env = os.getenv("NEURAL_YTDLP_PATH")
+    if env and Path(env).exists():
+        return Path(env)
+    found = _shutil.which("yt-dlp")
+    if found:
+        return Path(found)
+    for candidate in YTDLP_CANDIDATES:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def yt_dlp_available_languages(video_id: str) -> list[str]:
+    """Idiomas de subtítulos disponibles (automáticos y manuales) del vídeo."""
+    binary = yt_dlp_binary()
+    if binary is None:
+        return []
+    try:
+        proc = subprocess.run(
+            [str(binary), "--list-subs", "--no-warnings", "--no-playlist",
+             f"https://www.youtube.com/watch?v={video_id}"],
+            capture_output=True, timeout=90,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return []
+    text = proc.stdout.decode("utf-8", "replace")
+    langs: list[str] = []
+    in_table = False
+    for line in text.splitlines():
+        if line.startswith("Language") and "Name" in line:
+            in_table = True
+            continue
+        if not in_table:
+            continue
+        parts = line.split()
+        if not parts:
+            continue
+        lang = parts[0]
+        # Las líneas de la tabla empiezan por el código de idioma; se ignoran
+        # los avisos [info] y las cabeceras.
+        if lang.startswith("["):
+            continue
+        if re.fullmatch(r"[a-zA-Z]{2,3}(-[a-zA-Z0-9-]+)?", lang) and lang not in langs:
+            langs.append(lang)
+    return langs
+
+
+def _pick_language(available: list[str], preferred: tuple[str, ...]) -> str | None:
+    """Elige el idioma disponible más cercano al preferido.
+
+    Se prioriza la coincidencia EXACTA (p. ej. «es-419» si existe) frente a la
+    parcial, porque YouTube usa variantes regionales: pedir «es» cuando sólo
+    existe «es-419» devuelve 404/429 en la descarga."""
+    # 1) Variante regional corta del idioma preferido (es-419, es-ES, en-US…):
+    #    se prueban ANTES que el idioma genérico, porque en YouTube «es» puede
+    #    no existir como pista aunque sí exista «es-419». Se descartan las
+    #    variantes encadenadas («es-es-419», «en-zh-TW»): son traducciones
+    #    automáticas de otra lengua y no una transcripción en el idioma pedido.
+    for want in preferred:
+        base = want.split("-")[0].lower()
+        variants = [l for l in available
+                    if l.lower().startswith(base + "-")
+                    and not re.match(rf"^{base}-[a-z]{{2,3}}-", l.lower())]
+        if variants:
+            return sorted(variants, key=len, reverse=True)[0]
+    # 2) Coincidencia exacta con un idioma preferido
+    for want in preferred:
+        for lang in available:
+            if lang.lower() == want.lower():
+                return lang
+    # 3) Idioma genérico
+    for want in preferred:
+        base = want.split("-")[0].lower()
+        for lang in available:
+            if lang.lower() == base:
+                return lang
+    return available[0] if available else None
+
+
+def fetch_youtube_transcript_ytdlp(
+    video_id: str, preferred: tuple[str, ...] = PREFERRED_LANGS
+) -> ContentDraft | None:
+    """Transcripción COMPLETA de cualquier vídeo con subtítulos, mediante
+    yt-dlp. Descarga una sola pista (evita los 429 por peticiones múltiples) y
+    devuelve el texto con sus marcas de tiempo."""
+    binary = yt_dlp_binary()
+    if binary is None or not _valid_video_id(video_id):
+        return None
+
+    import tempfile
+
+    langs = yt_dlp_available_languages(video_id)
+    lang = _pick_language(langs, preferred)
+    if lang is None:
+        return None
+
+    import time
+
+    with tempfile.TemporaryDirectory(prefix="nn-subs-") as tmp:
+        out = str(Path(tmp) / "cap.%(ext)s")
+        files: list[Path] = []
+        # YouTube limita por IP las peticiones de subtítulos (429): se reintenta
+        # con espera y, en cada intento, se pide UNA sola pista.
+        for attempt in range(3):
+            for flag in ("--write-auto-subs", "--write-subs"):
+                try:
+                    subprocess.run(
+                        [str(binary), "--skip-download", flag,
+                         "--sub-langs", lang, "--sub-format", "json3/vtt", "--no-warnings",
+                         "--no-playlist", "-o", out,
+                         f"https://www.youtube.com/watch?v={video_id}"],
+                        capture_output=True, timeout=180,
+                    )
+                except (subprocess.SubprocessError, OSError):
+                    continue
+                files = sorted(Path(tmp).glob("cap.*"))
+                if files:
+                    break
+            if files:
+                break
+            time.sleep(3 + attempt * 4)  # backoff ante 429
+        if not files:
+            return None
+
+        path = files[0]
+        raw = path.read_text(encoding="utf-8", errors="replace")
+        if path.suffix == ".json3":
+            try:
+                segments = parse_json3_events(json.loads(raw))
+            except ValueError:
+                segments = []
+            provider = "yt_dlp_json3"
+        else:
+            segments = _segments_from_vtt(raw)
+            provider = "yt_dlp_vtt"
+        text = " ".join(seg.text for seg in segments) if segments else ""
+        if not text.strip():
+            return None
+        return ContentDraft(
+            content_type="TRANSCRIPT",
+            text=text,
+            is_verbatim=True,
+            provider=provider,
+            confidence="medium",  # subtítulos automáticos: no verificados por humanos
+            segments=segments,
+        )
+
+
+def _segments_from_vtt(raw: str) -> list[SegmentDraft]:
+    """Segmentos con tiempos a partir de un WebVTT (tolerante a CRLF, cabeceras
+    y bloques con líneas de texto multilínea)."""
+    segments: list[SegmentDraft] = []
+    pattern = re.compile(
+        r"(?:(\d{1,2}):)?(\d{1,2}):(\d{2})[.,](\d{1,3})\s*-->\s*"
+        r"(?:(\d{1,2}):)?(\d{1,2}):(\d{2})[.,](\d{1,3})"
+    )
+    normalised = raw.replace("\r\n", "\n").replace("\r", "\n")
+    current_time: int | None = None
+    for line in normalised.split(chr(10)):
+        match = pattern.search(line)
+        if match:
+            h, m, sec, ms = match.group(1), match.group(2), match.group(3), match.group(4)
+            total = (int(h) * 3600 if h else 0) + int(m) * 60 + int(sec)
+            current_time = total * 1000 + int(ms.ljust(3, "0"))
+            continue
+        if current_time is None:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("WEBVTT", "Kind:", "Language:", "NOTE", "STYLE")):
+            continue
+        text = re.sub(r"<[^>]+>", "", stripped).strip()
+        if text:
+            segments.append(SegmentDraft(text=text, start_ms=current_time,
+                                         sequence=len(segments)))
+    return segments

@@ -20,7 +20,10 @@ _auto_transcript_cache: dict = {}
 
 def _auto_transcript(video_id: str):
     """Búsqueda automática de transcripción de YouTube (punto de inyección
-    para pruebas); usa el proveedor ASR/timedtext sin Docker ni claves."""
+    para pruebas). Cadena de proveedores, sin Docker ni claves de API:
+      1) yt-dlp (subtítulos automáticos y manuales, cualquier vídeo);
+      2) timedtext (pistas manuales publicadas);
+      3) reproductor interno (pistas ASR)."""
     if video_id in _auto_transcript_cache:
         return _auto_transcript_cache[video_id]
     from ..providers.transcript import fetch_youtube_transcript_auto

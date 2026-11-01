@@ -98,7 +98,7 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 | ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
 |---|---|---|---|---|---|
 | NN-110.a | Renovación de lease + recuperación periódica + `release_job` limpio | NN-109.14 | Un job largo no pierde el lease; un job vencido se recupera sin reiniciar el worker; `lease_until`/`attempt` se limpian | **COMPLETADA** | `tests/test_queue_leases.py` (8 pruebas, rojas antes) · suite **167 passed, 1 skipped** — **E** |
-| NN-110.b | Tipos de job `transcribe_source`, `build_montage`, `probe_media`, `extract_web` + handlers | NN-110.a | Cada handler es idempotente y tiene test | PENDIENTE | — |
+| NN-110.b | Tipos de job `transcribe_source`, `build_montage`, `probe_media`, `extract_web` + handlers | NN-110.a | Cada handler es idempotente y tiene test | **COMPLETADA** | `tests/test_worker_jobs.py` (8 pruebas) · `services/transcription.py` y `services/montage.persist_animatica` · suite **175 passed, 1 skipped** — **E** |
 | NN-110.c | `transcribe_source` → `202 + job_id` | NN-110.b | El handler responde en <2 s; la UI muestra el progreso y el resultado | PENDIENTE | — |
 | NN-110.d | `build_montage` → `202 + job_id` + `ffprobe` al worker | NN-110.b | Ídem; el MP4 importado nunca se destruye | PENDIENTE | — |
 | NN-110.e | Logging estructurado + motivo de fallo normalizado | NN-110.a | El fallo queda en `Job.error` legible y en el log estructurado | PENDIENTE | — |

@@ -87,8 +87,42 @@ def _ffprobe(path: Path) -> dict:
     }
 
 
-def upload_media(db: Session, data: bytes, mime_type: str, filename: str | None) -> MediaAsset:
-    """Subida idempotente: el mismo contenido devuelve el asset existente."""
+def probe_media_asset(db: Session, asset: MediaAsset) -> MediaAsset:
+    """Sondea un medio ya subido con ffprobe y guarda sus metadatos.
+
+    Idempotente: volver a sondear el mismo medio vuelve a leer el archivo y
+    deja los mismos datos. El sondeo ocurre en el worker (NN-110): ffprobe
+    puede tardar y no debe bloquear una petición HTTP.
+    """
+    path = Path(asset.storage_path)
+    if not path.exists():
+        asset.probe_status = "FAILED"
+        db.flush()
+        return asset
+    probe = _ffprobe(path)
+    asset.width = probe.get("width")
+    asset.height = probe.get("height")
+    asset.duration_s = probe.get("duration_s")
+    asset.fps = probe.get("fps")
+    asset.orientation = probe.get("orientation")
+    asset.has_audio = probe.get("has_audio")
+    asset.probe_status = probe.get("probe_status", "UNKNOWN")
+    db.flush()
+    return asset
+
+
+def upload_media(
+    db: Session,
+    data: bytes,
+    mime_type: str,
+    filename: str | None,
+    probe: bool = True,
+) -> MediaAsset:
+    """Subida idempotente: el mismo contenido devuelve el asset existente.
+
+    `probe=False` deja el sondeo pendiente: el worker lo hace en un trabajo
+    aparte para que la subida no espere a ffprobe (NN-110).
+    """
     if mime_type not in ALLOWED_MIME:
         raise MediaUploadError(f"Tipo no permitido: {mime_type}. Permitidos: {sorted(ALLOWED_MIME)}")
     if not data:
@@ -107,20 +141,24 @@ def upload_media(db: Session, data: bytes, mime_type: str, filename: str | None)
     dest = folder / f"{digest}{ext}"
     dest.write_bytes(data)
 
-    probe = _ffprobe(dest) if mime_type == "video/mp4" else {"probe_status": "UNAVAILABLE"}
+    if probe:
+        probe_data = _ffprobe(dest) if mime_type == "video/mp4" else {"probe_status": "UNAVAILABLE"}
+    else:
+        # El sondeo queda pendiente: lo hace el worker en `probe_media`.
+        probe_data = {"probe_status": "PENDING"}
     asset = MediaAsset(
         sha256=digest,
         filename=filename,
         mime_type=mime_type,
         size_bytes=len(data),
         storage_path=str(dest),
-        width=probe.get("width"),
-        height=probe.get("height"),
-        duration_s=probe.get("duration_s"),
-        fps=probe.get("fps"),
-        orientation=probe.get("orientation"),
-        has_audio=probe.get("has_audio"),
-        probe_status=probe.get("probe_status", "UNKNOWN"),
+        width=probe_data.get("width"),
+        height=probe_data.get("height"),
+        duration_s=probe_data.get("duration_s"),
+        fps=probe_data.get("fps"),
+        orientation=probe_data.get("orientation"),
+        has_audio=probe_data.get("has_audio"),
+        probe_status=probe_data.get("probe_status", "UNKNOWN"),
         provenance="imported_flow_manual",
         license_state="PENDING",
         created_at=utcnow(),

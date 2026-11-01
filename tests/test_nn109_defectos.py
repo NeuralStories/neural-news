@@ -461,11 +461,11 @@ def test_b19_configure_streams_deja_utf8(demo_client, monkeypatch):
 
 def test_b8_la_cache_esta_acotada_en_tamano(demo_client, monkeypatch):
     """La caché no crece sin límite: se descarta la entrada más antigua."""
-    from neuralnews.api import sources as sources_mod
+    from neuralnews.services import transcription as transcription_mod
     from neuralnews.providers import transcript as transcript_mod
 
-    monkeypatch.setattr(sources_mod, "_auto_transcript_cache", {})
-    monkeypatch.setattr(sources_mod, "_AUTO_TRANSCRIPT_MAX_ENTRIES", 4)
+    monkeypatch.setattr(transcription_mod, "_auto_transcript_cache", {})
+    monkeypatch.setattr(transcription_mod, "_AUTO_TRANSCRIPT_MAX_ENTRIES", 4)
 
     class _Draft:
         text = "x"
@@ -481,17 +481,17 @@ def test_b8_la_cache_esta_acotada_en_tamano(demo_client, monkeypatch):
     monkeypatch.setattr(transcript_mod, "fetch_youtube_transcript_auto", _fake)
 
     for i in range(12):
-        sources_mod._auto_transcript(f"video{i}")
+        transcription_mod.auto_transcript(f"video{i}")
 
-    assert len(sources_mod._auto_transcript_cache) <= 4
+    assert len(transcription_mod._auto_transcript_cache) <= 4
 
 
 def test_b8_la_cache_tiene_caducidad(demo_client, monkeypatch):
     """Una entrada vencida no se devuelve y el proveedor vuelve a consultarse."""
-    from neuralnews.api import sources as sources_mod
+    from neuralnews.services import transcription as transcription_mod
     from neuralnews.providers import transcript as transcript_mod
 
-    monkeypatch.setattr(sources_mod, "_auto_transcript_cache", {})
+    monkeypatch.setattr(transcription_mod, "_auto_transcript_cache", {})
 
     class _Draft:
         text = "x"
@@ -506,25 +506,25 @@ def test_b8_la_cache_tiene_caducidad(demo_client, monkeypatch):
 
     monkeypatch.setattr(transcript_mod, "fetch_youtube_transcript_auto", _fake)
 
-    sources_mod._auto_transcript("v1")
-    sources_mod._auto_transcript("v1")
+    transcription_mod.auto_transcript("v1")
+    transcription_mod.auto_transcript("v1")
     assert len(llamadas) == 1, "la segunda llamada debe servirse de la caché"
 
     # La caducidad se comprueba sobre la marca de tiempo guardada, sin depender
     # del reloj: un test que duerme es un test que falla de forma intermitente.
-    expires_at, value = sources_mod._auto_transcript_cache["v1"]
-    sources_mod._auto_transcript_cache["v1"] = (expires_at - 3600, value)
+    expires_at, value = transcription_mod._auto_transcript_cache["v1"]
+    transcription_mod._auto_transcript_cache["v1"] = (expires_at - 3600, value)
 
-    sources_mod._auto_transcript("v1")
+    transcription_mod.auto_transcript("v1")
     assert len(llamadas) == 2, "tras caducar, se vuelve a consultar al proveedor"
 
 
 def test_b8_el_fracaso_tambien_se_cachea(demo_client, monkeypatch):
     """Un vídeo sin subtítulos no se vuelve a preguntar en cada intento."""
-    from neuralnews.api import sources as sources_mod
+    from neuralnews.services import transcription as transcription_mod
     from neuralnews.providers import transcript as transcript_mod
 
-    monkeypatch.setattr(sources_mod, "_auto_transcript_cache", {})
+    monkeypatch.setattr(transcription_mod, "_auto_transcript_cache", {})
 
     llamadas = []
 
@@ -534,6 +534,6 @@ def test_b8_el_fracaso_tambien_se_cachea(demo_client, monkeypatch):
 
     monkeypatch.setattr(transcript_mod, "fetch_youtube_transcript_auto", _fake)
 
-    assert sources_mod._auto_transcript("sin-subtitulos") is None
-    assert sources_mod._auto_transcript("sin-subtitulos") is None
+    assert transcription_mod.auto_transcript("sin-subtitulos") is None
+    assert transcription_mod.auto_transcript("sin-subtitulos") is None
     assert len(llamadas) == 1, "un resultado negativo también debe estar acotado"

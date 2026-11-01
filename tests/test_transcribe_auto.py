@@ -42,7 +42,7 @@ def test_parse_json3_handles_empty_payload():
 def test_transcribe_stores_auto_transcript_for_any_youtube_video(demo_client, worker, monkeypatch):
     """Cualquier vídeo (con ASR): el endpoint busca automáticamente, almacena la
     transcripción literal y la devuelve (found=True, created=True)."""
-    import neuralnews.api.sources as sources_mod
+    import neuralnews.services.transcription as transcription_mod
     from neuralnews.providers.base import ContentDraft, SegmentDraft
 
     fake_draft = ContentDraft(
@@ -66,7 +66,7 @@ def test_transcribe_stores_auto_transcript_for_any_youtube_video(demo_client, wo
         captured["video_id"] = video_id
         return fake_draft
 
-    monkeypatch.setattr(sources_mod, "_auto_transcript", fake_auto)
+    monkeypatch.setattr(transcription_mod, "auto_transcript", fake_auto)
     r = demo_client.post(f"/api/v1/sources/{sid_src}/transcribe")
     assert r.status_code == 200, r.text
     body = r.json()

@@ -13,6 +13,7 @@ final: se etiqueta como tal en el propio fichero y en la API.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import hashlib
 import shutil
 import subprocess
@@ -23,10 +24,51 @@ from typing import Any
 from sqlalchemy import select
 
 from .. import config
-from ..models import GraphicSpec
+from ..models import GraphicSpec, StudioStepRevision
 from .graphics import render_chart_png_1080x1920, render_title_png_1080x1920
 
 W, H, FPS = 1080, 1920, 30
+
+
+def persist_animatica(db: Any, project: Any, result: dict, actor_id: str | None) -> dict:
+    """Guarda la animática construida en el paso «resultado» (una sola fuente de datos).
+
+    Idempotente en el sentido de que **nunca destruye** lo anterior: crea una
+    revisión nueva con la animática actual. Lo usa tanto la API como el worker.
+    """
+    rev = (project.step_revisions or {}).get("resultado", 0)
+    payload: dict = {}
+    if rev:
+        row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "resultado",
+                StudioStepRevision.revision == rev,
+            )
+            .limit(1)
+        ).first()
+        payload = dict(row.payload) if row else {}
+    payload["animatica"] = {
+        "path": result["path"],
+        "duration_s": result["duration_s"],
+        "segments": result["segments"],
+        "label": result["label"],
+        "built_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+    }
+    current = (project.step_revisions or {}).get("resultado", 0)
+    project.step_revisions = {**project.step_revisions, "resultado": current + 1}
+    db.add(
+        StudioStepRevision(
+            project_id=project.id,
+            step="resultado",
+            revision=current + 1,
+            payload=payload,
+            actor_id=actor_id,
+        )
+    )
+    db.flush()
+    return payload["animatica"]
 
 
 def ffmpeg_dir() -> Path | None:

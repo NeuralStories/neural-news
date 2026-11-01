@@ -28,6 +28,12 @@ ANALYZE_VIDEO = "analyze_video"
 RESEARCH_STORY = "research_story"
 DRAFT_SCRIPT = "draft_script"
 EXPORT_BATCH = "export_batch"
+# Tipos que existían solo dentro del hilo de petición (NN-110). Ahora el
+# trabajo pesado lo hace el worker y la API responde de inmediato.
+TRANSCRIBE_SOURCE = "transcribe_source"
+BUILD_MONTAGE = "build_montage"
+PROBE_MEDIA = "probe_media"
+EXTRACT_WEB = "extract_web"
 
 HANDLERS = {}
 
@@ -62,6 +68,81 @@ def handle_process_source(db: Session, job: Job) -> str:
         cost_estimate=0.0,
     )
     return f"Fuente procesada; {len(stories)} candidato(s) de noticias"
+
+
+@handler(TRANSCRIBE_SOURCE)
+def handle_transcribe_source(db: Session, job: Job) -> str:
+    """Busca y guarda la transcripción de una fuente (YouTube, pódcast o web).
+
+    Idempotente: si la transcripción ya está guardada, no se vuelve a
+    descargar. Si no hay transcripción accesible, **no es un fallo**: el
+    trabajo termina con el motivo exacto en `progress`.
+    """
+    source_id = job.payload["source_id"]
+    source = db.get(Source, source_id)
+    if source is None:
+        raise RuntimeError("La fuente ya no existe")
+    from .services import transcription as transcription_service
+
+    outcome = transcription_service.transcribe_source_content(db, source)
+    if not outcome.found:
+        job.progress = outcome.message
+        return outcome.message
+    return outcome.message
+
+
+@handler(EXTRACT_WEB)
+def handle_extract_web(db: Session, job: Job) -> str:
+    """Extrae el texto del artículo web de la URL canónica de la fuente."""
+    source_id = job.payload["source_id"]
+    source = db.get(Source, source_id)
+    if source is None:
+        raise RuntimeError("La fuente ya no existe")
+    from .services import transcription as transcription_service
+
+    outcome = transcription_service.extract_web_content(db, source)
+    job.progress = outcome.message
+    return outcome.message
+
+
+@handler(BUILD_MONTAGE)
+def handle_build_montage(db: Session, job: Job) -> str:
+    """Construye la animática 9:16 real con FFmpeg.
+
+    Idempotente: el montage se reconstruye sobre los mismos materiales y se
+    persiste en el paso «resultado»; volver a lanzarlo no destruye nada.
+    """
+    project_id = job.payload["project_id"]
+    from .models import ProductionProject
+    from .services import montage as montage_service
+
+    project = db.get(ProductionProject, project_id)
+    if project is None:
+        raise RuntimeError("El proyecto ya no existe")
+    result = montage_service.build_animatica(db, project)
+    if not result.get("ok"):
+        raise RuntimeError(result.get("error") or "No se ha podido construir la animática")
+    montage_service.persist_animatica(db, project, result, job.payload.get("actor_id"))
+    db.flush()
+    return f"Animática construida: {result.get('duration_s', '?')} s ({result.get('label', '')})"
+
+
+@handler(PROBE_MEDIA)
+def handle_probe_media(db: Session, job: Job) -> str:
+    """Sondea un medio ya subido con ffprobe y guarda sus metadatos.
+
+    El sondeo se hace aquí, no en la petición: ffprobe puede tardar y bloquear.
+    """
+    media_id = job.payload["media_id"]
+    from .models import MediaAsset
+    from .services import media_library
+
+    asset = db.get(MediaAsset, media_id)
+    if asset is None:
+        raise RuntimeError("El medio ya no existe")
+    media_library.probe_media_asset(db, asset)
+    db.flush()
+    return f"Medio sondeado: {asset.probe_status}"
 
 
 @handler(ANALYZE_VIDEO)

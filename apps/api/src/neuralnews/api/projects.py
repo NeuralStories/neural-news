@@ -1043,38 +1043,7 @@ def build_montage(project_id: int, db=Depends(get_db), actor=Depends(get_current
             "missing": result.get("missing", []),
         })
     # Persistir en el paso Resultado (una sola fuente de datos)
-    rev = (project.step_revisions or {}).get("resultado", 0)
-    payload = {}
-    if rev:
-        row = db.scalars(
-            select(StudioStepRevision)
-            .where(
-                StudioStepRevision.project_id == project.id,
-                StudioStepRevision.step == "resultado",
-                StudioStepRevision.revision == rev,
-            )
-            .limit(1)
-        ).first()
-        payload = dict(row.payload) if row else {}
-    payload["animatica"] = {
-        "path": result["path"],
-        "duration_s": result["duration_s"],
-        "segments": result["segments"],
-        "label": result["label"],
-        "built_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-    }
-    current = (project.step_revisions or {}).get("resultado", 0)
-    project.step_revisions = {**project.step_revisions, "resultado": current + 1}
-    db.add(
-        StudioStepRevision(
-            project_id=project.id,
-            step="resultado",
-            revision=current + 1,
-            payload=payload,
-            actor_id=actor["actor_id"],
-        )
-    )
-    db.flush()
+    animatica = montage_service.persist_animatica(db, project, result, actor["actor_id"])
     return {
         "ok": True,
         "duration_s": result["duration_s"],

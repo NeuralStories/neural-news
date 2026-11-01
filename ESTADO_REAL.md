@@ -20,7 +20,7 @@
 | Invalidación dirigida (cap. 13): cambio del guion → gráficos derivados INVALIDADO + auditoría | FUNCIONA (PARCIAL: regla factual→derivados; las otras 3 reglas en Etapa B) | `test_script_change_invalidates_derived_graphics` |
 | Correcciones de auditoría F-01…F-10 (identidad maxDotAi, nada aprobado por defecto, Algenib hipótesis, traspaso no verifica, dedup canónica etiquetada, export ≠ backup BD…) | FUNCIONA | `tests/test_regressions_f01_f10.py` (10 tests de fichero + comportamiento) |
 | Runtime de Flow fuera del editor | PARCIAL (por diseño): todo BLOCKED con paquete manual; download nativo; dentro del editor delega en `window.Flow` | adaptador `flow/adapter.ts`; E2E verifica banner BLOCKED |
-| Render/montaje FFmpeg local | PARCIAL — simulación técnica (color/rótulos/tono), portado y conservado del 29/10; **no** es montaje audiovisual real | `services/av_render.py` portado en F1; etiquetado en código |
+| Render/montaje FFmpeg local | NO_IMPLEMENTADO (Etapa B) — **el motor FFmpeg del 29/10 no se portó**; solo su modelo de datos (`RenderOutput`) y la cola de jobs están listos. El botón de render no existe: fuera de Flow todo es BLOCKED/importación manual | ausencia verificada en `services/` y en la UI |
 | Regresiones heredadas R-BUG-1/2/3/4 | FUNCIONA (corregidas y cubiertas por tests y E2E) | ver TASK_NN-107 |
 
 ## PENDIENTE_POR_ACTIVO (dependen del propietario)
@@ -40,6 +40,6 @@
 
 ## Pruebas totales al cierre
 
-- API: **107 passed, 0 fallos** (+ `test_postgres_projects.py` PASSED contra PostgreSQL 16.9 local).
+- API: **114 passed, 0 fallos** (+ `test_postgres_projects.py` PASSED contra PostgreSQL 16.9 local; el único skip queda en el suite por defecto porque la URL de PG se inyecta con `NEURAL_TEST_POSTGRES`, y con ella el test pasa: 1 passed).
 - E2E navegador real (Edge): **2 passed** (`studio-reintegration`, `vertical-production`).
 - `tsc --noEmit` y `next build` limpios.

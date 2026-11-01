@@ -59,7 +59,8 @@ Commits `4b9ec04`, `d9f89f6`, `ef01bd0`. **Estado: PARCIAL** — la cadena de pr
   - El skip corresponde al test de PostgreSQL real, que se activa con `NEURAL_TEST_POSTGRES`.
 - **Tipos (web):** `npx tsc --noEmit` → **0 errores** — **E**.
 - **Build (web):** `next build` → **compila**, 9 páginas estáticas — **E**. Y **falla a propósito** sin `NEURAL_API_URL` fuera de local (B9) — **E**.
-- **E2E navegador real (Edge):** 2 specs — `studio-reintegration`, `vertical-production` — **E**.
+- **E2E navegador real (Edge):** **7 passed, 0 fallos** (`critical-flow` ×5, `studio-reintegration`, `vertical-production`), 1,2 min — **E**. Cada test baja de ~40 s de espera a 8–17 s: `poll()` ahora espera de verdad al trabajo (hallazgo B21).
+  - **Contraste con el código original:** en `ef01bd0`, con la base de datos desfasada (B20) y el sondeo sin esperar (B21), el mismo fichero E2E falla **4 de 5** y la web muestra «Application error: a client-side exception has occurred» tras entrar en modo demo.
 - **Migraciones:** cadena `d38b9d62cb47 → d4ce8c95781e → b3c1d9e4f7a2` (head). Paridad modelos↔migraciones verificada por comparación estática de las 31 tablas — **R** (sin `alembic upgrade` ejecutado en esta auditoría).
 - **PostgreSQL 16.9 local** (puerto 5433): dump, restauración en base limpia y comparación de recuento en 20 tablas → **idéntico**. **E**.
 - **17/17 fuentes de Flow** contrastan con `reports/manifest.json` (SHA-256 + bytes). **E**.

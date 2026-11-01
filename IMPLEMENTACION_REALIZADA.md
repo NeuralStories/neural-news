@@ -278,10 +278,27 @@ muerto sino una capacidad real que la auditoría F-10 guarda. Cablearlo en la in
 
 ### Verificación
 
-- `python -m pytest tests -q` → **154 passed, 1 skipped, 0 fallos** (E).
+- `python -m pytest tests -q` → **159 passed, 1 skipped, 0 fallos** (E).
 - `npx tsc --noEmit` → 0 errores (E).
 - `next build` → compila con `NEURAL_ENV=local`; **falla a propósito** sin `NEURAL_API_URL` (E).
+- **E2E Edge: 7 passed, 0 fallos** (E) — frente a **4 de 5 fallando** en el mismo fichero sobre el
+  código original (`ef01bd0`), con la base de datos desfasada (B20) y el sondeo sin esperar (B21).
 - Prueba de rojo→verde: con el código original restaurado, 8 de las 15 pruebas nuevas fallan (E).
+
+### Hallazgos aparecidos al verificar (fuera del plan original)
+
+| # | Qué pasó | Gravedad | Estado |
+|---|---|---|---|
+| **B19** | El worker **no completaba ningún trabajo** con la salida redirigida en Windows: el `print` con «→» estaba **dentro de la transacción**, el `UnicodeEncodeError` (cp1252) la revertía entera y el trabajo volvía a la cola **para siempre** | **Crítica** | CERRADO — flujos a UTF-8 y estado escrito fuera de la transacción |
+| **B20** | La **base de datos viva estaba desfasada** respecto a los modelos (`alembic_version` vacía, faltaba `generated_takes.needs_review`): `create_all()` solo crea tablas y **nunca añade columnas**. El Studio devolvía **500** y el E2E fallaba sin causa aparente | **Crítica** | CERRADO — el arranque aplica `alembic upgrade head`; base reparada y verificada (31/31 tablas, `alembic check` sin diferencias); red de seguridad en `tests/test_schema_migrations.py` (3 pruebas) |
+| **B21** | `useJobPolling` tenía **un solo temporizador compartido** y `poll()` **no esperaba**: el sondeo antiguo terminaba tarde y **machacaba el guion recién escrito**; la edición se perdía en silencio | **Alta** (pérdida de datos) | CERRADO — `poll()` espera al trabajo y cada trabajo lleva su temporizador |
+
+**Lección de método (aplicable a las fases siguientes):** tres de los cuatro hallazgos críticos
+aparecieron **al ejecutar**, no al leer el código, y en los tres casos la causa era la misma: **el
+mecanismo de prueba era más estrecho que la regla que debía comprobar**. La regla de identidad F-01
+miraba 4 ficheros (no vio 5 componentes con «NeuralDotAI»); la del esquema no existía. Antes de
+dar por cerrado un requisito hay que demostrar que la prueba que lo vigila **cubre el requisito
+entero**.
 
 ### Arranque (sin Docker, todo local)
 ```bash

@@ -23,7 +23,7 @@ from dataclasses import dataclass
 
 WORDS_PER_SECOND = 2.85  # misma constante que utils/scriptAnalyzer.ts (hipótesis editable)
 CLAUSE_REGEX = re.compile(r"[^.!?;\n]+(?:[.!?;\n]+|$)")
-NUMBER_REGEX = re.compile(r"\d+([.,]\d+)?\s?(%|por ciento|€|\$|millones|millones de)")
+NUMBER_REGEX = re.compile(r"\d+([.,]\d+)?\s?(%|por ciento|€|\$|mil millones|millones)")
 QUOTE_REGEX = re.compile(r"(«[^»]+»|\"[^\"]+\")|según|declaró|afirmó|anunció|confirmó", re.IGNORECASE)
 
 

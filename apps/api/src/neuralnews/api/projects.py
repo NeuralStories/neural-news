@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import datetime as _dt
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -39,6 +41,7 @@ from ..models import (
 )
 from ..security import get_current_actor
 from ..services.director import build_plan
+from ..services import montage as montage_service
 from ..services.graphics import render_bar_svg
 from ..services.media_library import MediaUploadError, asset_to_out, upload_media
 
@@ -967,3 +970,117 @@ def graphic_svg(project_id: int, graphic_id: int, db=Depends(get_db), actor=Depe
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return Response(content=svg, media_type="image/svg+xml")
+
+
+# ---------------------------------------------------------------------------
+# FASE 3 — Motor de montaje real (animática 9:16 con FFmpeg, sin Docker)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/projects/{project_id}/montage")
+def montage_status(project_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Estado del montaje: segmentos disponibles, materiales que faltan y la
+    última animática construida (persistida en el paso Resultado)."""
+    project = _get_project(db, project_id)
+    segments, missing = montage_service.timeline(db, project)
+    rev = (project.step_revisions or {}).get("resultado", 0)
+    animatica = None
+    if rev:
+        row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "resultado",
+                StudioStepRevision.revision == rev,
+            )
+            .order_by(StudioStepRevision.revision.desc())
+            .limit(1)
+        ).first()
+        if row is not None:
+            animatica = (row.payload or {}).get("animatica")
+    return {
+        "segments": segments,
+        "missing": missing,
+        "animatica": animatica,
+        "label": "ANIMÁTICA 9:16 — previsualización sin locución; NO es el render final",
+    }
+
+
+@router.post("/projects/{project_id}/montage")
+def build_montage(project_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Construye la animática 9:16 real con FFmpeg a partir de las tomas con
+    MP4 importado y las tarjetas programáticas. Sin locución (pendiente)."""
+    project = _get_project(db, project_id)
+    try:
+        result = montage_service.build_animatica(db, project)
+    except Exception as exc:  # diagnóstico explícito en la respuesta
+        raise HTTPException(status_code=500, detail=f"Error de montaje: {exc}") from exc
+    if not result.get("ok"):
+        raise HTTPException(status_code=409, detail={
+            "message": result.get("error", "El montaje no puede construirse"),
+            "missing": result.get("missing", []),
+        })
+    # Persistir en el paso Resultado (una sola fuente de datos)
+    rev = (project.step_revisions or {}).get("resultado", 0)
+    payload = {}
+    if rev:
+        row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "resultado",
+                StudioStepRevision.revision == rev,
+            )
+            .limit(1)
+        ).first()
+        payload = dict(row.payload) if row else {}
+    payload["animatica"] = {
+        "path": result["path"],
+        "duration_s": result["duration_s"],
+        "segments": result["segments"],
+        "label": result["label"],
+        "built_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+    }
+    current = (project.step_revisions or {}).get("resultado", 0)
+    project.step_revisions = {**project.step_revisions, "resultado": current + 1}
+    db.add(
+        StudioStepRevision(
+            project_id=project.id,
+            step="resultado",
+            revision=current + 1,
+            payload=payload,
+            actor_id=actor["actor_id"],
+        )
+    )
+    db.flush()
+    return {
+        "ok": True,
+        "duration_s": result["duration_s"],
+        "segments": result["segments"],
+        "missing": result["missing"],
+        "label": result["label"],
+        "download_url": f"/api/v1/projects/{project.id}/montage.mp4",
+    }
+
+
+@router.get("/projects/{project_id}/montage.mp4")
+def montage_file(project_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> object:
+    from fastapi.responses import FileResponse
+
+    project = _get_project(db, project_id)
+    rev = (project.step_revisions or {}).get("resultado", 0)
+    animatica = None
+    if rev:
+        row = db.scalars(
+            select(StudioStepRevision)
+            .where(
+                StudioStepRevision.project_id == project.id,
+                StudioStepRevision.step == "resultado",
+                StudioStepRevision.revision == rev,
+            )
+            .limit(1)
+        ).first()
+        animatica = (row.payload or {}).get("animatica") if row else None
+    if not animatica or not Path(animatica["path"]).exists():
+        raise HTTPException(status_code=404, detail="Todavía no hay animática construida para este proyecto")
+    return FileResponse(animatica["path"], media_type="video/mp4", filename=f"animatica_916_{project.id}.mp4")

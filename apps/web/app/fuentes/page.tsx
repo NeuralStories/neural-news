@@ -158,17 +158,55 @@ export default function FuentesPage() {
   );
 }
 
+type TranscriptInfo = {
+  found: boolean;
+  message?: string;
+  content_type?: string;
+  content_type_label?: string;
+  is_verbatim?: boolean;
+  provider?: string;
+  text?: string;
+  segments?: Array<{ start_ms: number | null; end_ms: number | null; text: string; sequence: number }>;
+};
+
 function SourceRow({ source }: { source: SourceListItem }) {
   const [detail, setDetail] = useState<SourceDetail | null>(null);
   const [transcript, setTranscript] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [transcriptData, setTranscriptData] = useState<TranscriptInfo | null>(null);
+  const [showTranscript, setShowTranscript] = useState(false);
   const { poll } = useJobPolling();
 
   const toggle = async () => {
     if (detail) return setDetail(null);
     const d = await api.getSource(source.id);
     setDetail(d);
+  };
+
+  const loadTranscript = async () => {
+    setShowTranscript((v) => !v);
+    try {
+      setTranscriptData(await api.getTranscript(source.id));
+    } catch (e) {
+      setMsg((e as Error).message);
+    }
+  };
+
+  const searchTranscript = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setBusy(true);
+    setMsg(null);
+    try {
+      const body = await api.transcribeSource(source.id);
+      setMsg(body.message ?? (body.created ? "Transcripción creada y almacenada." : "Transcripción encontrada."));
+      setTranscriptData(await api.getTranscript(source.id));
+      setDetail(await api.getSource(source.id));
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const saveTranscript = async () => {
@@ -251,6 +289,17 @@ function SourceRow({ source }: { source: SourceListItem }) {
                 Analizar vídeo
               </button>
             )}
+            <button className="btn px-2 py-1 text-xs" onClick={loadTranscript}>
+              Transcripción
+            </button>
+            <button
+              className="btn-primary px-2 py-1 text-xs"
+              onClick={searchTranscript}
+              disabled={busy}
+              title="Busca subtítulos públicos (YouTube), el texto del artículo o la transcripción del feed"
+            >
+              {busy ? "Buscando…" : "Buscar transcripción"}
+            </button>
           </div>
         </td>
       </tr>
@@ -283,6 +332,32 @@ function SourceRow({ source }: { source: SourceListItem }) {
                   )}
                 </div>
               ))}
+              {showTranscript && (
+                <div className="rounded border border-neutral-800 bg-neutral-950 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className={transcriptData?.found ? "badge-ok" : "badge-warn"}>
+                      {transcriptData?.found ? `Transcripción (${transcriptData.content_type_label ?? "transcripción"})` : "Sin transcripción"}
+                    </span>
+                    {transcriptData?.found && transcriptData.provider && (
+                      <span className="text-xs text-neutral-500">vía {transcriptData.provider}</span>
+                    )}
+                  </div>
+                  {transcriptData?.found && transcriptData.text && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-sky-400">Ver texto completo</summary>
+                      <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap text-xs text-neutral-200">{transcriptData.text}</pre>
+                      {transcriptData.segments && transcriptData.segments.length > 0 && (
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {transcriptData.segments.length} fragmentos con marcas de tiempo.
+                        </p>
+                      )}
+                    </details>
+                  )}
+                  {!transcriptData?.found && transcriptData?.message && (
+                    <p className="mt-1 text-xs text-neutral-400">{transcriptData.message}</p>
+                  )}
+                </div>
+              )}
               {(source.status === "METADATA_ONLY" || source.status === "PARTIAL" || source.status === "READY") && (
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input

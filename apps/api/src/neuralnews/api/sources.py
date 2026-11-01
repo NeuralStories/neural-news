@@ -153,6 +153,131 @@ def get_source(source_id: int, db=Depends(get_db), actor=Depends(get_current_act
     return out.model_dump(mode="json")
 
 
+@router.get("/{source_id}/transcript")
+def get_transcript(source_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Devuelve la transcripción vigente de la fuente (texto + segmentos)."""
+    source = db.get(Source, source_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Esa fuente no existe")
+    for content in db.scalars(
+        select(SourceContent)
+        .where(SourceContent.source_id == source.id)
+        .order_by(SourceContent.id.desc())
+    ).all():
+        if content.content_type in ("TRANSCRIPT", "ARTICLE_TEXT", "MANUAL_TEXT"):
+            return {
+                "found": True,
+                "content_type": content.content_type,
+                "content_type_label": CONTENT_TYPE_LABELS.get(content.content_type, content.content_type),
+                "is_verbatim": content.is_verbatim,
+                "provider": content.provider,
+                "text": content.text,
+                "segments": [
+                    {
+                        "start_ms": seg.start_ms,
+                        "end_ms": seg.end_ms,
+                        "text": seg.text,
+                        "sequence": seg.sequence,
+                    }
+                    for seg in content.segments
+                ],
+            }
+    return {"found": False, "message": "Esta fuente todavía no tiene transcripción"}
+
+
+@router.post("/{source_id}/transcribe")
+def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Busca o crea la transcripción de la fuente según su tipo:
+    YouTube → subtítulos públicos; pódcast → podcast:transcript del feed;
+    artículo web → texto del artículo; manual → el texto aportado.
+    Nada se inventa: si no hay transcripción accesible, se responde el motivo."""
+    source = db.get(Source, source_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Esa fuente no existe")
+
+    def out(found: bool, created: bool, draft=None, message: str | None = None) -> dict:
+        body: dict = {"found": found, "created": created}
+        if message:
+            body["message"] = message
+        if draft is not None:
+            body["transcript"] = {
+                "text": draft.text,
+                "provider": draft.provider,
+                "segments": len(draft.segments),
+            }
+        return body
+
+    existing = [
+        c for c in db.scalars(
+            select(SourceContent)
+            .where(SourceContent.source_id == source.id)
+            .order_by(SourceContent.id.desc())
+        ).all()
+        if c.content_type == "TRANSCRIPT"
+    ]
+    if existing:
+        return out(True, False, existing[0], "Ya existe una transcripción; se devuelve tal cual")
+
+    settings = get_settings()
+    from ..services.sources import _store_content
+    try:
+        if source.provider == "youtube":
+            if source.demo:
+                demo_t = next((c for c in db.scalars(
+                    select(SourceContent)
+                    .where(SourceContent.source_id == source.id,
+                           SourceContent.content_type == "TRANSCRIPT")
+                ).all()), None)
+                if demo_t is None:
+                    return out(False, False, None,
+                               "Fuente de demostración sin transcripción simulada almacenada")
+                return out(True, False, type("D", (), {
+                    "text": demo_t.text, "provider": demo_t.provider, "segments": [],
+                })(), "Fuente de demostración: la transcripción simulada ya está almacenada")
+            from ..providers.transcript import fetch_youtube_transcript
+            video_id = source.external_id or ""
+            draft = fetch_youtube_transcript(video_id)
+            if draft is None:
+                return out(False, False, None,
+                           "El vídeo no tiene una pista de subtítulos pública accesible "
+                           "(prueba con otro idioma o aporta la transcripción)")
+        elif source.provider == "spotify":
+            feed_url = (source.metadata or {}).get("feed_url")
+            if not feed_url:
+                return out(False, False, None,
+                           "Spotify no expone la transcripción sin el feed RSS del programa: "
+                           "añade feed_url a los metadatos de la fuente o pega la transcripción")
+            from ..providers.transcript import fetch_podcast_transcript_from_feed
+            draft = fetch_podcast_transcript_from_feed(
+                feed_url, source.external_id, source.title)
+            if draft is None:
+                return out(False, False, None,
+                           "El feed no incluye podcast:transcript para este episodio")
+        elif source.provider in ("web_rss", "manual") and source.canonical_url:
+            from ..providers.web_rss import fetch_web
+            from ..services.sources import _store_content
+            result = fetch_web(source.canonical_url)
+            if result.status in ("READY", "PARTIAL") and result.contents:
+                for draft in result.contents:
+                    _store_content(db, source, draft)
+                return out(True, True, result.contents[0],
+                           "Texto del artículo extraído de nuevo desde la URL canónica")
+            return out(False, False, None,
+                       f"No se ha podido extraer el texto desde la URL: {result.error or result.status}")
+        else:
+            return out(False, False, None,
+                       "Fuente manual: el texto aportado ES la transcripción; "
+                       "guárdalo con «Guardar transcripción»")
+    except FetchBlocked as exc:
+        return out(False, False, None, f"Bloqueado por seguridad: {exc}")
+    except Exception as exc:  # red u otro fallo real: se reporta, no se inventa
+        return out(False, False, None, f"No se ha podido obtener la transcripción: {exc}")
+
+    _store_content(db, source, draft)
+    db.flush()
+    return out(True, True, draft, "Transcripción creada y almacenada como texto literal")
+
+
 @router.post("/{source_id}/process")
 def process_source(
     source_id: int,
@@ -214,7 +339,7 @@ def add_transcript(
     if not payload.transcript or not payload.transcript.strip():
         raise HTTPException(status_code=400, detail="Escribe o pega la transcripción")
     from ..providers.base import ContentDraft
-    from ..services.sources import _store_content
+    
 
     _store_content(
         db,

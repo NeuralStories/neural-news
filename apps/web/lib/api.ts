@@ -41,6 +41,14 @@ export const api = {
   getSource: (id: number) => request<import("./types").SourceDetail>(`/v1/sources/${id}`),
   processSource: (id: number) => request<{ job_id: number; created: boolean }>(`/v1/sources/${id}/process`, { method: "POST", body: JSON.stringify({}) }),
   analyzeVideo: (id: number) => request<{ job_id: number; created: boolean }>(`/v1/sources/${id}/analyze`, { method: "POST" }),
+  transcribeSource: (id: number) =>
+    request<{ found: boolean; created: boolean; message?: string; transcript?: { text: string; provider: string; segments: number } }>(
+      `/v1/sources/${id}/transcribe`, { method: "POST", body: JSON.stringify({}) },
+    ),
+  getTranscript: (id: number) =>
+    request<{ found: boolean; message?: string; content_type?: string; is_verbatim?: boolean; provider?: string; text?: string; segments?: Array<{ start_ms: number | null; end_ms: number | null; text: string; sequence: number }> }>(
+      `/v1/sources/${id}/transcript`,
+    ),
   addTranscript: (id: number, transcript: string) =>
     request<{ ok: boolean }>(`/v1/sources/${id}/transcript`, { method: "POST", body: JSON.stringify({ transcript }) }),
 

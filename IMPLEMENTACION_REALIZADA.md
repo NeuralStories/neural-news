@@ -130,3 +130,34 @@ Ejecutada por HTTP contra `localhost:3000` con PostgreSQL local:
   line/timeline/percentage, publicación.
 - Nota: `probe_status` de los MP4 será `OK` instalando FFmpeg y añadiéndolo al PATH.
 - **Docker: eliminado del flujo por decisión del propietario.** La base de datos es PostgreSQL local de binarios nativos (§4.1); el `infra/docker-compose.yml` del repositorio queda sin uso.
+
+
+---
+
+# FASES 1–4 — Integración y primera producción real (01/11/2026)
+
+## FASE 1 — Integración de NN-107 en `main` ✅
+- Fusión controlada `--no-ff` sin conflictos (merge `0647489`); punto de reversión etiquetado `pre-merge-main` (dd7c414).
+- Verificación tras fusionar en `main`: 117 tests + 1 skip, build limpio, app integrada contra PostgreSQL local (proyecto 2 recuperado tras reinicio).
+- **Invalidación exclusiva** (nuevo): `prompt_packages.source_script_hash` + `generated_takes.needs_review` (migración `b3c1d9e4f7a2`). Cambiar el guion marca `⚠ Revisar: el guion cambió` SOLO en las tomas cuyo prompt dependía del texto; recompilar despeja la marca; el MP4 importado nunca se destruye.
+
+## FASE 2 — PILOTO 001 ✅ (proyecto #12, http://localhost:3000/estudio?project=12)
+- Noticia real: OPA de Anthropic (Reuters, nov 2026; valoración 61,5→380→965 G$). Fuente manual con snapshot y referencia reuters.com/technology/.
+- Guion periodístico natural (~150 palabras ≈ 53 s a 2,85 pal/s) editable; afirmaciones UNVERIFIED hasta contraste humano.
+- maxDotAi PENDIENTE_DE_VINCULAR (sin activos no se inventa nada); plató CRT PENDIENTE_DE_APROBACIÓN.
+- Director: 7 tomas (2 FLOW_MAXDOTAI, 4 GENERATIVE_BROLL, 1 DOCUMENTARY en el primer plan; línea de tiempo revisada con TITLE_CARD + DATA_GRAPHIC para montaje).
+- Gráfico programático con valores exactos 61,5/380/965 (SVG en la UI) + FlowManualPackage por toma.
+
+## FASE 3 — Motor de montaje real ✅ (PARCIAL por diseño: animática sin locución)
+- FFmpeg 9.0.2 binarios nativos en `ffmpeg-local/` (sin Docker).
+- `services/montage.py`: timeline desde shots/takes persistidos; clips MP4 reales + tarjetas programáticas (Pillow, valores exactos); concat 1080x1920/30fps; salida etiquetada ANIMÁTICA (no render final).
+- API: `GET/POST /v1/projects/{id}/montage(.mp4)` con lista exacta de materiales ausentes.
+- Validación: 2 tests (MP4 reales vía testsrc; lista de faltantes honesta). Animática del piloto: h264 1080x1920, 10,5 s programáticos; 5 tomas pendientes listadas con motivo.
+
+## FASE 4 — UX ✅
+- Sección «Montaje» en Producción: Validar y montar lo disponible → previsualización del MP4 + lista de pendientes por ventana. Sin pantallas técnicas duplicadas.
+
+## Pruebas al cierre de las FASES 1–4
+- API: **119 passed, 0 fallos, 1 skip** (skip = test PG que con `NEURAL_TEST_POSTGRES` pasa: verificado 1 passed).
+- E2E Edge: **2 passed** (studio-reintegration 18,7 s; vertical-production 12,7 s).
+- Commit de referencia: `d701099` en `main`.

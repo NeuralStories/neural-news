@@ -13,7 +13,7 @@ export const REAL_SOURCE_METADATA: Record<string, SourceFileMetadata> = {
   "constants.ts": {
     path: 'constants.ts',
     category: 'constants',
-    description: 'Presets canónicos de NeuralDotAI, plató CRT, voz Algenib y catálogo de movimientos'
+    description: 'Presets canónicos de maxDotAi, plató CRT, voz Algenib y catálogo de movimientos'
   },
   "utils/scriptAnalyzer.ts": {
     path: 'utils/scriptAnalyzer.ts',

@@ -378,7 +378,7 @@ class ProductionProject(Base):
         back_populates="project", cascade="all, delete-orphan", order_by="Shot.sequence"
     )
     takes: Mapped[list["GeneratedTake"]] = relationship(
-        back_populates="project", cascade="all, delete-orphan"
+        back_populates="project", cascade="all, delete-orphan", order_by="GeneratedTake.id"
     )
     story: Mapped[Story | None] = relationship()
     script_version: Mapped[ScriptVersion | None] = relationship()

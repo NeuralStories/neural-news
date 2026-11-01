@@ -51,7 +51,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </h4>
             <p>
               - <strong>Referencias Editoriales:</strong> Fuentes comprobadas, documentos técnicos y transcripciones de YouTube/Spotify.<br />
-              - <strong>Referencias Audiovisuales:</strong> Hoja de tres paneles del presentador @neuraldotai, plató CRT original y estilos de cámara.<br />
+              - <strong>Referencias Audiovisuales:</strong> Hoja de tres paneles del presentador @maxDotAi, plató CRT original y estilos de cámara.<br />
               Las referencias aprobadas pueden fijarse como <em>permanentes</em> en cada episodio.
             </p>
           </section>

@@ -111,7 +111,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
                   NeuralStories Broadcast
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">@neuraldotai • Sistema Editorial y Producción Audiovisual IA</p>
+              <p className="text-[11px] text-slate-400">@maxDotAi • Sistema Editorial y Producción Audiovisual IA</p>
             </div>
           </div>
         )}

@@ -21,11 +21,11 @@ def test_f01_identity_is_maxdotai_only():
     assert "NeuralDotAI" not in constants
     assert "@neuraldotai" not in constants
     assert "pendiente de confirmar" in constants  # handle aún sin confirmar en cuenta
-    # Ningún componente revierte la identidad
-    for rel in ("App.tsx", "components/CharacterSheetTab.tsx", "components/TopNavigation.tsx"):
+    # Ningún componente revierte la identidad (ni la cabecera del Studio)
+    for rel in ("App.tsx", "components/CharacterSheetTab.tsx", "components/TopNavigation.tsx",
+                "components/HelpModal.tsx"):
         assert "NeuralDotAI" not in read(rel), rel
-    integration = read("integration/data/avProfiles.ts")
-    assert "MAXDOTAI_CANONICAL" in integration
+        assert "@neuraldotai" not in read(rel), rel
 
 
 def test_f02_no_initial_reference_is_preapproved():
@@ -82,10 +82,11 @@ def test_f08_imported_articles_start_unverified():
     constants = read("constants.ts")
     assert "verificationStatus: 'sin_verificar'" in constants
     assert "verificationStatus: 'verificado'" not in constants
-    # El consumidor de traspasos no eleva a verificado (R-BUG-3)
-    consumer = read("integration/lib/handoffConsumer.ts")
-    assert "verificationStatus: 'verificado'" not in consumer
-    assert "en_revision" in consumer
+    # El traspaso manual se retiró por duplicado (D7): la conexión es el dossier,
+    # que lee los estados del motor y nunca verifica al importar (R-BUG-3).
+    assert not (STUDIO / "integration" / "components" / "HandoffImport.tsx").exists()
+    dossier = read("components/DossierPanel.tsx")
+    assert "importar o traspasar nunca verifica" in dossier
 
 
 def test_f09_dedup_is_canonical_first_and_labelled_heuristic():

@@ -28,8 +28,6 @@ import {
 } from './constants';
 import { splitScriptIntoScenes } from './utils/scriptAnalyzer';
 import { checkArticleDuplicate } from './utils/newsDeduplication';
-import { HandoffImport } from './integration/components/HandoffImport';
-import { ProductionPlanPanel } from './integration/components/ProductionPlanPanel';
 import { ProductionVertical } from './components/ProductionVertical';
 import { DossierPanel } from './components/DossierPanel';
 import { TopNavigation } from './components/TopNavigation';
@@ -83,7 +81,7 @@ export default function App({ projectId }: { projectId: number | null }) {
   const [episodeBlocks, setEpisodeBlocks] = useState<ProductionEpisodeBlock[]>(INITIAL_EPISODE_BLOCKS);
   const [activeArticleId, setActiveArticleId] = useState<string>(INITIAL_NEWS_ARTICLES[0].id);
 
-  // MÓDULO 2: PERSONAJE (@neuraldotai)
+  // MÓDULO 2: PERSONAJE (@maxDotAi)
   const [sheetState, setSheetState] = useState<MasterSheetState>({
     isApproved: true,
     notes: 'Hoja de tres paneles canónica para NeuralStories News',
@@ -581,7 +579,7 @@ export default function App({ projectId }: { projectId: number | null }) {
       const exportPkg: StudioExportPackage = {
         formatVersion: '2.0',
         exportedAt: new Date().toISOString(),
-        studio: 'NeuralStories News (@neuraldotai)',
+        studio: 'NeuralStories News (@maxDotAi)',
         contract: 'neural.news-studio-v2',
         articles,
         episodeBlocks,
@@ -616,14 +614,6 @@ export default function App({ projectId }: { projectId: number | null }) {
       setIsExporting(false);
     }
   };
-
-  // Recepción del traspaso production_handoff.v1 (verificado por el consumidor)
-  const handleImportHandoffArticles = useCallback(
-    (imported: Omit<NewsArticle, 'id' | 'orderIndex'>[]) => {
-      return handleImportBatchArticles(imported as NewsArticle[]);
-    },
-    [handleImportBatchArticles]
-  );
 
   const handleImportConfigurationJson = useCallback((imported: any) => {
     try {
@@ -970,7 +960,6 @@ export default function App({ projectId }: { projectId: number | null }) { /* Or
         {currentTab === 'noticias' && (
           <>
             {projectId && <DossierPanel projectId={projectId} />}
-            <HandoffImport onImportArticles={handleImportHandoffArticles} />
             <NewsEditorialTab
             articles={articles}
             episodeBlocks={episodeBlocks}
@@ -1060,7 +1049,6 @@ export default function App({ projectId }: { projectId: number | null }) { /* Or
                 onChanged={() => void reload()}
               />
             )}
-            <ProductionPlanPanel article={activeArticle} />
             <ResultTab
             finalPrompt={finalPrompt}
             onCopyPrompt={async () => {

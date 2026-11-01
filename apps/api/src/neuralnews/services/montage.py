@@ -114,6 +114,7 @@ def timeline(db: Any, project: Any) -> tuple[list[dict], list[dict]]:
             "end_s": shot.end_s,
             "duration_s": duration,
             "beat_texts": (shot.data or {}).get("beat_texts", []),
+            "transition": (shot.data or {}).get("transition", "corte_directo"),
         }
         if take is not None and take.imported_media_id is not None:
             entry["segment_type"] = "CLIP"
@@ -161,47 +162,82 @@ def build_animatica(db: Any, project: Any) -> dict:
     stamp = int(time.time())
     out_path = out_dir / f"animatica_916_{stamp}.mp4"
 
+    T = 0.4  # duración de la transición xfade entre segmentos (glitch breve)
+    XFADE_MAP = {
+        "rgb_glitch_flash": "fade",
+        "whip_pan": "wipeleft",
+        "push_zoom": "zoomin",
+        "corte_directo": "fade",  # con T corto se comporta como corte casi seco
+    }
     filter_parts: list[str] = []
     input_args: list[str] = []
     index = 0
-    for seg in buildable:
+    # Cada entrada se recorta a su ventana + T extra si el límite posterior es
+    # xfade (el solapamiento consume material del siguiente encadenado).
+    for i, seg in enumerate(buildable):
         dur = seg["duration_s"]
+        extra = T if i < len(buildable) - 1 and seg.get("transition") != "corte_directo" else 0
         if seg["segment_type"] == "CLIP":
             src = seg["path"]
             filter_parts.append(
                 f"[{index}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,"
                 f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,fps={FPS},tpad=stop_mode=clone:stop_duration=8,"
-                f"trim=duration={dur},setpts=PTS-STARTPTS[v{index}]"
+                f"trim=duration={dur + extra:.2f},setpts=PTS-STARTPTS[v{index}]"
             )
             input_args += ["-i", src]
-            index += 1
         else:
             card = _render_card(seg.get("title", "neural.news"), seg.get("beat_texts", []),
                                 series=None, source_note="ANIMÁTICA — previsualización sin locución")
             filter_parts.append(
-                f"[{index}:v]scale={W}:{H},fps={FPS},trim=duration={dur},setpts=PTS-STARTPTS[v{index}]"
+                f"[{index}:v]scale={W}:{H},fps={FPS},trim=duration={dur + extra:.2f},setpts=PTS-STARTPTS[v{index}]"
             )
-            input_args += ["-loop", "1", "-t", str(dur), "-i", str(card)]
-            index += 1
-    concat = "".join(f"[v{i}]" for i in range(index)) + f"concat=n={index}:v=1:a=0[vout]"
+            input_args += ["-loop", "1", "-t", f"{dur + extra:.2f}", "-i", str(card)]
+        index += 1
+
+    # Encadenado: xfade (glitch/pan/zoom/fade) o corte seco (concat), según la
+    # transición asignada por el director a cada límite.
+    transitions_used: list[dict] = []
+    current = "[v0]"
+    visible = buildable[0]["duration_s"]
+    for i in range(1, len(buildable)):
+        boundary = buildable[i].get("transition", "corte_directo")
+        prev = buildable[i - 1]
+        if boundary != "corte_directo":
+            transition = XFADE_MAP.get(boundary, "fade")
+            offset = round(max(visible - T, 0), 2)
+            out_label = f"[x{i}]"
+            filter_parts.append(
+                f"{current}[v{i}]xfade=transition={transition}:duration={T}:offset={offset}{out_label}"
+            )
+            transitions_used.append({"after_segment": i, "transition": boundary, "ffmpeg": transition,
+                                     "duration_s": T, "offset_s": offset})
+            current = out_label
+            visible = round(visible + buildable[i]["duration_s"] - T, 2)
+        else:
+            out_label = f"[c{i}]"
+            filter_parts.append(f"{current}[v{i}]concat=n=2:v=1:a=0{out_label}")
+            transitions_used.append({"after_segment": i, "transition": "corte_directo"})
+            current = out_label
+            visible = round(visible + buildable[i]["duration_s"], 2)
 
     args = [
         *input_args,
-        "-filter_complex", ";".join(filter_parts) + ";" + concat,
-        "-map", "[vout]", "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
-        "-r", str(FPS), "-t", f"{buildable[-1]['end_s']}",
+        "-filter_complex", ";".join(filter_parts),
+        "-map", current, "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+        "-r", str(FPS),
         str(out_path),
     ]
     proc = _run(bin_dir, args, timeout=600)
     if proc.returncode != 0:
         return {"ok": False, "error": proc.stderr.decode("utf-8", "replace")[-800:], "missing": missing}
 
-    duration = buildable[-1]["end_s"]
+    duration = visible if transitions_used else buildable[-1]["end_s"]
     return {
         "ok": True,
         "path": str(out_path),
         "duration_s": duration,
         "segments": len(buildable),
         "missing": missing,
+        "transitions": transitions_used,
         "label": "ANIMÁTICA 9:16 — previsualización sin locución; NO es el render final",
     }

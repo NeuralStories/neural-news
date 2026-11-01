@@ -161,3 +161,23 @@ Ejecutada por HTTP contra `localhost:3000` con PostgreSQL local:
 - API: **119 passed, 0 fallos, 1 skip** (skip = test PG que con `NEURAL_TEST_POSTGRES` pasa: verificado 1 passed).
 - E2E Edge: **2 passed** (studio-reintegration 18,7 s; vertical-production 12,7 s).
 - Commit de referencia: `d701099` en `main`.
+
+
+## FASE 3/4 — Lagunas cerradas tras la revisión del propietario (01/11/2026)
+
+1. **Transiciones en el montaje (FASE 3 punto 5) — IMPLEMENTADO.** El director asigna ahora a cada
+   toma un movimiento del catálogo (sin repetir el mismo en tomas consecutivas) y una transición de
+   entrada (corte seco rotando con glitch RGB / whip pan / push zoom). El montador aplica
+   transiciones reales: xfade (fade/wipeleft/zoomin) de 0,4 s entre segmentos y concat seco para
+   los cortes directos; la duración del MP4 refleja el solape. La respuesta del montaje expone las
+   transiciones aplicadas. Tests: `test_transiciones_movimiento.py` (3 passed: movimientos sin
+   repetición consecutiva, xfade aplicado con acortamiento real, movimiento llegado al prompt).
+2. **Movimiento del catálogo en las tomas (FASE 2) — IMPLEMENTADO.** Las 7 tomas del PILOTO 001
+   fueron replanificadas con `movement_id` + `movement_instruction` (lateral_slide_in,
+   chest_punch_zoom, subtle_dolly, horizontal_flip…) y sus prompts regenerados a v2 incluyendo el
+   movimiento y la transición de entrada. La animática del piloto se reconstruyó con las
+   transiciones (h264 1080x1920, 25,6 s según ffprobe; evidencia en
+   `REVISION_NN107_FLOW/evidencia/piloto001_animatica_916.mp4`).
+- Corrección adicional: `run_director` desvincula tomas/beats antes de sustituir la línea de
+  tiempo (FK violations en PostgreSQL al replanificar proyectos con tomas).
+- Pruebas al cierre: **122 passed, 0 fallos, 1 skip** + 2 E2E en verde.

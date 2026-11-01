@@ -702,6 +702,12 @@ def run_director(
         raise HTTPException(status_code=422, detail="provider_max_clip_s debe estar entre 0 y 60 segundos")
     plan = build_plan(script, provider_max_clip_s=body.provider_max_clip_s)
 
+    # Desvincular tomas y referencias de beat antes de sustituir (FK): las tomas
+    # se conservan como activos del operador y quedan sin ventana asignada.
+    for take in project.takes:
+        take.shot_id = None
+    for shot in project.shots:
+        shot.beat_id = None
     project.beats.clear()
     for beat in plan.beats:
         project.beats.append(
@@ -1064,6 +1070,7 @@ def build_montage(project_id: int, db=Depends(get_db), actor=Depends(get_current
         "duration_s": result["duration_s"],
         "segments": result["segments"],
         "missing": result["missing"],
+        "transitions": result.get("transitions", []),
         "label": result["label"],
         "download_url": f"/api/v1/projects/{project.id}/montage.mp4",
     }

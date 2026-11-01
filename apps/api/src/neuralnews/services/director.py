@@ -22,6 +22,16 @@ import re
 from dataclasses import dataclass
 
 WORDS_PER_SECOND = 2.85  # misma constante que utils/scriptAnalyzer.ts (hipótesis editable)
+
+# Catálogo de movimiento (cap. 6.6 / MovimientoTab): instrucción de cámara por
+# toma, elegida por intención y SIN repetir el mismo movimiento en tomas seguidas.
+MOVEMENT_CATALOG = [
+    {"id": "lateral_slide_in", "prompt": "Rapid smooth lateral camera whip-in from screen left to center lock-on, anchor remains rock steady."},
+    {"id": "chest_punch_zoom", "prompt": "Tight chest-up close framing, immediate punchy snap-zoom toward anchor chest, broadcast telemetry stability."},
+    {"id": "subtle_dolly", "prompt": "Continuous slow push-in dolly shot toward speaker face for the full shot duration, zero camera shake."},
+    {"id": "horizontal_flip", "prompt": "Dynamic perspective shift snapping from 15-degree off-axis angle to dead-center frontal anchor posture."},
+]
+TRANSITIONS = ["corte_directo", "rgb_glitch_flash", "whip_pan", "push_zoom"]
 CLAUSE_REGEX = re.compile(r"[^.!?;\n]+(?:[.!?;\n]+|$)")
 NUMBER_REGEX = re.compile(r"\d+([.,]\d+)?\s?(%|por ciento|€|\$|mil millones|millones)")
 QUOTE_REGEX = re.compile(r"(«[^»]+»|\"[^\"]+\")|según|declaró|afirmó|anunció|confirmó", re.IGNORECASE)
@@ -103,16 +113,29 @@ def build_plan(
         duration = round(sum(b["est_seconds"] for b in window), 2)
         texts = [b["text"] for b in window]
         kind, rationale = _shot_kind(texts, is_first=not shots, is_last=False)
+        idx = len(shots)
+        # Movimiento por intención, sin repetir el movimiento anterior
+        movement = MOVEMENT_CATALOG[idx % len(MOVEMENT_CATALOG)]
+        if idx > 0 and shots[-1]["data"]["movement_id"] == movement["id"]:
+            movement = MOVEMENT_CATALOG[(idx + 1) % len(MOVEMENT_CATALOG)]
+        # Transición de entrada: corte seco por defecto; glitch/pan/zoom rotando
+        transition = TRANSITIONS[idx % len(TRANSITIONS)] if idx > 0 else "corte_directo"
         shots.append(
             {
-                "sequence": len(shots),
+                "sequence": idx,
                 "beat_id": None,
                 "shot_kind": kind,
                 "rationale": rationale,
                 "start_s": start,
                 "end_s": round(start + duration, 2),
                 "max_duration_s": provider_max_clip_s,
-                "data": {"beat_texts": texts, "est_duration_s": duration},
+                "data": {
+                    "beat_texts": texts,
+                    "est_duration_s": duration,
+                    "movement_id": movement["id"],
+                    "movement_instruction": movement["prompt"],
+                    "transition": transition,
+                },
             }
         )
         window = []

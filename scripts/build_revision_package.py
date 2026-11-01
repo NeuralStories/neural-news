@@ -98,20 +98,26 @@ with zipfile.ZipFile(ZIP_PATH) as z:
         inner.append((info.filename, info.file_size, hashlib.sha256(z.read(info)).hexdigest()))
 
 head = subprocess.run(["git", "log", "--oneline", "-8"], cwd=REPO, capture_output=True, text=True).stdout
-with open(OUT / "MANIFIESTO_FINAL_SHA256.txt", "w", encoding="utf-8") as m:
-    m.write("MANIFIESTO — REVISION_NN107_FLOW.zip (entrega final NN-107, inmutable)\n")
-    m.write(f"Generado: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-    m.write("Estado: NO APROBADO — pendiente de revisión y aprobación del propietario\n")
-    m.write("Docker: eliminado del flujo (100 % sin Docker; PostgreSQL local de binarios nativos)\n\n")
-    m.write("== Commits (rama nn-107-reintegracion-flow) ==\n" + head + "\n")
-    m.write("== Escaneo de secretos ==\n")
-    m.write(("SIN SECRETOS DETECTADOS" if not secret_hits else "AVISOS:\n" + "\n".join(secret_hits)) + "\n\n")
-    m.write("== Contenido sellado (nombre | bytes | sha256) ==\n")
-    for name, size, h in inner:
-        m.write(f"{h}  {name}  ({size:,} bytes)\n")
+manifest_text = (
+    "MANIFIESTO — REVISION_NN107_FLOW.zip (entrega final NN-107, inmutable)\n"
+    f"Generado: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    "Estado: NO APROBADO — pendiente de revisión y aprobación del propietario\n"
+    "Docker: eliminado del flujo (100 % sin Docker; PostgreSQL local de binarios nativos)\n\n"
+    "== Commits (rama nn-107-reintegracion-flow) ==\n" + head + "\n"
+    "== Escaneo de secretos ==\n"
+    + ("SIN SECRETOS DETECTADOS" if not secret_hits else "AVISOS:\n" + "\n".join(secret_hits)) + "\n\n"
+    "== Contenido sellado (nombre | bytes | sha256) ==\n"
+    + "".join(f"{h}  {name}  ({size:,} bytes)\n" for name, size, h in inner)
+    + f"\n(Este manifiesto cubre las {len(inner)} entradas anteriores; su propia copia dentro del "
+      "zip es la entrada MANIFIESTO_FINAL_SHA256.txt.)\n"
+)
+# El manifiesto viaja DENTRO del zip; su propia hash no se auto-sella.
+(OUT / "MANIFIESTO_FINAL_SHA256.txt").write_text(manifest_text, encoding="utf-8", newline="\n")
+with zipfile.ZipFile(ZIP_PATH, "a", zipfile.ZIP_DEFLATED) as z:
+    z.write(OUT / "MANIFIESTO_FINAL_SHA256.txt", "MANIFIESTO_FINAL_SHA256.txt")
 
 zip_hash = sha(ZIP_PATH)
-with open(BASE / "REVISION_NN107_FLOW.zip.sha256", "w", encoding="utf-8") as f:
+with open(BASE / "REVISION_NN107_FLOW.zip.sha256", "w", encoding="utf-8", newline="\n") as f:
     f.write(f"{zip_hash}  REVISION_NN107_FLOW.zip\n")
 
 print(f"REVISION_NN107_FLOW.zip: {len(inner)} entradas, {ZIP_PATH.stat().st_size/1e6:.1f} MB")

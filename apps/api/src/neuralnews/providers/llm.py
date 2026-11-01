@@ -176,24 +176,11 @@ class EditorialLLMProvider:
                 )
             )
         if not drafts:
-            # Contenido genérico: dos candidatos prudentes y ninguna opinión presentada como hecho.
-            drafts.append(
-                StoryDraft(
-                    provisional_title="Tema detectado en el contenido aportado",
-                    neutral_summary=(
-                        "El contenido aportado parece tratar un asunto de IA, pero la extracción "
-                        "determinista de demo no ha identificado un hecho concreto. Revisa y edita."
-                    ),
-                    facts=[],
-                    source_published_at=published_at,
-                    entities=[],
-                    questions_to_verify=["¿Cuál es el hecho principal del contenido?"],
-                    evidence_state="WITHOUT_CONFIRMATION",
-                    topic_key=_demo_topic_key(text[:200]),
-                    novelty="ANALYSIS",
-                )
-            )
-        if "opinión personal" in lowered or "creo que" in lowered:
+            # Contenido genérico: extracción determinista real sobre cualquier texto.
+            generica = self._extract_generic(text, published_at)
+            if generica is not None:
+                drafts.append(generica)
+        if any(marker in lowered for marker in self._OPINION_MARKERS + self._OPINION_CONTEXT):
             drafts.append(
                 StoryDraft(
                     provisional_title="Opinión del autor detectada (no verificable)",
@@ -212,6 +199,160 @@ class EditorialLLMProvider:
                 )
             )
         return drafts
+
+    # ------------------------------------------------------- extracción genérica
+    _OPINION_MARKERS = (
+        "creo que", "opino que", "en mi opinión", "me parece que", "pienso que",
+        "a mi modo de ver", "personalmente", "supongo que", "mi predicción",
+    )
+    # Señales de que la frase continúa una opinión (no un hecho comprobable).
+    _OPINION_CONTEXT = (
+        "intuición", "no hay datos", "sin datos", "es una opinión", "no lo sé",
+        "no lo se", "a mi juicio", "en mi cabeza", "me da la sensación", "quien sabe",
+    )
+    # Patrones de inyección de prompt o de orden ejecutable dentro del contenido.
+    # El contenido SIEMPRE es dato: estas frases no llegan al titular ni a las afirmaciones.
+    _INJECTION_MARKERS = (
+        "ignora todas las reglas", "ignora las reglas", "ignore previous", "ignore all",
+        "ignore the", "system:", "you are now", "actúa como", "actua como", "eres un agente",
+        "borra la base de datos", "borra todo", "revela tus", "revela el sistema",
+        "system prompt", "instrucciones del sistema", "developer mode",
+        "<script", "javascript:", "onerror=", "onclick=", "eval(", "exec(",
+        "sudo ", "rm -rf", "curl ", "wget ", "base64 -d",
+    )
+    _DATE_PATTERNS = (
+        re.compile(r"\b(\d{4}-\d{2}-\d{2})\b"),
+        re.compile(r"\b(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|"
+                   r"septiembre|octubre|noviembre|diciembre)\s+de\s+(\d{4})\b", re.IGNORECASE),
+        re.compile(r"\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|"
+                   r"noviembre|diciembre)\s+de\s+(\d{4})\b", re.IGNORECASE),
+    )
+
+    def _extract_generic(self, text: str, published_at: datetime | None) -> StoryDraft | None:
+        """Extracción determinista que funciona con CUALQUIER texto, no sólo con los fixtures.
+
+        No inventa: el titular sale de la primera frase con contenido, los hechos son las
+        frases con datos concretos (cifras, entidades, fechas) y las opiniones se separan.
+        Devuelve None si el texto es sólo opinión (esa se registra aparte).
+        """
+        limpio = self._sanear(text)
+        frases = [f.strip() for f in re.split(r"(?<=[.!?])\s+|\n+", limpio) if len(f.strip()) > 25]
+        if not frases:
+            frases = [limpio[:200]] if limpio else ["(contenido vacío)"]
+
+        opinion_frases = [
+            f
+            for f in frases
+            if any(m in f.lower() for m in self._OPINION_MARKERS + self._OPINION_CONTEXT)
+        ]
+        inyectadas = [f for f in frases if self._es_inyeccion(f)]
+        hecho_frases = [f for f in frases if f not in opinion_frases and f not in inyectadas]
+        if not hecho_frases:
+            # Todo el contenido es opinión o instrucciones inyectadas: no se inventa nada.
+            return None
+
+        titulo = self._titulo(hecho_frases[0] if hecho_frases else frases[0])
+        resumen = " ".join(hecho_frases[:2])[:600] if hecho_frases else limpio[:600]
+
+        hechos: list[FactDraft] = []
+        for frase in hecho_frases:
+            if self._tiene_dato(frase):
+                hechos.append(FactDraft(statement=frase[:300], quote_or_reference=frase[:120]))
+            if len(hechos) >= 4:
+                break
+
+        fecha_evento = self._detectar_fecha(limpio)
+        entidades = self._detectar_entidades(hecho_frases)
+        es_opinion = bool(opinion_frases) and not hechos
+
+        return StoryDraft(
+            provisional_title=titulo,
+            neutral_summary=resumen,
+            facts=hechos,
+            source_published_at=published_at,
+            event_date=fecha_evento,
+            entities=entidades,
+            questions_to_verify=[
+                "¿Qué fecha exacta corresponde al acontecimiento?",
+                "¿Quién lo confirma de forma independiente?",
+                "¿Está disponible para el público o es un anuncio?",
+            ],
+            evidence_state="WITHOUT_CONFIRMATION",
+            is_opinion=es_opinion,
+            topic_key=_demo_topic_key(titulo),
+            novelty="NEW_EVENT" if hechos else "ANALYSIS",
+        )
+
+    @staticmethod
+    def _sanear(texto: str) -> str:
+        """Quita HTML y código embebido ANTES de extraer: el contenido es dato, no marcado."""
+        limpio = re.sub(r"(?is)<(script|style|iframe|object|embed)\b.*?</\1>", " ", texto)
+        limpio = re.sub(r"(?is)<[^>]+>", " ", limpio)
+        limpio = re.sub(r"(?i)\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", " ", limpio)
+        return re.sub(r"\s+", " ", limpio).strip()
+
+    @staticmethod
+    def _es_inyeccion(frase: str) -> bool:
+        """Detecta frases con órdenes o instrucciones dirigidas al sistema, no al lector."""
+        baja = frase.lower()
+        return any(marker in baja for marker in EditorialLLMProvider._INJECTION_MARKERS)
+
+    @staticmethod
+    def _titulo(frase: str) -> str:
+        titulo = re.sub(r"\s+", " ", frase).strip().rstrip(".")
+        if len(titulo) > 96:
+            corte = titulo[:96].rsplit(" ", 1)[0]
+            titulo = corte + "…"
+        return titulo or "Tema sin titular"
+
+    @staticmethod
+    def _tiene_dato(frase: str) -> bool:
+        """Una frase con cifras, porcentajes o entidades concrete es candidata a hecho."""
+        if re.search(r"\d", frase):
+            return True
+        return bool(re.search(r"\b(ha|han|anunci|present|lanz|public|abre|confirma|acuerda|"
+                             r"adquiere|crea|saca|consegui)\w*\b", frase, re.IGNORECASE))
+
+    def _detectar_fecha(self, texto: str) -> datetime | None:
+        match = self._DATE_PATTERNS[0].search(texto)
+        if match:
+            try:
+                return datetime.strptime(match.group(1), "%Y-%m-%d")
+            except ValueError:
+                return None
+        meses = {
+            "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+            "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11,
+            "diciembre": 12,
+        }
+        match = self._DATE_PATTERNS[1].search(texto)
+        if match:
+            try:
+                return datetime(int(match.group(3)), meses[match.group(2).lower()], int(match.group(1)))
+            except (ValueError, KeyError):
+                return None
+        match = self._DATE_PATTERNS[2].search(texto)
+        if match:
+            try:
+                return datetime(int(match.group(2)), meses[match.group(1).lower()], 1)
+            except (ValueError, KeyError):
+                return None
+        return None
+
+    @staticmethod
+    def _detectar_entidades(frases: list[str]) -> list[str]:
+        """Entidades: palabras capitalizadas que no son la primera de la frase."""
+        contadas: dict[str, int] = {}
+        for frase in frases:
+            palabras = frase.split()
+            for indice, palabra in enumerate(palabras):
+                limpia = re.sub(r"[^\wÁÉÍÓÚÜÑáéíóúüñ-]", "", palabra)
+                if indice == 0 or len(limpia) < 3 or not limpia[0].isupper():
+                    continue
+                if limpia.lower() in {"el", "la", "los", "las", "un", "una", "en", "y", "de", "del"}:
+                    continue
+                contadas[limpia] = contadas.get(limpia, 0) + 1
+        return [nombre for nombre, veces in contadas.items() if veces >= 1][:6]
 
     # ---------------------------------------------------------------- guion
     def draft_script(self, story: Story, claims: list[str], target_duration_s: int = 40) -> ScriptDraft:
@@ -238,7 +379,7 @@ class EditorialLLMProvider:
         verified_bits = [c.statement for c in story.claims if c.verification_status == "SUPPORTED"]
         unverified = [c.statement for c in story.claims if c.verification_status != "SUPPORTED"]
         lines: list[str] = []
-        lines.append(f"{story.title}.")
+        lines.append(f"{story.title.rstrip('. ')}.")
         lines.append("Esto acaba de pasar, y tiene más truco del que parece.")
         if verified_bits:
             lines.append("Lo que está confirmado: " + "; ".join(verified_bits) + ".")

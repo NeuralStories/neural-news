@@ -37,6 +37,14 @@ class DuplicateSource(ValueError):
         self.source = source
 
 
+class SourceNotAnalyzable(RuntimeError):
+    """La fuente sólo tiene información básica: no hay contenido del que extraer noticias.
+
+    No es un fallo reintentable: es el resultado esperado de un episodio o vídeo sin
+    transcripción. El trabajo termina con este mensaje y la fuente queda METADATA_ONLY.
+    """
+
+
 def detect_and_normalize(url: str) -> tuple[str, str | None]:
     """Devuelve (provider, external_id) y normaliza la URL canónica de la plataforma."""
     lowered = url.strip().lower()
@@ -265,12 +273,13 @@ def extract_stories_from_source(db: Session, source: Source) -> list[Story]:
     ).all()
     analyzable = [c for c in contents if c.content_type != "METADATA_ONLY"]
     if not analyzable:
-        raise RuntimeError(
+        raise SourceNotAnalyzable(
             "Esta fuente solo tiene información básica; añade una transcripción o un análisis "
             "antes de buscar noticias"
         )
 
     created: list[Story] = []
+    opinion_ya_registrada = False
     for content in analyzable:
         try:
             drafts = llm.extract_stories(content.text, published_at=source.published_at)
@@ -278,6 +287,12 @@ def extract_stories_from_source(db: Session, source: Source) -> list[Story]:
             source.metadata_json = {**source.metadata_json, "last_extraction_error": str(exc)}
             raise
         for draft in drafts:
+            if draft.is_opinion:
+                # Una sola opinión por fuente: un vídeo con transcripción y análisis
+                # no debe generar dos candidatos de opinión idénticos.
+                if opinion_ya_registrada:
+                    continue
+                opinion_ya_registrada = True
             story = _upsert_story(db, source, content, draft)
             if story is not None:
                 created.append(story)

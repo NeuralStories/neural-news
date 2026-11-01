@@ -26,6 +26,21 @@ from ..providers.safety import FetchBlocked, fetch_url_safely
 
 PREFERRED_LANGS = ("es", "es-419", "es-ES", "en", "en-US")
 
+# Cliente web interno del reproductor de YouTube: permite listar las pistas de
+# subtítulos (incluidas las automáticas ASR) de CUALQUIER vídeo, sin clave.
+INNERTUBE_URL = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
+INNERTUBE_CONTEXT = {
+    "context": {
+        "client": {
+            "clientName": "WEB",
+            "clientVersion": "2.20261001.00.00",
+            "hl": "es",
+            "gl": "ES",
+        }
+    }
+}
+VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
+
 
 def _fetch_text(url: str) -> str:
     """Descarga con el guardián SSRF y devuelve el cuerpo como texto UTF-8."""
@@ -194,4 +209,88 @@ def fetch_podcast_transcript_from_feed(feed_url: str, episode_external_id: str |
                 confidence="high",
                 segments=[],
             )
+    return None
+
+
+def _valid_video_id(video_id: str) -> bool:
+    return bool(VIDEO_ID_RE.match(video_id or ""))
+
+
+def youtube_caption_tracks(video_id: str) -> list[dict]:
+    """Lista las pistas de subtítulos del vídeo vía la API interna del
+    reproductor (incluye las automáticas ASR). Sin clave de API."""
+    if not _valid_video_id(video_id):
+        raise ValueError("Identificador de vídeo de YouTube no válido")
+    body = {**INNERTUBE_CONTEXT, "videoId": video_id}
+    response = httpx.post(INNERTUBE_URL, json=body, timeout=get_settings().fetch_timeout_s,
+                          headers={"Content-Type": "application/json"})
+    response.raise_for_status()
+    payload = response.json()
+    renderer = (payload.get("captions") or {}).get("playerCaptionsTracklistRenderer") or {}
+    tracks = renderer.get("captionTracks") or []
+    # Preferencia: castellano primero, y pistas manuales antes que automáticas
+    def sort_key(track: dict) -> tuple[int, int]:
+        lang = (track.get("languageCode") or "").lower()
+        lang_pref = 0 if lang.startswith("es") else (1 if lang.startswith("en") else 2)
+        is_asr = track.get("kind") == "asr"
+        return (lang_pref, 1 if is_asr else 0)
+    return sorted(tracks, key=sort_key)
+
+
+def parse_json3_events(payload: dict) -> list[SegmentDraft]:
+    """Convierte la respuesta json3 de subtítulos en segmentos con tiempos."""
+    segments: list[SegmentDraft] = []
+    for event in payload.get("events") or []:
+        segs = event.get("segs") or []
+        text = "".join(s.get("utf8", "") for s in segs).replace("\n", " ").strip()
+        if not text:
+            continue
+        start = int(event.get("tStartMs") or 0)
+        dur = int(event.get("dDurationMs") or 0)
+        segments.append(
+            SegmentDraft(text=text, start_ms=start, end_ms=start + dur if dur else None,
+                         sequence=len(segments))
+        )
+    return segments
+
+
+def fetch_youtube_transcript_auto(video_id: str, langs: tuple[str, ...] = PREFERRED_LANGS) -> ContentDraft | None:
+    """Transcripción AUTOMÁTICA para cualquier vídeo de YouTube:
+    1) pistas manuales vía timedtext (más fiables); 2) si no, las automáticas
+    ASR del reproductor. None si el vídeo no tiene subtítulos de ningún tipo."""
+    if not _valid_video_id(video_id):
+        raise ValueError("Identificador de vídeo de YouTube no válido")
+
+    # 1) Pistas manuales publicadas (canal más fiable)
+    manual = fetch_youtube_transcript(video_id, langs)
+    if manual is not None:
+        return manual
+
+    # 2) Cualquier pista (incluida ASR) vía el reproductor interno
+    try:
+        tracks = youtube_caption_tracks(video_id)
+    except (httpx.HTTPError, ValueError):
+        return None
+    for track in tracks:
+        base_url = track.get("baseUrl")
+        if not base_url:
+            continue
+        try:
+            response = httpx.get(f"{base_url}&fmt=json3", timeout=get_settings().fetch_timeout_s)
+            response.raise_for_status()
+            segments = parse_json3_events(response.json())
+        except (httpx.HTTPError, ValueError):
+            continue
+        if not segments:
+            continue
+        text = " ".join(seg.text for seg in segments)
+        is_asr = track.get("kind") == "asr"
+        return ContentDraft(
+            content_type="TRANSCRIPT",
+            text=text,
+            is_verbatim=True,
+            provider="youtube_asr" if is_asr else "youtube_captions",
+            confidence="medium" if is_asr else "high",
+            segments=segments,
+        )
     return None

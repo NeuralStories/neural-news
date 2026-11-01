@@ -9,10 +9,25 @@ from ..db import get_db
 from ..models import Claim, Job, Source, SourceContent, Story, StorySource
 from ..queue import enqueue
 from ..schemas import ProcessRequest, SourceCreate, SourceDetailOut, SourceOut
+from ..providers.safety import FetchBlocked
 from ..security import get_current_actor
 from ..services.sources import DuplicateSource, create_source
 from ..states import CONTENT_TYPE_LABELS, SOURCE_LABELS, STORY_LABELS
 from ..worker_tasks import ANALYZE_VIDEO, PROCESS_SOURCE  # noqa: F401  (ANALYZE_VIDEO usado)
+
+_auto_transcript_cache: dict = {}
+
+
+def _auto_transcript(video_id: str):
+    """Búsqueda automática de transcripción de YouTube (punto de inyección
+    para pruebas); usa el proveedor ASR/timedtext sin Docker ni claves."""
+    if video_id in _auto_transcript_cache:
+        return _auto_transcript_cache[video_id]
+    from ..providers.transcript import fetch_youtube_transcript_auto
+    draft = fetch_youtube_transcript_auto(video_id)
+    if draft is not None:
+        _auto_transcript_cache[video_id] = draft
+    return draft
 
 router = APIRouter(prefix="/api/v1/sources", tags=["sources"])
 
@@ -207,6 +222,8 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
             }
         return body
 
+    settings = get_settings()
+    from ..services.sources import _store_content
     existing = [
         c for c in db.scalars(
             select(SourceContent)
@@ -215,32 +232,29 @@ def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_curr
         ).all()
         if c.content_type == "TRANSCRIPT"
     ]
-    if existing:
-        return out(True, False, existing[0], "Ya existe una transcripción; se devuelve tal cual")
-
-    settings = get_settings()
-    from ..services.sources import _store_content
     try:
         if source.provider == "youtube":
-            if source.demo:
-                demo_t = next((c for c in db.scalars(
-                    select(SourceContent)
-                    .where(SourceContent.source_id == source.id,
-                           SourceContent.content_type == "TRANSCRIPT")
-                ).all()), None)
-                if demo_t is None:
-                    return out(False, False, None,
-                               "Fuente de demostración sin transcripción simulada almacenada")
-                return out(True, False, type("D", (), {
-                    "text": demo_t.text, "provider": demo_t.provider, "segments": [],
-                })(), "Fuente de demostración: la transcripción simulada ya está almacenada")
-            from ..providers.transcript import fetch_youtube_transcript
+            # Búsqueda automática para CUALQUIER vídeo: pistas manuales
+            # (timedtext) y automáticas ASR (reproductor interno). Descarga
+            # pública sin clave ni coste, como el artículo web.
             video_id = source.external_id or ""
-            draft = fetch_youtube_transcript(video_id)
-            if draft is None:
-                return out(False, False, None,
-                           "El vídeo no tiene una pista de subtítulos pública accesible "
-                           "(prueba con otro idioma o aporta la transcripción)")
+            draft = _auto_transcript(video_id)
+            if draft is not None:
+                _store_content(db, source, draft)
+                db.flush()
+                return out(True, True, draft, "Transcripción encontrada automáticamente y almacenada")
+            existing_demo = next((c for c in db.scalars(
+                select(SourceContent)
+                .where(SourceContent.source_id == source.id,
+                       SourceContent.content_type == "TRANSCRIPT")
+            ).all()), None)
+            if existing_demo is not None:
+                return out(True, False, type("D", (), {
+                    "text": existing_demo.text, "provider": existing_demo.provider, "segments": [],
+                })(), "Fuente de demostración: la transcripción simulada ya está almacenada")
+            return out(False, False, None,
+                       "El vídeo no tiene subtítulos (ni manuales ni automáticos) accesibles; "
+                       "aporta la transcripción manualmente")
         elif source.provider == "spotify":
             feed_url = (source.metadata or {}).get("feed_url")
             if not feed_url:

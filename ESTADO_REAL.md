@@ -53,8 +53,8 @@ Commits `4b9ec04`, `d9f89f6`, `ef01bd0`. **Estado: PARCIAL** — la cadena de pr
 
 ## 4. Pruebas (verificadas el 01/11/2026, tras NN-109)
 
-- **API:** **154 passed, 1 skipped, 0 fallos** — **E**, desde la raíz del repositorio (`python -m pytest tests -q`, 65 s).
-  - **Antes de NN-109: 139 passed, 1 skipped.** Las **15 pruebas nuevas** de `tests/test_nn109_defectos.py` cubren B1, B2, B3, B7, B8, B15 y B16, y se han verificado **rojas sobre el código original** (8 de 15 fallaban) y **verdes** después del arreglo.
+- **API:** **159 passed, 1 skipped, 0 fallos** — **E**, desde la raíz del repositorio (`python -m pytest tests -q`, 67 s).
+  - **Antes de NN-109: 139 passed, 1 skipped.** Las **20 pruebas nuevas** cubren B1, B2, B3, B7, B8, B15, B16, B19 y B20: 17 en `tests/test_nn109_defectos.py` (verificadas **rojas sobre el código original** — 8 de 15 fallaban — y **verdes** tras el arreglo) y 3 en `tests/test_schema_migrations.py` (el esquema sale solo de Alembic y coincide con los modelos).
   - ⚠ **Fragilidad pendiente (NN-114):** ejecutada desde `apps/api` la suite **falla 3 tests** (`ModuleNotFoundError: No module named 'tests.test_director_package'`) porque `apps/api/pyproject.toml` declara `testpaths = ["../../tests"]` pero los imports `from tests.*` no resuelven sin la raíz en `sys.path`. **Falta un `conftest.py` en la raíz o un `pythonpath` en la configuración de pytest.**
   - El skip corresponde al test de PostgreSQL real, que se activa con `NEURAL_TEST_POSTGRES`.
 - **Tipos (web):** `npx tsc --noEmit` → **0 errores** — **E**.
@@ -90,6 +90,7 @@ Todos **A** (verificados sobre el artefacto). **Estado**: `CERRADO` = corregido 
 | **B16** | `podcast:transcript` se leía del atributo `href` | `providers/transcript.py` | feedparser lo expone como `url`: **la transcripción de pódcast nunca se recuperó** | **CERRADO** — se aceptan `href` y `url` — **E** |
 | **B17** | «NeuralDotAI» (nombre previo a la reintegración) en 5 sitios visibles | `BackupModal.tsx:95`, `ReferencesTab.tsx:138,365`, `ResultTab.tsx:142`, `VoiceTab.tsx:22` | Violaba la regla de identidad F-01 del propio proyecto; el test original solo miraba 4 ficheros y no lo detectaba | **CERRADO** — la comprobación F-01 ahora recorre **todo** el árbol del Studio (más fuerte que la lista fija) — **E** |
 | **B18** | `BackupModal.tsx` sin usar | `features/studio/components/BackupModal.tsx` | **NO es código muerto**: es el «Centro de mantenimiento» (SHA-256 + descarga JSON), una capacidad real que la auditoría F-10 guarda | **ABIERTO por decisión** — se conserva; cablearlo es NN-113 |
+| **B20** | **La base de datos viva estaba desfasada respecto a los modelos**: `alembic_version` vacía y faltaba la columna `generated_takes.needs_review` | `main.py:41-42` (`Base.metadata.create_all()`) | `create_all()` solo crea tablas nuevas y **nunca añade columnas**: la base se creó antes de que existiera la migración `b3c1d9e4f7a2` y quedó desfasada en silencio. El Studio entero devolvía **500** («no such column») y **3 E2E fallaban**. Ninguna prueba lo detectaba | **CERRADO** — el arranque aplica `alembic upgrade head` y nunca `create_all`; la base viva se reparó (`stamp d4ce8c95781e` + `upgrade head`) y queda verificada: 31/31 tablas, 0 columnas de menos, `alembic check` sin diferencias. **Red de seguridad: `tests/test_schema_migrations.py` (3 pruebas)** — **E** |
 
 ### 5.2 Riesgos de plataforma (beta-go-live)
 

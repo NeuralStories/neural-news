@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,8 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .api import auth, batches, ops, projects, sources, stories
 from .config import get_settings
-from .db import get_engine
-from .models import Base
 
 # Los errores del servidor se registran en el log en vez de filtrarse al cliente
 # (hallazgo B7) y en vez de perderse por stderr (hallazgo P5).
@@ -19,6 +18,35 @@ logging.basicConfig(
     level=os.getenv("NEURAL_LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s %(levelname)-8s %(name)s %(message)s",
 )
+
+
+def ensure_schema() -> None:
+    """Aplica las migraciones pendientes: el esquema sale SOLO de Alembic.
+
+    Antes se usaba `Base.metadata.create_all()`, que solo crea tablas nuevas y
+    no añade columnas a las ya existentes. Una base de datos de una versión
+    anterior se quedaba desfasada en silencio y la aplicación fallaba con
+    «no such column» — fue lo que dejó el Studio entero devolviendo 500
+    (hallazgo P3/B20). Ahora el arranque aplica las migraciones pendientes y,
+    si no puede, lo dice en voz alta en vez de fingir que la base está bien.
+    """
+    migrations_dir = Path(__file__).resolve().parents[4] / "infra" / "migrations"
+    if not (migrations_dir / "env.py").exists():
+        raise RuntimeError(
+            f"No se encuentra el directorio de migraciones en {migrations_dir}. "
+            "El esquema solo puede aplicarse con Alembic; revise la instalación."
+        )
+    try:
+        from alembic import command
+        from alembic.config import Config
+    except ImportError as exc:  # pragma: no cover - dependencia declarada en pyproject
+        raise RuntimeError(
+            "Alembic es necesario para preparar el esquema: "
+            "instale el backend con `python -m pip install -e \".[dev]\"`."
+        ) from exc
+    cfg = Config(str(migrations_dir / "alembic.ini"))
+    cfg.set_main_option("script_location", str(migrations_dir))
+    command.upgrade(cfg, "head")
 
 
 def create_app() -> FastAPI:
@@ -36,10 +64,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # En la primera ejecución local (sin migraciones aplicadas) creamos el esquema.
-    # En producción usar Alembic (infra/migrations).
-    if settings.database_url.startswith("sqlite"):
-        Base.metadata.create_all(get_engine())
+    # El esquema se prepara con Alembic, nunca con create_all (ver ensure_schema).
+    ensure_schema()
 
     app.include_router(auth.router)
     app.include_router(sources.router)

@@ -2,9 +2,9 @@
 
 ## Última actualización
 
-2026-11-02 18:20 (Europe/Madrid) — **Fases 0–8 cerradas y NN-117.4/.6/.7/.8 completadas** (sin
-commitear). Todas las filas del plan maestro están **COMPLETADAS** salvo las declaradas fuera de
-alcance; el plan queda listo para el informe final.
+2026-11-02 21:30 (Europe/Madrid) — **Plan maestro cerrado**: las 95 filas están **COMPLETADAS**
+(0 PENDIENTES, 0 BLOQUEADAS) y `origin beta/v1` está al día en `a08c831`. Solo queda la decisión
+del propietario sobre R-26 y el remoto remoto.
 
 ## Capacidades disponibles
 
@@ -171,13 +171,18 @@ guardando checkpoint tras cada tarea completada.
 
 ## PRÓXIMA ACCIÓN EXACTA
 
-Commitear el lote verificado de la Fase 8 y de NN-117 (`.4`, `.6`, `.7`, `.8`) y empujarlo a
-`origin beta/v1` con el mensaje «NN-115/116 y NN-117: métricas, alertas, rutas de modelo,
-subtítulos, contradicciones y ADR de descartes». **Antes de commitear**, comprobar que
-`python -m pytest tests -q` sigue en exit 0 y que `npx playwright test` da 8/8 (el E2E que estaba
-corriendo se canceló porque una herramienta aplicó migraciones sobre la base viva; ya está
-corregido: `tools/exportar_openapi.py` usa una base aislada).
+**El plan maestro está cerrado**: las 95 filas están **COMPLETADAS**, ninguna PENDIENTE ni
+BLOQUEADA, y `origin beta/v1` está al día (`a08c831`).
 
-Después, cerrar el plan: revisar que **todas** las filas de `docs/agente/PLAN_MAESTRO.md` están
-COMPLETADAS o declaradas fuera de alcance, y dejar el informe final con las autorizaciones
-pendientes (mover `newsV2/` al control de versiones; crear un remoto remoto).
+Lo que queda no es una tarea del plan, sino **una decisión del propietario** (no se ejecuta sin
+autorización):
+
+1. **Mover `newsV2/` al control de versiones** (riesgo R-26): la gobernanza sigue fuera de todo
+   repositorio. Decidir entre (a) moverla a `neural-news/docs/governance/` y redirigir las
+   referencias, o (b) versionarla como repositorio propio.
+2. **Crear un remoto remoto (GitHub/GitLab)**: el remoto actual es local
+   (`.remotes/neural-news.git`); crear uno externo es una acción externa.
+
+Si ninguna de las dos se autoriza, el producto queda en el estado en que está y **no** hay más
+tareas del plan pendientes. Para retomar el trabajo: leer este `docs/agente/ESTADO.md` y seguir
+desde aquí.

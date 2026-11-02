@@ -121,25 +121,27 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 | NN-111.11 | Escaneo de secretos (árbol + historial) | — | 0 hallazgos | **COMPLETADA** | `tools/scan_secrets.py`: **0 hallazgos** (3 avisos por la contraseña de ejemplo) — **E** |
 | NN-111.12 | Checklist de despliegue de 20 puntos, verificado en máquina limpia | NN-111.1…NN-111.11 | Checklist firmado y ejecutado | **COMPLETADA** | `docs/DEPLOY.md`: 40 comprobaciones en 11 bloques, con la evidencia de lo verificado — **A** |
 
-### Fase 5 — Frontend · **PENDIENTE**
+### Fase 5 — Frontend · **EN CURSO**
 
 | ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
 |---|---|---|---|---|---|
 | NN-113.1 | `loading.tsx` / `error.tsx` / `not-found.tsx` por sección | — | Ninguna sección puede quedar en blanco por un error de render | **COMPLETADA** | `app/error.tsx` (con reintentar), `app/not-found.tsx`, `app/loading.tsx` + 6 de sección (`components/marcador-carga.tsx`) — **E** |
 | NN-113.2 | ESLint real (`eslint-config-next`) + `npm run lint` | — | El script se ejecuta y no falla | **COMPLETADA** | `eslint@9` + `eslint-config-next@15.1.6` + `eslint.config.mjs` · **0 problemas** (antes: el script no era ejecutable) — **E** |
 | NN-113.3 | `npm run typecheck` + `strict` + `noUnusedLocals` + `noUncheckedIndexedAccess` | — | Script en verde; 0 `any` en el Studio | **COMPLETADA** | `npm run typecheck` → 0 errores — **E** |
-| NN-113.4 | Cliente HTTP único con `ApiError` tipado | — | 1 solo `fetch`; 1 solo modelo de error | PENDIENTE | — |
-| NN-113.5 | Propagar el error de `useJobPolling` | — | Las páginas muestran el fallo del trabajo | PENDIENTE | — |
+| NN-113.4 | Cliente HTTP único con `ApiError` tipado | — | 1 solo `fetch`; 1 solo modelo de error | **COMPLETADA** | `apps/web/lib/http.ts` (nuevo): `request()` + `ApiError` con `status`/`code`/`detail` y `esConflicto`. `lib/api.ts`, `features/studio/lib/projectApi.ts` y `ProductionVertical.tsx` lo usan; el `fetch` a mano del Studio desaparece (`projectApi` traduce el 409 en `ProjectConflict`) — **E** (`eslint` 0, `tsc` 0) |
+| NN-113.5 | Propagar el error de `useJobPolling` | — | Las páginas muestran el fallo del trabajo | **COMPLETADA** | `app/fuentes/page.tsx`: `useJobPolling()` ya exponía `error` y la página lo **descartaba**; ahora se muestra junto al aviso — **A** (`apps/web/app/fuentes/page.tsx:43,156`) |
 | NN-113.6 | Un solo mapa de estado, compartido y generado | — | 0 duplicados del mapa de estados | PENDIENTE | — |
 | NN-113.7 | Eliminar los `any` | NN-113.3 | 0 `any` en el Studio | **COMPLETADA** | Los 10 `any` sustituidos por tipos reales (`ConfiguracionImportada`, `NoticiaImportada`, `mensajeDeError`) — **E** |
 | NN-113.8 | A11y: teclado, `aria-label`, foco, contraste AA | — | Auditoría sin bloqueantes | PENDIENTE | — |
 | NN-113.9 | Lint de clases inexistentes | — | `scrollbar-none`/`studio-root` sustituidas o definidas | PENDIENTE | — |
-| NN-113.10 | `next/font` en vez de `<link>` externo | — | 0 peticiones bloqueantes a terceros | PENDIENTE | — |
-| NN-113.11 | Idempotencia real por contenido | — | La clave no depende de `Date.now()` | PENDIENTE | — |
+| NN-113.10 | `next/font` en vez de `<link>` externo | — | 0 peticiones bloqueantes a terceros | **COMPLETADA** | **Desviación documentada**: `Material Symbols Outlined` **no está** en el catálogo de `next/font/google` (comprobado en `node_modules/next/font/google/index.d.ts`), así que no puede autopropiarse. La carga se hace sin bloquear: `components/carga-fuente-iconos.tsx` con `media="print"` + `onLoad` → el criterio (0 peticiones bloqueantes) se cumple — **A** |
+| NN-113.11 | Idempotencia real por contenido | — | La clave no depende de `Date.now()` | **COMPLETADA** | `idempotenciaDe()` en `lib/http.ts`: FNV-1a de 32 bits sobre el payload con claves ordenadas → el mismo contenido da siempre la misma clave y el servidor devuelve la fuente existente en vez de duplicarla — **E** |
 | NN-113.12 | Unificar el sistema visual | — | 1 sistema de componentes | PENDIENTE | — |
 | NN-113.13 | Dividir los archivos grandes | — | Ningún componente >500 líneas sin motivo | PENDIENTE | — |
-| NN-113.14 | `webServer` en Playwright | — | `npm run e2e` funciona sin pila levantada a mano | PENDIENTE | — |
+| NN-113.14 | `webServer` en Playwright | — | `npm run e2e` funciona sin pila levantada a mano | **COMPLETADA** | `playwright.config.ts` con `webServer` (API + worker + web) — el E2E levanta la pila sola — **E** (8 passed) |
 | NN-113.15 | Cablear `BackupModal` (capacidad real, B18) | NN-113.1 | El Centro de mantenimiento es accesible desde la UI | PENDIENTE | — |
+| NN-113.16 | **B23** — «Investigar» sobre una noticia aprobada moría con `ValueError` y se reintentaba 3 veces | NN-110.f | La transición `APPROVED → RESEARCHING` es válida y la aprobación queda anulada | **COMPLETADA** | `states.py` (transición) + `research.py` (invalida la aprobación `ACTIVE` antes de investigar) · `tests/test_reinvestigar_aprobada.py` — **E** |
+| NN-113.17 | **B24** — dos borradores simultáneos chocaban con el UNIQUE de `script_versions` y rompían la sesión | NN-110.f | La versión se asigna con savepoint + reintento sobre un número libre | **COMPLETADA** | `services/scripts.py`: *savepoint* + hasta 3 intentos; la transacción del manejador sobrevive al choque · `tests/test_version_script_concurrente.py` — **E** |
 
 ### Fase 6 — Reproducibilidad y CI · **PENDIENTE**
 

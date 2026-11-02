@@ -1,31 +1,6 @@
 "use client";
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    credentials: "same-origin",
-    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
-    ...init,
-  });
-  if (response.status === 401) {
-    const error = new Error("Sesión no iniciada");
-    (error as Error & { status?: number }).status = 401;
-    throw error;
-  }
-  if (!response.ok) {
-    let detail = "Ha ocurrido un error inesperado";
-    try {
-      const data = await response.json();
-      detail = typeof data.detail === "string" ? data.detail : data.detail?.message || JSON.stringify(data.detail ?? data);
-    } catch {
-      /* respuesta sin JSON */
-    }
-    const error = new Error(detail);
-    (error as Error & { status?: number }).status = response.status;
-    throw error;
-  }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
-}
+import { request } from "./http";
 
 export const api = {
   me: () => request<import("./types").Me>("/v1/auth/me"),
@@ -35,7 +10,7 @@ export const api = {
   addSource: (payload: Record<string, unknown>, idempotencyKey?: string) =>
     request<{ source: import("./types").SourceListItem; job_id: number | null; created: boolean; message: string | null }>(
       "/v1/sources",
-      { method: "POST", body: JSON.stringify(payload), headers: { "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) } },
+      { method: "POST", body: payload, idempotencyKey },
     ),
   listSources: (query = "") => request<{ total: number; items: import("./types").SourceListItem[] }>(`/v1/sources${query}`),
   getSource: (id: number) => request<import("./types").SourceDetail>(`/v1/sources/${id}`),

@@ -2,8 +2,9 @@
 
 ## Última actualización
 
-2026-11-02 14:30 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) en curso;
-Fase 6 (NN-114) y Fase 8 (NN-115/116) pendientes.
+2026-11-02 15:30 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) **EN CURSO**
+(`.1`–`.5`, `.7`, `.10`, `.11`, `.14`, `.16`, `.17` completadas); Fase 6 (NN-114) y Fase 8
+(NN-115/116) pendientes.
 
 ## Capacidades disponibles
 
@@ -23,14 +24,30 @@ Fase 6 (NN-114) y Fase 8 (NN-115/116) pendientes.
 **NN-113 — Frontend (Fase 5).** EN CURSO.
 
 Hecho y verificado: `.1` (fronteras de error y estados de carga), `.2` (ESLint ejecutable),
-`.3` (script `typecheck`), `.7` (0 `any`), `.10` (fuente de iconos sin bloquear el render),
-`.14` (`webServer` en Playwright).
+`.3` (script `typecheck`), `.4` (cliente HTTP único con `ApiError`), `.5` (error del trabajo
+propagado), `.7` (0 `any`), `.10` (fuente de iconos sin bloquear el render), `.11` (idempotencia
+por contenido), `.14` (`webServer` en Playwright), `.16` (B23), `.17` (B24).
 
-Pendiente en esta fase: `.4` (cliente HTTP único con error tipado), `.5` (propagar el error del
-trabajo), `.6` (mapa de estado compartido), `.8` (a11y), `.11` (idempotencia por contenido),
-`.12` (sistema visual único), `.13` (dividir archivos grandes), `.15` (cablear `BackupModal`).
+Pendiente en esta fase: `.6` (mapa de estado compartido), `.8` (a11y), `.9` (lint de clases
+inexistentes), `.12` (sistema visual único), `.13` (dividir archivos grandes: `features/studio/App.tsx`
+= 840 líneas y `NewsEditorialTab.tsx` = 759), `.15` (cablear `BackupModal`).
 
 ## Último punto verificado
+
+**NN-113.4 / .5 / .11 + B23 (NN-113.16) + B24 (NN-113.17) — COMPLETADAS con evidencia E.**
+
+- `python -m pytest tests -q` → **258 passed, 1 skipped** (259 tests colectados), **exit 0**.
+- `npx eslint .` → **0 problemas**. `npx tsc --noEmit` → **0 errores**.
+- `npx playwright test` → **8 passed, 0 fallos** (exit 0).
+- **B23**: `APPROVED → RESEARCHING` era una transición inválida → el trabajo moría con
+  `ValueError: Transición de estado no permitida` y **se reintentaba 3 veces**. Ahora la transición
+  es válida y `research_story` **invalida la aprobación activa** antes de investigar (igual que al
+  editar el guion).
+- **B24**: el número de versión de guion se calculaba «último + 1»: dos borradores simultáneos
+  chocaban con el UNIQUE `(story_id, version)` y la sesión quedaba rota («This Session's transaction
+  has been rolled back…»). Ahora el intento va dentro de un **savepoint**: si choca, sólo se revierte
+  ese savepoint y se recalcula el número libre.
+- Los dos los destapó el **log del worker**, no las pruebas: **un E2E en verde no basta**.
 
 **NN-113.2 / .3 / .7 — COMPLETADAS con evidencia E.**
 
@@ -52,31 +69,29 @@ E2E `beta-journey` (falló 1 de 7 en una pasada).
 
 ## Trabajo a medias sin verificar
 
-- **NN-113**: el E2E completo se está reejecutando tras el arreglo de B22 (el resultado está en la
-  salida de la última ejecución).
+- **NN-113**: las tareas `.4`/`.5`/`.11` y los defectos B23/B24 están verificados pero **sin commitear**
+  (el commit se hace justo después de este checkpoint).
 - **NN-114**: `pytest.ini` en la raíz (la suite ya pasa desde cualquier directorio),
   `scripts/bootstrap.ps1`, `scripts/start.ps1`, `scripts/stop.ps1` y `.github/workflows/ci.yml`
   **escritos pero sin ejecutar de extremo a extremo**.
 
 ## Archivos modificados desde el último checkpoint
 
-Sin commitear (desde `23d70c0`):
+Sin commitear (desde `e7b3588`):
 
-- `apps/web/` — `eslint.config.mjs`, `package.json` (+ `typecheck`, `lint` real), `package-lock.json`,
-  `playwright.config.ts` (webServer), `app/error.tsx`, `app/not-found.tsx`, `app/loading.tsx`,
-  `app/ops/page.tsx` + `app/ops/loading.tsx`, `app/*/loading.tsx` (6), `components/marcador-carga.tsx`,
-  `components/carga-fuente-iconos.tsx`, `components/app-shell.tsx` (enlace «Operación»),
-  `lib/api.ts` (+ `health()`), `features/studio/**` (limpieza de lint, `types.ts` + `ConfiguracionImportada`,
-  `utils/errorMessage.ts`), `app/noticias/[id]/page.tsx` (carrera B22).
-- `apps/api/` — `health.py` (comprobaciones reales), `main.py` (las usa), `services/budget.py`
-  (costes por proveedor), `worker_tasks.py` (presupuesto antes de la llamada), `pyproject.toml`
-  (argon2-cffi), `pytest.ini` nuevo en la raíz.
-- `scripts/` — `db_backup.py`, `bootstrap.ps1`, `start.ps1`, `stop.ps1`.
-- `tests/` — `test_presupuesto.py`, `test_salud.py`, `test_queue_leases.py`, `test_boveda.py`,
-  `test_argon2id.py`, `test_zona_segura.py`, `test_red_descargas.py`, `test_limite_entradas.py`,
-  `test_entorno_beta.py`, `test_nn109_defectos.py`, `test_logging_observabilidad.py`.
-- `.github/workflows/ci.yml` — nuevo.
-- `docs/agente/` — `PLAN_MAESTRO.md`, `REGISTRO.md`, `ESTADO.md`.
+- `apps/web/lib/http.ts` — **nuevo**: cliente HTTP único (`request`, `ApiError`, `idempotenciaDe`).
+- `apps/web/lib/api.ts` — deja de tener su propio `fetch`; usa `lib/http.ts`.
+- `apps/web/features/studio/lib/projectApi.ts` — usa `lib/http.ts`; traduce el 409 en `ProjectConflict`.
+- `apps/web/features/studio/components/ProductionVertical.tsx` — 0 `fetch` a mano.
+- `apps/web/app/fuentes/page.tsx` — muestra el error del trabajo (NN-113.5) e idempotencia por
+  contenido (NN-113.11).
+- `apps/api/src/neuralnews/states.py` — transición `APPROVED → RESEARCHING` (B23).
+- `apps/api/src/neuralnews/services/research.py` — invalida la aprobación al reinvestigar (B23).
+- `apps/api/src/neuralnews/services/scripts.py` — savepoint + reintento del número de versión (B24).
+- `tests/test_reinvestigar_aprobada.py` — **nuevo** (B23).
+- `tests/test_version_script_concurrente.py` — **nuevo** (B24).
+- `docs/agente/PLAN_MAESTRO.md`, `docs/agente/REGISTRO.md`, `docs/agente/ESTADO.md`.
+- `tools/diag_script.py` — **eliminado** (script de diagnóstico temporal).
 
 ## Bloqueos y lo que se necesita para resolverlos
 
@@ -99,11 +114,9 @@ guardando checkpoint tras cada tarea completada.
 
 ## PRÓXIMA ACCIÓN EXACTA
 
-Comprobar el resultado del E2E que se está ejecutando en segundo plano
-(`npx playwright test` en `neural-news/apps/web`): debe dar **7 passed**. Si es verde, confirmar
-`npx eslint .` → 0 problemas y `npx tsc --noEmit` → 0 errores, y **commitear** todo lo de la Fase 5
-con el mensaje «NN-113: lint ejecutable, tipos sin `any`, fronteras de error y carrera del guion
-corregida», empujando a `origin beta/v1`. Después, seguir con **NN-113.4** (cliente HTTP único con
-`ApiError` tipado en `apps/web/lib/api.ts`, que hoy conviven con `projectApi.ts` y con un `fetch` a
-mano en `ProductionVertical.tsx`) y **NN-113.5** (propagar el error del trabajo: `useJobPolling` ya
-lo expone, pero `app/fuentes/page.tsx:25` lo descarta).
+Commitear lo verificado de NN-113 (`.4`, `.5`, `.11`, B23 y B24) y empujarlo a `origin beta/v1`
+con el mensaje «NN-113: cliente HTTP único, idempotencia por contenido y dos fallos de concurrencia
+corregidos (B23, B24)». Después, seguir con **NN-113.6** (mapa de estado compartido: buscar los
+duplicados del mapa de estados entre `lib/hooks.ts`, `features/studio/constants.ts` y
+`features/studio/types.ts`) y **NN-113.13** (dividir `features/studio/App.tsx`, 840 líneas, y
+`NewsEditorialTab.tsx`, 759).

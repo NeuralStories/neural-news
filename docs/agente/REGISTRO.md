@@ -223,6 +223,48 @@ entra, comprobar que el código de origen hace lo que dice y que se usa**, y tra
 
 ---
 
+## 2026-11-02 — B23 y B24: dos fallos que sólo aparecieron al ejecutar el E2E
+
+Los dos los destapó el **log del E2E**, no las pruebas: el E2E daba verde mientras el worker
+registraba errores por debajo. Merece la pena señalar que **un E2E en verde no basta**: el log del
+worker es parte de la evidencia.
+
+### B23 — «Investigar» sobre una noticia aprobada fallaba
+
+```
+[worker] job #106 → RETRYABLE_FAILED — ValueError: Transición de estado no permitida
+        en story: APPROVED → RESEARCHING
+```
+
+`APPROVED → RESEARCHING` no era una transición válida. El trabajo moría con un `ValueError` confuso
+y **se reintentaba tres veces** sin explicar por qué. En demo las noticias se fusionan por tema, así
+que la segunda prueba del E2E encontraba la noticia ya aprobada.
+
+**Decisión:** reinvestigar una noticia aprobada es **legítimo** (puede haber evidencia nueva) y, como
+al editar el guion, la aprobación queda **anulada**: hay que volver a aprobarla. Se añade la
+transición y se invalida la aprobación activa en `research_story`.
+
+### B24 — dos borradores simultáneos chocaban con la restricción UNIQUE
+
+```
+Original exception was: (sqlite3.IntegrityError) UNIQUE constraint failed:
+        script_versions.story_id, script_versions.version
+```
+
+El número de versión se calculaba como «el último + 1»: lectura y escritura separadas, con una
+ventana de carrera. Al chocar, la sesión quedaba rota y el trabajo se perdía con un error interno
+(*«This Session's transaction has been rolled back due to a previous exception during flush»*).
+
+**Decisión:** el intento se hace dentro de un **savepoint**: si choca, sólo se revierte ese
+savepoint (la transacción del manejador sigue viva) y se recalcula el número libre. Verificado
+rojo→verde con una prueba que reproduce la carrera.
+
+**Lección:** el mecanismo de prueba (un E2E que espera a su trabajo) era más estrecho que el
+escenario real (dos workers procesando la misma noticia). Los dos fallos eran **del producto**, no de
+las pruebas, y sólo se venían cuando había concurrencia de verdad.
+
+---
+
 ## 2026-11-02 — Lección de método (reiterada)
 
 Tres de los hallazgos críticos de la Fase 2 y de la Fase 3 aparecieron **al ejecutar**, no al leer

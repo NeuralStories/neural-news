@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { idempotenciaDe } from "@/lib/http";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { SourceDetail, SourceListItem } from "@/lib/types";
 
@@ -38,7 +39,7 @@ export default function FuentesPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { waiting, poll } = useJobPolling();
+  const { waiting, poll, error: jobError } = useJobPolling();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -59,7 +60,10 @@ export default function FuentesPage() {
     setError(null);
     setNotice(null);
     try {
-      const key = `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      // La clave de idempotencia se deriva del **contenido**, no del reloj
+      // (NN-113.11): con `Date.now()` cada pulsación creaba una fuente
+      // distinta y la idempotencia del servidor nunca se ejercía.
+      const key = idempotenciaDe(payload);
       const result = await api.addSource(payload, key);
       if (result.message) setNotice(result.message);
       else setNotice("Fuente registrada; el análisis está en marcha.");
@@ -149,6 +153,9 @@ export default function FuentesPage() {
         </details>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
+      {/* El error del trabajo en cola ya no se descarta (NN-113.5): si el
+          análisis falla, se dice por qué. */}
+      {jobError && <p className="text-sm text-red-400">{jobError}</p>}
         {notice && <p className="text-sm text-emerald-400">{notice}</p>}
         {waiting !== null && <p className="text-sm text-sky-400">Analizando la fuente (trabajo #{waiting})…</p>}
       </section>

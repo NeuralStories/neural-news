@@ -6,6 +6,7 @@ Crear una nueva versión anula la aprobación vigente: hay que volver a aprobar.
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
@@ -98,24 +99,45 @@ def _create_version(
     actor_id: str,
     target_duration_s: int | None,
 ) -> ScriptVersion:
-    current = latest_version(db, story.id)
-    version_number = (current.version if current else 0) + 1
-    _ensure_script_draft_state(db, story)
-    version = ScriptVersion(
-        story_id=story.id,
-        version=version_number,
-        content=content.strip(),
-        target_duration_s=target_duration_s or estimate_duration(content.strip()),
-        language="es-ES",
-        author_type=author_type,
-        content_hash=content_hash(content.strip()),
+    """Crea una versión de guion con un número **único**.
+
+    El número se calcula como «el último + 1», lo que tiene una ventana de
+    carrera: dos borradores simultáneos sobre la misma noticia calculan el mismo
+    número y chocan con la restricción UNIQUE
+    (`script_versions.story_id, script_versions.version`). Cuando eso pasaba, la
+    sesión quedaba rota y el trabajo se perdía con un error interno.
+
+    Ahora el intento se hace dentro de un *savepoint*: si choca, sólo se
+    revierte ese savepoint (la transacción del manejador sigue viva) y se
+    recalcula el número (hallazgo B24).
+    """
+    for _intento in range(3):
+        current = latest_version(db, story.id)
+        version_number = (current.version if current else 0) + 1
+        _ensure_script_draft_state(db, story)
+        try:
+            with db.begin_nested():
+                version = ScriptVersion(
+                    story_id=story.id,
+                    version=version_number,
+                    content=content.strip(),
+                    target_duration_s=target_duration_s or estimate_duration(content.strip()),
+                    language="es-ES",
+                    author_type=author_type,
+                    content_hash=content_hash(content.strip()),
+                )
+                db.add(version)
+                db.flush()
+        except IntegrityError:
+            # Otro borrador se creó a la vez: se recalcula el número libre.
+            continue
+        db.add(AuditLog(event="script_version_created", actor_id=actor_id, detail={
+            "story_id": story.id, "version": version_number, "author_type": author_type,
+        }))
+        return version
+    raise RuntimeError(
+        "No se ha podido asignar un número de versión de guion libre tras varios intentos"
     )
-    db.add(version)
-    db.flush()
-    db.add(AuditLog(event="script_version_created", actor_id=actor_id, detail={
-        "story_id": story.id, "version": version_number, "author_type": author_type,
-    }))
-    return version
 
 
 def save_user_edit(

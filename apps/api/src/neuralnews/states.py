@@ -28,7 +28,10 @@ STORY_TRANSITIONS: dict[str, set[str]] = {
     "RESEARCHING": {"REVIEW_REQUIRED", "SCRIPT_DRAFT", "RESEARCHING", "REJECTED"},
     "REVIEW_REQUIRED": {"SCRIPT_DRAFT", "RESEARCHING", "REJECTED"},
     "SCRIPT_DRAFT": {"APPROVED", "RESEARCHING", "REJECTED"},
-    "APPROVED": {"SCRIPT_DRAFT", "REJECTED"},
+    # APPROVED → RESEARCHING: reinvestigar una noticia aprobada es legítimo
+    # (puede haber evidencia nueva). La aprobación queda anulada, igual que
+    # cuando se edita el guion (hallazgo B23).
+    "APPROVED": {"SCRIPT_DRAFT", "RESEARCHING", "REJECTED"},
     "REJECTED": set(),
 }
 

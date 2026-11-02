@@ -83,6 +83,21 @@ def score_story(db: Session, story: Story) -> float:
 
 def research_story(db: Session, story: Story) -> Story:
     """Ejecuta la investigación de las afirmaciones de una noticia."""
+    if story.status == "APPROVED":
+        # Reinvestigar una noticia **aprobada** es legítimo: puede haber
+        # evidencia nueva. Como al editarla, la aprobación queda anulada y
+        # hay que volver a aprobarla. Antes esto lanzaba «transición no
+        # permitida APPROVED → RESEARCHING» y el trabajo fallaba y se
+        # reintentaba tres veces sin explicar por qué (hallazgo B23).
+        from ..models import Approval
+
+        approval = db.scalar(
+            select(Approval).where(
+                Approval.story_id == story.id, Approval.status == "ACTIVE"
+            )
+        )
+        if approval is not None:
+            approval.status = "INVALIDATED"
     assert_transition("story", story.status, "RESEARCHING")
     story.status = "RESEARCHING"
     db.flush()

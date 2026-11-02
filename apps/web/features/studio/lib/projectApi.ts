@@ -1,9 +1,16 @@
 'use client';
 
+import { ApiError, request } from '@/lib/http';
+
 /**
  * Cliente de la API de proyectos (NN-107 F1) para el Studio integrado.
+ *
  * Misma origen (`/api/v1/...`, proxada por next.config.ts): una sola cookie,
  * una sola base de datos, ninguna redacción paralela.
+ *
+ * Usa el **cliente HTTP común** (`@/lib/http`): antes este fichero tenía su
+ * propio `fetch` con otro modelo de error, y el Studio tenía un tercer `fetch`
+ * a mano en `ProductionVertical.tsx`. Ahora hay uno solo.
  */
 
 export interface ProjectStepState {
@@ -46,26 +53,17 @@ export class ProjectConflict extends Error {
   }
 }
 
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    credentials: 'same-origin',
-    headers: init?.body && !(init.body instanceof FormData)
-      ? { 'Content-Type': 'application/json', ...(init.headers ?? {}) }
-      : init?.headers,
-    ...init,
-  });
-  if (response.status === 409) {
-    const detail = (await response.json().catch(() => null))?.detail;
-    throw new ProjectConflict(Number(detail?.current_revision ?? 0));
+/** Llama a la API de proyectos y traduce el 409 en `ProjectConflict`. */
+async function call<T>(path: string, init: Parameters<typeof request>[1] = {}): Promise<T> {
+  try {
+    return await request<T>(path, init);
+  } catch (err) {
+    if (err instanceof ApiError && err.esConflicto) {
+      const detalle = err.detail as { current_revision?: number } | undefined;
+      throw new ProjectConflict(Number(detalle?.current_revision ?? 0));
+    }
+    throw err;
   }
-  if (!response.ok) {
-    const detail = (await response.json().catch(() => null))?.detail;
-    const message =
-      typeof detail === 'string' ? detail : detail?.message ?? `Error ${response.status}`;
-    throw new Error(message);
-  }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
 export const projectApi = {

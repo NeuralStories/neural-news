@@ -8,6 +8,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useJobPolling } from '@/lib/hooks';
+import { request } from '@/lib/http';
 import {
   ProjectConflict,
   projectApi,
@@ -174,15 +175,21 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
     });
 
   const loadGraphics = async () => {
-    const res = await fetch(`/api/v1/projects/${projectId}/graphics`, { credentials: 'same-origin' });
-    if (res.ok) setGraphics((await res.json()).items ?? []);
+    const datos = await request<{ items: Array<{ id: number; title: string; status: string }> }>(
+      `/api/v1/projects/${projectId}/graphics`,
+    );
+    setGraphics(datos.items ?? []);
   };
   const loadMontage = async () => {
-    const res = await fetch(`/api/v1/projects/${projectId}/montage`, { credentials: 'same-origin' });
-    if (!res.ok) return null;
-    const datos = await res.json();
-    setMontageState(datos);
-    return datos;
+    try {
+      const datos = await request<NonNullable<typeof montageState>>(
+        `/api/v1/projects/${projectId}/montage`,
+      );
+      setMontageState(datos);
+      return datos;
+    } catch {
+      return null;
+    }
   };
   useEffect(() => {
     void loadGraphics();
@@ -192,20 +199,14 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
 
   const createGraphic = () =>
     run('graphic', async () => {
-      const res = await fetch(`/api/v1/projects/${projectId}/graphics`, {
+      await request(`/api/v1/projects/${projectId}/graphics`, {
         method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           title: graphicTitle,
           chart_type: 'BAR',
           series: [{ label: graphicLabel, value: Number(graphicValue.replace(',', '.')), unit: graphicUnit }],
-        }),
+        },
       });
-      if (!res.ok) {
-        const detail = (await res.json().catch(() => null))?.detail;
-        throw new Error(typeof detail === 'string' ? detail : 'No se pudo crear el gráfico');
-      }
       setGraphicValue('');
       await loadGraphics();
     });
@@ -214,14 +215,9 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
     run('montage', async () => {
       // El montaje lo hace el worker (gate G3): la API encola y responde al
       // instante. FFmpeg puede tardar minutos.
-      const res = await fetch(`/api/v1/projects/${projectId}/montage`, {
-        method: 'POST', credentials: 'same-origin',
+      const body = await request<{ job_id: number }>(`/api/v1/projects/${projectId}/montage`, {
+        method: 'POST',
       });
-      if (!res.ok) {
-        const detail = (await res.json().catch(() => null))?.detail;
-        throw new Error(typeof detail === 'string' ? detail : 'No se pudo encolar el montaje');
-      }
-      const body = await res.json();
       const info = await poll(body.job_id);
       const estado = await loadMontage();
       if (info.status !== 'DONE') {

@@ -102,24 +102,24 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 | NN-110.c | `transcribe_source` → `202 + job_id` | NN-110.b | El handler responde en <2 s; la UI muestra el progreso y el resultado | **COMPLETADA** | `test_transcribe_responde_de_inmediato` (el handler tarda <1 s con un proveedor lento) · UI: `/fuentes` sigue el trabajo y distingue aviso de error — **E** |
 | NN-110.d | `build_montage` → `202 + job_id` + `ffprobe` al worker | NN-110.b | Ídem; el MP4 importado nunca se destruye | **COMPLETADA** | `tests/test_montage.py` y `test_transiciones_movimiento.py` reescritos al recorrido encolar→worker→comprobar · E2E **7 passed** — **E** |
 | NN-110.e | Logging estructurado + motivo de fallo normalizado | NN-110.a | El fallo queda en `Job.error` legible y en el log estructurado | **COMPLETADA** | `logging_setup.py` (JSON por evento) + columna `jobs.error_kind` con migración `c4d2e8f1a5b6` · `tests/test_logging_observabilidad.py` (6) · traza JSON verificada en ejecución real — **E** |
-| NN-110.f | Verificación de latencia y E2E del recorrido | NN-110.c, NN-110.d | p95 < 2 s por endpoint; `beta-journey` en verde | PENDIENTE | — |
+| NN-110.f | Verificación de latencia y E2E del recorrido | NN-110.c, NN-110.d | p95 < 2 s por endpoint; `beta-journey` en verde | **COMPLETADA** | `tests/test_latencia_handlers.py` (5) con el proveedor lento a propósito · `e2e/beta-journey.spec.ts` · suite **187 passed, 1 skipped** · E2E **8 passed** — **E** |
 
 ### Fase 4 — Beta-go-live · **PENDIENTE**
 
 | ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
 |---|---|---|---|---|---|
-| NN-111.1 | `NEURAL_ENV=local\|beta\|prod` gobierna demo, cookie, allowlist y esquema; el arranque **falla** si la configuración es incoherente | NN-109.7 | Sin `NEURAL_ENV=prod` la app no arranca con demo activo o cookie insegura | PENDIENTE | — |
-| NN-111.2 | Cookie `secure`/`SameSite`/`dominio` por entorno | NN-111.1 | Sin `secure=False` hardcodeado | PENDIENTE | — |
-| NN-111.3 | `require_demo_disabled` aplicado a las rutas de pago/servicio externo | NN-111.1 | 0 usos → ≥1 uso real, con test | PENDIENTE | — |
-| NN-111.4 | Esquema **solo** por Alembic | NN-109.15 | `upgrade → downgrade → upgrade` verde en PG limpio | PENDIENTE | — |
-| NN-111.5 | Paridad SQLite/PostgreSQL | NN-111.4 | El esquema de local y de CI es el de producción | PENDIENTE | — |
-| NN-111.6 | Descargas con streaming y corte real de bytes | — | El cuerpo no se carga entero en memoria antes de recortar | PENDIENTE | — |
-| NN-111.7 | Mitigar DNS-rebinding (IP fijada o proxy de salida) | — | Test que cambia la resolución entre validar y conectar | PENDIENTE | — |
-| NN-111.8 | Documentar la allowlist de red | — | `docs/SECURITY.md` recoge la lista y su motivo | PENDIENTE | — |
+| NN-111.1 | `NEURAL_ENV=local\|beta\|prod` gobierna demo, cookie, allowlist y esquema; el arranque **falla** si la configuración es incoherente | NN-109.7 | Sin `NEURAL_ENV=prod` la app no arranca con demo activo o cookie insegura | **COMPLETADA** | `Settings.comprobar()` en el arranque de API y worker · `tests/test_entorno_beta.py` — **E** |
+| NN-111.2 | Cookie `secure`/`SameSite`/`dominio` por entorno | NN-111.1 | Sin `secure=False` hardcodeado | **COMPLETADA** | `Secure` fuera de local; `Domain`/`SameSite` configurables — **E** |
+| NN-111.3 | `require_demo_disabled` aplicado a las rutas de pago/servicio externo | NN-111.1 | 0 usos → ≥1 uso real, con test | **COMPLETADA** | `/auth/demo` sólo en local; `require_paid_services` en `research`/`draft`/`analyze`; presupuesto con demo → 400 — **E** |
+| NN-111.4 | Esquema **solo** por Alembic | NN-109.15 | `upgrade → downgrade → upgrade` verde en PG limpio | **COMPLETADA** | Ejecutado sobre `nn_beta_check` (PostgreSQL limpio): cadena de 4 migraciones, 32 tablas — **E** |
+| NN-111.5 | Paridad SQLite/PostgreSQL | NN-111.4 | El esquema de local y de CI es el de producción | **COMPLETADA** | `tools/compare_schema.py`: 31/31 tablas y 0 diferencias en **ambos** motores — **E** |
+| NN-111.6 | Descargas con streaming y corte real de bytes | — | El cuerpo no se carga entero en memoria antes de recortar | **COMPLETADA** | Lectura por trozos con parada en el límite (`tests/test_red_descargas.py`) — **E** |
+| NN-111.7 | Mitigar DNS-rebinding (IP fijada o proxy de salida) | — | Test que cambia la resolución entre validar y conectar | **COMPLETADA** | Se comprueba la IP real de la conexión contra las validadas; se descarta si no encaja — **E** |
+| NN-111.8 | Documentar la allowlist de red | — | `docs/SECURITY.md` recoge la lista y su motivo | **COMPLETADA** | `SECURITY.md` §1.1: motivo, alcance, riesgo asumido y lista actual — **A** |
 | NN-111.9 | Argon2id para contraseñas | NN-117 | Hash argon2 con fallback PBKDF2 | PENDIENTE | — |
-| NN-111.10 | Rate limit en `/auth/login` | — | Límite de intentos con respuesta clara | PENDIENTE | — |
-| NN-111.11 | Escaneo de secretos (árbol + historial) | — | 0 hallazgos | PENDIENTE | — |
-| NN-111.12 | Checklist de despliegue de 20 puntos, verificado en máquina limpia | NN-111.1…NN-111.11 | Checklist firmado y ejecutado | PENDIENTE | — |
+| NN-111.10 | Rate limit en `/auth/login` | — | Límite de intentos con respuesta clara | **COMPLETADA** | `rate_limit.py`: 5 fallos → 429 con enfriamiento; en memoria, por proceso — **E** |
+| NN-111.11 | Escaneo de secretos (árbol + historial) | — | 0 hallazgos | **COMPLETADA** | `tools/scan_secrets.py`: **0 hallazgos** (3 avisos por la contraseña de ejemplo) — **E** |
+| NN-111.12 | Checklist de despliegue de 20 puntos, verificado en máquina limpia | NN-111.1…NN-111.11 | Checklist firmado y ejecutado | **COMPLETADA** | `docs/DEPLOY.md`: 40 comprobaciones en 11 bloques, con la evidencia de lo verificado — **A** |
 
 ### Fase 5 — Frontend · **PENDIENTE**
 

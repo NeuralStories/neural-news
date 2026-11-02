@@ -48,6 +48,10 @@ def ensure_schema() -> None:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    # La configuración incoherente para el entorno impide arrancar (ADR-017).
+    # Es preferible no levantar a levantar exponiendo el modo demo o una
+    # cookie de sesión sin cifrar por HTTPS.
+    settings.comprobar()
     app = FastAPI(
         title="neural.news API",
         version=__version__,

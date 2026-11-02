@@ -13,7 +13,7 @@ from ..models import Claim, Job, Source, SourceContent, Story, StorySource
 from ..queue import enqueue
 from ..schemas import ProcessRequest, SourceCreate, SourceDetailOut, SourceOut
 from ..providers.safety import FetchBlocked  # noqa: F401  (re-exportado para los routers)
-from ..security import get_current_actor
+from ..security import get_current_actor, require_paid_services
 from ..services.sources import DuplicateSource, create_source
 from ..states import CONTENT_TYPE_LABELS, SOURCE_LABELS, STORY_LABELS
 from ..worker_tasks import (  # noqa: F401  (ANALYZE_VIDEO re-exportado)
@@ -265,6 +265,7 @@ def analyze_video(
     actor=Depends(get_current_actor),
 ) -> dict:
     """Pide el análisis del vídeo de la fuente (adaptador Gemini; requiere clave, salvo demo)."""
+    require_paid_services()
     source = db.get(Source, source_id)
     if source is None:
         raise HTTPException(status_code=404, detail="Esa fuente no existe")

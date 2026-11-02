@@ -9,7 +9,7 @@ from ..db import get_db
 from ..errors import error_kind_label
 from ..models import Job, Setting
 from ..schemas import BudgetUpdate, JobOut
-from ..security import get_current_actor
+from ..security import get_current_actor, require_demo_disabled
 from ..services.budget import get_budget, set_budget, usage_summary
 from ..states import JOB_LABELS
 
@@ -68,9 +68,12 @@ def usage(db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
 def update_budget(
     payload: BudgetUpdate, db=Depends(get_db), actor=Depends(get_current_actor)
 ) -> dict:
-    if actor["is_demo"]:
-        return {"warning": "Sesión de demostración: los cambios no afectan a servicios reales",
-                **get_budget(db)}
+    """Activa o ajusta el presupuesto de los servicios de pago.
+
+    Con el modo demo activo el cambio **no** surte efecto (todo se simula), así
+    que se rechaza en lugar de devolver un «ok» que engaña.
+    """
+    require_demo_disabled()
     return set_budget(
         db,
         paid_services_enabled=payload.paid_services_enabled,

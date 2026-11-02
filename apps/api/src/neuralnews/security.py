@@ -57,19 +57,31 @@ def create_session(db, actor_id: str, is_demo: bool = False) -> tuple[str, DbSes
 
 
 def set_session_cookie(response: Response, token: str) -> None:
-    response.set_cookie(
-        COOKIE_NAME,
-        token,
-        httponly=True,
-        samesite="lax",
-        secure=False,  # en despliegue con HTTPS, activar via variable de entorno
-        max_age=get_settings().session_ttl_minutes * 60,
-        path="/",
-    )
+    """Cookie de sesión: HttpOnly, y **segura** fuera del entorno local.
+
+    Antes `secure=False` estaba fijo: por HTTPS la cookie de sesión viajaba en
+    claro. Ahora depende del entorno (ADR-017) y se puede fijar a mano con
+    `NEURAL_SESSION_COOKIE_SECURE` / `_SAMESITE` / `_DOMAIN`.
+    """
+    settings = get_settings()
+    kwargs = {
+        "httponly": True,
+        "samesite": settings.session_cookie_samesite,
+        "secure": settings.cookie_segura,
+        "max_age": settings.session_ttl_minutes * 60,
+        "path": "/",
+    }
+    if settings.session_cookie_domain:
+        kwargs["domain"] = settings.session_cookie_domain
+    response.set_cookie(COOKIE_NAME, token, **kwargs)
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(COOKIE_NAME, path="/")
+    settings = get_settings()
+    kwargs = {"path": "/"}
+    if settings.session_cookie_domain:
+        kwargs["domain"] = settings.session_cookie_domain
+    response.delete_cookie(COOKIE_NAME, **kwargs)
 
 
 def get_current_actor(request: Request, db=Depends(get_db)) -> dict:
@@ -83,6 +95,32 @@ def get_current_actor(request: Request, db=Depends(get_db)) -> dict:
     return {"actor_id": session.actor_id, "is_demo": session.is_demo}
 
 
-def require_demo_disabled(settings=get_settings()) -> None:
+def require_demo_disabled(settings=None) -> None:
+    """Impide una operación que solo tiene sentido con servicios reales.
+
+    En el entorno local el modo demo es legítimo; en un despliegue, el modo
+    demo está prohibido (lo comprueba `Settings.comprobar()` al arrancar).
+
+    Los ajustes se resuelven **en la llamada**, no al importar el módulo: si se
+    fijaran al importar, el valor quedaría congelado y no se podría cambiar en
+    caliente ni sustituir en las pruebas.
+    """
+    settings = settings or get_settings()
     if settings.demo_mode:
         raise HTTPException(status_code=400, detail="El modo demo está activado; desactívalo para usar servicios reales")
+
+
+def require_paid_services(settings=None) -> None:
+    """Ruta que llama a un proveedor de pago.
+
+    En un despliegue, si los servicios de pago están desactivados, se dice en
+    voz alta en vez de encolar un trabajo que no va a poder completarse (o que
+    devolvería datos de demostración sin avisar).
+    """
+    settings = settings or get_settings()
+    if settings.es_despliegue and not settings.paid_services_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="Los servicios de pago están desactivados en este despliegue "
+            "(NEURAL_PAID_SERVICES_ENABLED=false): esta función necesita un proveedor real",
+        )

@@ -9,7 +9,7 @@ from ..models import Approval, Claim, Evidence, Job, ScriptVersion, Source, Stor
 from ..providers.image_prompt import build_storyboard
 from ..queue import enqueue
 from ..schemas import ApproveRequest, RejectRequest, ScriptPatch, ScriptVersionOut
-from ..security import get_current_actor
+from ..security import get_current_actor, require_paid_services
 from ..services.dedupe import duplicates_for_all, find_possible_duplicates
 from ..services.research import score_story
 from ..services.scripts import (
@@ -181,6 +181,12 @@ def get_storyboard(story_id: int, db=Depends(get_db), actor=Depends(get_current_
 
 @router.post("/{story_id}/research")
 def research(story_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Encola la investigación con un proveedor real (búsqueda + modelo).
+
+    En un despliegue sin servicios de pago activados, se dice en voz alta en
+    lugar de encolar un trabajo que no podrá completarse.
+    """
+    require_paid_services()
     story = db.get(Story, story_id)
     if story is None:
         raise HTTPException(status_code=404, detail="Esa noticia no existe")
@@ -192,6 +198,8 @@ def research(story_id: int, db=Depends(get_db), actor=Depends(get_current_actor)
 
 @router.post("/{story_id}/draft")
 def draft(story_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Encola la redacción del guion con un proveedor real (modelo editorial)."""
+    require_paid_services()
     story = db.get(Story, story_id)
     if story is None:
         raise HTTPException(status_code=404, detail="Esa noticia no existe")

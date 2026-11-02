@@ -9,6 +9,7 @@ from sqlalchemy import select
 from ..config import get_settings
 from ..db import get_db
 from ..models import Session as DbSession
+from ..rate_limit import DemasiadosIntentos, limitador_entradas
 from ..schemas import LoginRequest, MeResponse
 from ..security import (
     COOKIE_NAME,
@@ -28,7 +29,17 @@ def _admin_password_hash() -> str | None:
 
 
 @router.post("/login", response_model=MeResponse)
-def login(payload: LoginRequest, response: Response, db=Depends(get_db)) -> MeResponse:
+def login(
+    payload: LoginRequest,
+    request: Request,
+    response: Response,
+    db=Depends(get_db),
+) -> MeResponse:
+    """Entrada del editor.
+
+    Los intentos fallidos se limitan por dirección (NN-111.10): tras varios
+    fallos seguidos la entrada se rechaza durante el enfriamiento.
+    """
     settings = get_settings()
     expected_hash = _admin_password_hash()
     if expected_hash is None:
@@ -36,8 +47,15 @@ def login(payload: LoginRequest, response: Response, db=Depends(get_db)) -> MeRe
             status_code=503,
             detail="No hay contraseña configurada. Define NEURAL_ADMIN_PASSWORD en el archivo .env",
         )
+    clave = request.client.host if request.client else "desconocida"
+    try:
+        limitador_entradas.comprobar(clave)
+    except DemasiadosIntentos as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     if payload.username != settings.admin_username or not verify_password(payload.password, expected_hash):
+        limitador_entradas.registrar_fallo(clave)
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    limitador_entradas.registrar_exito(clave)
     token, _ = create_session(db, actor_id=payload.username, is_demo=False)
     set_session_cookie(response, token)
     return MeResponse(actor_id=payload.username, is_demo=False, demo_mode=settings.demo_mode)
@@ -45,8 +63,19 @@ def login(payload: LoginRequest, response: Response, db=Depends(get_db)) -> MeRe
 
 @router.post("/demo", response_model=MeResponse)
 def demo_login(response: Response, db=Depends(get_db)) -> MeResponse:
-    """Acceso rápido de demostración: sólo cuando el modo demo está activado (uso local)."""
+    """Acceso rápido de demostración: **sólo en el entorno local**.
+
+    Fuera de `local` el endpoint **no existe**: con `NEURAL_ENV=beta|prod` el
+    modo demo ya no puede estar activo (la aplicación no arranca si lo está),
+    pero este cierre evita además que un cambio futuro de configuración lo
+    deje abierto por descuido.
+    """
     settings = get_settings()
+    if not settings.es_local:
+        raise HTTPException(
+            status_code=403,
+            detail="El acceso rápido de demostración solo existe en el entorno local",
+        )
     if not settings.demo_mode:
         raise HTTPException(status_code=403, detail="El modo demo está desactivado")
     token, _ = create_session(db, actor_id="demo", is_demo=True)

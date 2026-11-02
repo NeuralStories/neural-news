@@ -32,7 +32,10 @@ flow-recovery/
 # Herramientas locales del workspace (viven fuera de este repositorio).
 ffmpeg-local/
 pglocal/
-tools/
+tools/*.exe
+tools/dbg*
+tools/*.rar
+tools/*.zip
 archive/
 backups/
 .remotes/

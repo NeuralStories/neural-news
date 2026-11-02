@@ -140,6 +140,9 @@ def tick() -> int:
 def run(poll_seconds: float = 1.0, once: bool = False) -> None:
     configure_streams()
     configure_logging()
+    # El worker obeye la misma configuración que la API: si el despliegue es
+    # incoherente, tampoco el worker lo lleva adelante en silencio.
+    get_settings().comprobar()
     settings = get_settings()
     recovered = sweep_stale_jobs(settings.job_lease_seconds)
     if recovered:

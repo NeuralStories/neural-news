@@ -2,16 +2,17 @@
 
 ## Última actualización
 
-2026-11-02 00:45 (Europe/Madrid) — **NN-110.a COMPLETADA**. Fase 3 en curso; siguiente: **NN-110.b**.
+2026-11-02 08:40 (Europe/Madrid) — **Fase 3 (NN-110) COMPLETADA**: NN-110.a…e cerradas con
+evidencia; NN-110.f (verificación) en curso. Siguiente: **NN-111** (beta-go-live).
 
 ## Capacidades disponibles
 
 | Capacidad | Estado | Detalle |
 |---|---|---|
-| Archivos persistentes | ✅ | `neural-news/` (repo git activo), `newsV2/` (gobernanza, **fuera de git**), `archive/`, `backups/`, `.remotes/` |
+| Archivos persistentes | ✅ | `neural-news/` (repo git activo, rama `beta/v1`), `newsV2/` (gobernanza, **fuera de git**), `archive/`, `backups/`, `.remotes/` |
 | Ejecución de comandos | ✅ | PowerShell 7 en Windows; `python` 3.12.6 con FastAPI/SQLAlchemy/Alembic/pytest; `node` 24, Next.js 15, Playwright (Edge del sistema) |
-| Base de datos | ✅ | PostgreSQL 16.9 nativo en `pglocal/` (**puerto 5433**, en marcha, PID 9932); `neuralnews` con 20 tablas |
-| Red | ⚠️ | Sin remoto remoto de git: el remoto es **local** (`.remotes/*.git`). Internet disponible para consultas, pero **no usado** en el trabajo ejecutado |
+| Base de datos | ✅ | PostgreSQL 16.9 nativo en `pglocal/` (**puerto 5433**, en marcha); SQLite en `neural-news/storage/` (esquema en `c4d2e8f1a5b6`, migrado y verificado) |
+| Red | ⚠️ | Sin remoto remoto de git: el remoto es **local** (`.remotes/*.git`). Internet disponible para consultas, **no usado** en el trabajo ejecutado |
 | Consulta de cuota | ❌ | **No disponible**: no hay ninguna herramienta de cuota en esta plataforma. Estado: **desconocido** |
 | Programador / reanudación | ❌ | **No disponible**: no hay herramienta de creación de tareas programadas. Reanudación = reejecutar este mismo `/goal` |
 | Multiagente | ✅ | Disponible para tareas exploradoras independientes |
@@ -19,30 +20,32 @@
 
 ## Tarea actual y estado
 
-**NN-110.b — Tipos de job `transcribe_source`, `build_montage`, `probe_media`, `extract_web` + handlers.** PENDIENTE → EN CURSO.
+**NN-110.f — Verificación de la Fase 3: test de latencia y E2E del recorrido beta.** EN CURSO.
 
-Contexto: hoy hay 5 tipos de job (`process_source`, `analyze_video`, `research_story`,
-`draft_script`, `export_batch`). La transcripción y el montaje se ejecutan **dentro del hilo de
-petición** (`api/sources.py:206` y `api/projects.py:1021`), y el `ffprobe` de la subida de medios
-también (`api/projects.py:530,611`).
+Contexto: el gate G3 («ninguna operación de más de 2 s dentro de un handler») se comprueba con
+`tests/test_latencia_handlers.py`, que vuelve **lento a propósito** al proveedor que antes se
+ejecutaba en la petición: si el trabajo volviera al hilo, el handler tardaría 3 s y la prueba fallaría.
 
 ## Último punto verificado
 
-**NN-110.a — COMPLETADA con evidencia E.**
+**NN-110.e — COMPLETADA con evidencia E.**
 
-- `python -m pytest tests -q` → **167 passed, 1 skipped, 0 fallos** (65 s).
-- 8 pruebas nuevas en `tests/test_queue_leases.py`, verificadas **rojas** antes del arreglo:
-  la reserva no era visible para otras sesiones, `renew_lease` no existía, `release_job` no
-  limpiaba el lease ni el intento, y no había barrido periódico.
-- El lease ahora significa algo: `claim_next_job` confirma la reserva (el trabajo es visible como
-  `RUNNING` con su lease antes de ejecutar nada), el worker renueva el lease con un hilo dedicado
-  mientras el trabajo corre, el barrido periódico recupera lo vencido **sin reiniciar el worker**,
-  y `release_job` limpia `lease_until`, `next_run_at` y `attempt`.
-- Commit `NN-110.a` en `beta/v1` (pendiente de push en este checkpoint).
+- `python -m pytest tests -q` → **182 passed, 1 skipped, 0 fallos** (79 s).
+- 6 pruebas nuevas en `tests/test_logging_observabilidad.py`: el log es **JSON por evento** con
+  `job_id`, `status`, `duration_s` y `error_kind`; el motivo del fallo se registra **cuando ocurre**
+  (`budget` / `material` / `connector` / `unknown`), no se deduce del texto.
+- Traza JSON verificada **en ejecución real** sobre la pila en marcha:
+  `{"event": "job.done", "job_id": 48, "status": "DONE", "duration_s": 0.031}`.
+- Migración `c4d2e8f1a5b6` (columna `jobs.error_kind`) aplicada a la base viva y verificada:
+  31/31 tablas, 0 columnas de menos, `alembic check` sin diferencias.
+- Commits en `beta/v1`: `a4b891e` (NN-110.a), `dbd76cc` (NN-110.b), `fa966da` (NN-110.c/d),
+  `5f5ce7e` (NN-110.e) — todos empujados a `.remotes/neural-news.git`.
 
 ## Trabajo a medias sin verificar
 
-- **Ninguno.** NN-110.a está cerrada con evidencia; NN-110.b empieza desde cero.
+- **NN-110.f**: las pruebas de latencia (`tests/test_latencia_handlers.py`, 5) ya están en **verde**;
+  el E2E nuevo `e2e/beta-journey.spec.ts` pasa en verde (15,2 s). Falta la **suite E2E completa**
+  en verde y el commit.
 
 ## Archivos modificados desde el último checkpoint
 

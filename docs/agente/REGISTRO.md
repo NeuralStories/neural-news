@@ -125,7 +125,75 @@ desde ese directorio, pero los imports `from tests.*` no resuelven sin la raíz 
 
 ---
 
-## 2026-11-02 — Inicio de la ejecución del plan (NN-110 en adelante)
+## 2026-11-02 — NN-110.a: el lease de la cola por fin significa algo
+
+**Hallazgo:** la reserva (`claim_next_job`) y la finalización del trabajo se confirmaban en la **misma
+transacción**. Mientras el trabajo se ejecutaba, para el resto del sistema seguía en `QUEUED`.
+
+**Consecuencias:** el lease no significaba nada (nadie veía `RUNNING`); `recover_stale_jobs` no
+encontraba nada que recuperar, porque el trabajo nunca llegaba a estar `RUNNING` fuera de su
+transacción; un trabajo largo perdía el lease a mitad; y un worker caído dejaba sus trabajos
+colgados hasta el siguiente reinicio.
+
+**Decisión:** la reserva se confirma en el momento (`claim_next_job` hace commit), el worker renueva
+el lease con un hilo dedicado mientras el trabajo corre, el barrido es **periódico** (no solo al
+arrancar) y `release_job` limpia `lease_until`, `next_run_at` y `attempt`.
+
+**Salvedad honesta:** en SQLite las escrituras se serializan, así que la renovación desde otra
+conexión puede quedar bloqueada mientras el manejador escribe. Por eso el barrido **ignora los
+trabajos que este worker tiene activos** (`skip_ids`): sin esa salvedad, un trabajo largo se
+recuperaría a sí mismo. Con PostgreSQL la renovación funciona con normalidad.
+
+**Error resuelto:** al partir `tick()` en dos sesiones (una para reservar, otra para ejecutar), el
+estado `RUNNING` pasa a ser visible antes de ejecutar. Es el cambio que hace posible todo lo demás.
+
+---
+
+## 2026-11-02 — NN-110.b/c/d: el trabajo pesado sale del hilo de petición
+
+**Decisión:** cuatro operaciones que se ejecutaban dentro de la petición HTTP pasan a ser trabajos
+del worker: transcripción, extracción web, montaje y sondeo de medios. Los handlers devuelven
+`202` con el identificador del trabajo.
+
+**Cambio de contrato (deliberado):** el endpoint ya no devuelve el resultado, devuelve el trabajo.
+Eso obliga a cambiar las pruebas: se han reescrito para el recorrido **encolar → worker →
+comprobar**, que es más fiel que antes (antes solo se probaba el camino síncrono).
+
+**Decisión de diseño:** la lógica se movió a `services/transcription.py` para que la API y el worker
+usen **la misma implementación**. Dos copias de la lógica se separan; una, no.
+
+**Punto delicado resuelto:** el material que falta y las transiciones aplicadas se guardaban en el
+router, así que el worker no podía reconstruir la animática. Se movieron a
+`services/montage.persist_animatica`, que usan tanto la API como el worker.
+
+---
+
+## 2026-11-02 — NN-110.e: el log es JSON y el motivo del fallo queda registrado
+
+**Decisión:** el motivo del fallo se registra **cuando ocurre**, no se deduce después del texto.
+Adivinarlo por el mensaje es frágil y mezcla «presupuesto» con «conector».
+
+**Vocabulario:** `budget` (presupuesto, definitivo), `material` (falta material, definitivo:
+reintentar no cambia nada), `connector` (falló un proveedor, se reintenta), `unknown`.
+
+**Cambio de esquema:** columna `jobs.error_kind` con su migración `c4d2e8f1a5b6`. El esquema sale
+solo de Alembic (decisión de NN-109.15): la base viva se migró con `alembic upgrade head` y se
+verificó (0 columnas de menos, `alembic check` sin diferencias).
+
+**Verificación en ejecución real** (no solo en pruebas): el worker emite
+`{"event": "job.done", "job_id": 48, "status": "DONE", "duration_s": 0.031, ...}` y la línea se
+parsea con `ConvertFrom-Json`.
+
+---
+
+## 2026-11-02 — Lección de método (reiterada)
+
+Tres de los hallazgos críticos de la Fase 2 y de la Fase 3 aparecieron **al ejecutar**, no al leer
+el código, y en todos los casos la causa era la misma: **el mecanismo de prueba era más estrecho
+que la regla que debía comprobar**. Antes de dar por cerrado un requisito hay que demostrar que la
+prueba que lo vigila **cubre el requisito entero**.
+
+---
 
 **Estado:** Fases 0, 1 y 2 **COMPLETADAS** y verificadas. Se crea `docs/agente/` dentro del repo
 activo para que el checkpoint quede **bajo control de versiones** (parte del riesgo R-26).

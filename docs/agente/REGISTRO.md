@@ -530,3 +530,36 @@ salida y gestiona la espera por cuota).
 número real de **filas de tarea es 89** (las 6 de más eran líneas de texto que contienen la
 palabra). El checkpoint dice 89.
 
+---
+
+## 2026-11-02 — B35: la auditoría de evidencia audtaba nada (y nadie lo notó)
+
+El contrato exige comprobar que lo marcado COMPLETADA lo esté de verdad (§3.4 del `/goal`). La
+suite, el E2E y los lints ya lo cubrían por el lado del **comportamiento**, pero no por el lado de
+las **referencias**: una fila podía citar un fichero borrado hace semanas y el plan seguiría
+pareciendo completo.
+
+Se escribe `tools/auditar_evidencias.py`: extrae las rutas que cita la columna de evidencia de
+`PLAN_MAESTRO.md` y comprueba una a una que existen (ficheros, directorios, rutas de API y
+símbolos). Primera versión: **0 desfasadas**. Demasiado limpio.
+
+**B35 (nuevo, real):** la auditoría **no estaba comprobando los ficheros**. Dos fallos encadenados:
+1. La extensión se comparaba con punto (`".ts"`) contra un valor sin punto (`"ts"`): **ninguna**
+   referencia entraba en la rama de fichero y todas caían en la de «símbolo».
+2. La rama de «símbolo» buscaba el literal en **todo** lo versionado, **incluida la propia
+   documentación**: el plan se citaba a sí mismo y toda referencia «existía» por definición.
+
+Con las dos correcciones, la auditoría dice la verdad: 84 referencias comprobadas y existentes, 9
+fuera del repositorio (artefactos sellados), 3 que no son rutas (`ok/warn/error`), **0 desfasadas**.
+
+**Rojo→verde verificado**: inyectando `apps/web/lib/fichero-falso.ts` en una fila, la auditoría
+lo detecta (exit 1) y el test falla; al retirar la inyección, todo vuelve a verde.
+
+**Lección (la segunda de esta sesión):** una comprobación que **no puede fallar** no es una
+comprobación. La forma de detectar que la auditoría no miraba nada fue meterle un fichero falso:
+si no lo encuentra, no estaba mirando. Es el mismo motivo por el que el E2E se ejecutó contra
+una pila levantada por el propio Playwright y no contra un servidor heredado.
+
+`tools/auditar_evidencias.py` queda como paso de CI (`La evidencia que cita el plan maestro
+existe de verdad`) y con test propio (`tests/test_evidencias_plan.py`).
+

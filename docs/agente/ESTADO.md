@@ -9,6 +9,11 @@
   `neural-news/docs/agente/REGISTRO.md`
 - **task_actual:** ninguna — **PLAN COMPLETADO** (0 PENDIENTES, 0 BLOQUEADAS). Commit
   `ea8486d` en `beta/v1`, empujado a `origin beta/v1`.
+- **capacidades_disponibles:** **archivos persistentes** ✓ (repositorio y `docs/agente/` en disco) ·
+  **internet** ✓ (disponible, no usado en este tramo) · **cuota consultable: NO** (no hay
+  herramienta de consulta de cuota ni de saldo) · **programador externo: SÍ** (`cron_create`
+  verificado; hoy sin tareas) · **ejecución de Bash/WSL: parcial** (WSL no arranca: la
+  virtualización está desactivada, así que el `supervisor.sh` **no** se ha podido ejecutar aquí).
 - **ultimo_punto_verificado:** **Verificación final completa, ejecutada sobre el árbol limpio en
   `ea8486d`:**
   - `python -m pytest tests -q` → **exit 0** (332 tests, 1 skip)
@@ -19,6 +24,11 @@
   - `python tools/scan_secrets.py .` → **0 hallazgos de secretos** (0 avisos de ejemplo)
   - `python tools/generate_estados.py --check` y `tools/generar_manifiesto_studio.py --check` → al día
   - `python tools/exportar_openapi.py --check` → el contrato exportado coincide con el servido
+  - `python tools/auditar_evidencias.py` → **84 referencias de evidencia comprobadas y
+    existentes, 9 fuera del repositorio (artefactos sellados), 0 desfasadas**: ninguna fila
+    completada cita un fichero que ya no exista (B35 corregido: la primera versión no
+    comprobaba los ficheros y se citaba a sí misma)
+  - `python tools/generar_plan_casillas.py --check` → `PLAN.md` (89/89 `[x]`) al día
   - `scripts\bootstrap.ps1` ejecutado de extremo a extremo → **exit 0** (requisitos → backend →
     `.env` → migraciones → web → suite verde) y `scripts\start.ps1` levanta API+worker+web (web 200)
 - **trabajo_parcial_sin_verificar:** nada. El árbol de trabajo está limpio (0 ficheros modificados)

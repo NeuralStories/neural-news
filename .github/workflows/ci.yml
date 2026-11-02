@@ -112,6 +112,9 @@ jobs:
       - name: El plan con casillas está al día (lo valida el supervisor externo)
         working-directory: .
         run: python tools/generar_plan_casillas.py --check
+      - name: La evidencia que cita el plan maestro existe de verdad
+        working-directory: .
+        run: python tools/auditar_evidencias.py
       - name: El manifiesto de integridad del Studio está al día
         working-directory: .
         run: python tools/generar_manifiesto_studio.py --check

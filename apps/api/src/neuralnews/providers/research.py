@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from ..services import secrets as secrets_service
 from ..config import get_settings
 from .base import ClaimResearchDraft, EvidenceDraft, ResearchDraft
 
@@ -30,7 +31,7 @@ class ResearchSearchProvider:
     def __init__(self, demo: bool | None = None) -> None:
         settings = get_settings()
         self.demo = settings.demo_mode if demo is None else demo
-        self.has_key = bool(settings.search_api_key)
+        self.has_key = bool(secrets_service.clave_de_proveedor("search_api_key"))
 
     def research(self, claims: list[str]) -> ResearchDraft:
         if self.demo:
@@ -152,7 +153,7 @@ class ResearchSearchProvider:
             params={"q": query, "count": 5},
             headers={
                 "Accept": "application/json",
-                "X-Subscription-Token": settings.search_api_key,
+                "X-Subscription-Token": secrets_service.clave_de_proveedor("search_api_key"),
             },
             timeout=20,
         )

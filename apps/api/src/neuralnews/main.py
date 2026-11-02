@@ -9,7 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .api import auth, batches, ops, projects, sources, stories
 from .config import get_settings
+from .db import session_scope
 from .logging_setup import configure_logging
+from .services import secrets as services_secrets
+from . import vault
 
 # Los errores del servidor se registran en el log en vez de filtrarse al cliente
 # (hallazgo B7) y en vez de perderse por stderr (hallazgo P5). El formato es
@@ -67,6 +70,12 @@ def create_app() -> FastAPI:
 
     # El esquema se prepara con Alembic, nunca con create_all (ver ensure_schema).
     ensure_schema()
+    # La bóveda de secretos se carga en memoria (NN-117.3). Sin clave maestra la
+    # aplicación **arranca igual**: lo que dependa de un secreto queda bloqueado
+    # y se dice con claridad, en vez de fallar sin explicación.
+    vault.configurar(settings.master_key)
+    with session_scope() as db:
+        services_secrets.cargar_desde_db(db)
 
     app.include_router(auth.router)
     app.include_router(sources.router)

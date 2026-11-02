@@ -1,7 +1,12 @@
 """Autenticación básica: un editor, sesión con token en cookie HttpOnly.
 
-La contraseña se guarda con PBKDF2-SHA256. En modo demo el acceso rápido crea
-sesiones marcadas como demo; ese modo sólo debe activarse en local.
+La contraseña se guarda con **Argon2id** (portado del motor editorial, NN-117.5).
+Se mantiene la verificación de **PBKDF2-SHA256** para que las contraseñas ya
+guardadas sigan funcionando: el formato guardado decide con qué algoritmo se
+comprueba.
+
+En modo demo el acceso rápido crea sesiones marcadas como demo; ese modo sólo
+debe activarse en local.
 """
 from __future__ import annotations
 
@@ -19,20 +24,61 @@ from .models import AuditLog, Session as DbSession, utcnow
 
 COOKIE_NAME = "nn_session"
 
+# Prefijos de los formatos de contraseña guardados.
+PBKDF2_PREFIJO = "pbkdf2$"
+ARGON2_PREFIJO = "$argon2"
+
+
+def _argon2_disponible() -> bool:
+    try:
+        import argon2  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
 
 def hash_password(password: str, salt: str | None = None) -> str:
+    """Genera el hash de una contraseña.
+
+    Usa Argon2id cuando la dependencia está disponible; si no, cae a
+    PBKDF2-SHA256 (200 000 iteraciones) para no dejar al operador sin poder
+    entrar. El formato guardado lo dice: `pbkdf2$salt$digest` o el texto
+    estándar de Argon2 (`$argon2id$…`).
+    """
+    if _argon2_disponible():
+        from argon2 import PasswordHasher
+
+        return PasswordHasher().hash(password)
     salt = salt or secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 200_000).hex()
-    return f"pbkdf2${salt}${digest}"
+    return f"{PBKDF2_PREFIJO}{salt}${digest}"
 
 
 def verify_password(password: str, stored: str) -> bool:
-    try:
-        _, salt, digest = stored.split("$")
-    except ValueError:
+    """Comprueba la contraseña contra el hash guardado, sea del formato que sea."""
+    if not stored:
         return False
-    candidate = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 200_000).hex()
-    return hmac.compare_digest(candidate, digest)
+    if stored.startswith(PBKDF2_PREFIJO):
+        try:
+            _, salt, digest = stored.split("$")
+        except ValueError:
+            return False
+        candidate = hashlib.pbkdf2_hmac(
+            "sha256", password.encode(), salt.encode(), 200_000
+        ).hex()
+        return hmac.compare_digest(candidate, digest)
+    if stored.startswith(ARGON2_PREFIJO):
+        try:
+            from argon2 import PasswordHasher
+            from argon2.exceptions import VerificationError, VerifyMismatchError
+        except ImportError:
+            # Sin la dependencia no se puede comprobar: se rechaza (no se acepta).
+            return False
+        try:
+            return bool(PasswordHasher().verify(stored, password))
+        except (VerifyMismatchError, VerificationError):
+            return False
+    return False
 
 
 def admin_password_hash() -> str | None:

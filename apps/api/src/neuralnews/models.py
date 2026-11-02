@@ -320,6 +320,20 @@ class Setting(Base):
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
 
 
+class ProviderSecret(Base):
+    """Secreto de proveedor **cifrado** con la clave maestra (NN-117.3).
+
+    En la base de datos no hay ningún valor en claro: sólo el texto cifrado.
+    El valor descifrado vive en memoria del proceso (`neuralnews.vault`).
+    """
+
+    __tablename__ = "provider_secrets"
+
+    provider: Mapped[str] = mapped_column(String(64), primary_key=True)
+    ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+
 def dumps_compact(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), default=str)
 

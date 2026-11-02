@@ -116,7 +116,7 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 | NN-111.6 | Descargas con streaming y corte real de bytes | — | El cuerpo no se carga entero en memoria antes de recortar | **COMPLETADA** | Lectura por trozos con parada en el límite (`tests/test_red_descargas.py`) — **E** |
 | NN-111.7 | Mitigar DNS-rebinding (IP fijada o proxy de salida) | — | Test que cambia la resolución entre validar y conectar | **COMPLETADA** | Se comprueba la IP real de la conexión contra las validadas; se descarta si no encaja — **E** |
 | NN-111.8 | Documentar la allowlist de red | — | `docs/SECURITY.md` recoge la lista y su motivo | **COMPLETADA** | `SECURITY.md` §1.1: motivo, alcance, riesgo asumido y lista actual — **A** |
-| NN-111.9 | Argon2id para contraseñas | NN-117 | Hash argon2 con fallback PBKDF2 | PENDIENTE | — |
+| NN-111.9 | Argon2id para contraseñas | NN-117 | Hash argon2 con fallback PBKDF2 | **COMPLETADA** | Hecho con NN-117.5 — **E** |
 | NN-111.10 | Rate limit en `/auth/login` | — | Límite de intentos con respuesta clara | **COMPLETADA** | `rate_limit.py`: 5 fallos → 429 con enfriamiento; en memoria, por proceso — **E** |
 | NN-111.11 | Escaneo de secretos (árbol + historial) | — | 0 hallazgos | **COMPLETADA** | `tools/scan_secrets.py`: **0 hallazgos** (3 avisos por la contraseña de ejemplo) — **E** |
 | NN-111.12 | Checklist de despliegue de 20 puntos, verificado en máquina limpia | NN-111.1…NN-111.11 | Checklist firmado y ejecutado | **COMPLETADA** | `docs/DEPLOY.md`: 40 comprobaciones en 11 bloques, con la evidencia de lo verificado — **A** |
@@ -157,11 +157,11 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 
 | ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
 |---|---|---|---|---|---|
-| NN-117.1 | Port de `backup/verify` de BD (`app/domain/media.py`) | NN-108.1 | Backup → restore en BD limpia → verificación de hash | PENDIENTE | — |
-| NN-117.2 | Port de zonas seguras / cámara (`app/domain/camera.py`) | NN-108.1 | Test de etiqueta fuera de margen | PENDIENTE | — |
-| NN-117.3 | Port del vault (`app/security/vault.py`) | NN-108.1 | Round-trip Fernet + `secret_status` | PENDIENTE | — |
+| NN-117.1 | Port de `backup/verify` de BD | NN-108.1 | Backup → restore en BD limpia → verificación de hash | **COMPLETADA** | `scripts/db_backup.py`: verificado en ejecución (626 filas restauradas en base aislada, viva intacta) — **E** |
+| NN-117.2 | Zonas seguras (el plan apuntaba al fichero equivocado) | NN-108.1 | Test de etiqueta fuera de margen | **COMPLETADA** | El `SAFE_ZONE` del hermano **no se usa** (código muerto): se corrigió la incoherencia real — el rótulo ahora usa la zona segura compartida — `tests/test_zona_segura.py` — **E** |
+| NN-117.3 | Port del vault (`app/security/vault.py`) | NN-108.1 | Round-trip Fernet + `secret_status` | **COMPLETADA** | `neuralnews/vault.py` + `services/secrets.py`: sólo texto cifrado en la base; 5 adaptadores resuelven «bóveda primero, entorno después» — **E** |
 | NN-117.4 | Port de rutas de modelo (`c0f68f32807d`) | NN-108.1 | Resolución de modelo en el job con snapshot | PENDIENTE | — |
-| NN-117.5 | Port de Argon2id (`app/security/auth.py`) | NN-108.1, NN-111.9 | Test de sesión | PENDIENTE | — |
+| NN-117.5 | Port de Argon2id (`app/security/auth.py`) | NN-108.1, NN-111.9 | Test de sesión | **COMPLETADA** | Argon2id con verificación PBKDF2 conservada (las contraseñas existentes siguen funcionando) — `tests/test_argon2id.py` — **E** |
 | NN-117.6 | Port de subtítulos SRT/VTT (`app/domain/subtitles.py`) | NN-117.1 | SRT/VTT desde los segmentos de transcripción | PENDIENTE | — |
 | NN-117.7 | Port de contradicciones de cifras (`app/domain/contradictions.py`) | NN-117.1 | Test de contradicción sin auto-cambio | PENDIENTE | — |
 | NN-117.8 | ADR de los descartes (scheduler, briefs, prompt catalog) | NN-108.1 | ADR-016 con la justificación | PENDIENTE | — |

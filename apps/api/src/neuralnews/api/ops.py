@@ -8,10 +8,12 @@ from ..config import get_settings
 from ..db import get_db
 from ..errors import error_kind_label
 from ..models import Job, Setting
-from ..schemas import BudgetUpdate, JobOut
+from ..schemas import BudgetUpdate, JobOut, SecretPayload
 from ..security import get_current_actor, require_demo_disabled
+from ..services import secrets as secrets_service
 from ..services.budget import get_budget, set_budget, usage_summary
 from ..states import JOB_LABELS
+from .. import vault
 
 router = APIRouter(prefix="/api/v1", tags=["ops"])
 
@@ -81,10 +83,84 @@ def update_budget(
     )
 
 
+@router.get("/config/secrets")
+def listar_secretos(db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Estado de las claves de proveedor: de dónde viene cada una, nunca su valor."""
+    return {
+        "vault_available": vault.clave_maestra_configurada(),
+        "providers": secrets_service.estado(db),
+    }
+
+
+@router.put("/config/secrets/{clave}")
+def guardar_secreto(
+    clave: str,
+    payload: SecretPayload,
+    db=Depends(get_db),
+    actor=Depends(get_current_actor),
+) -> dict:
+    """Guarda una clave de proveedor **cifrada** en la bóveda.
+
+    Requiere clave maestra (`NEURAL_MASTER_KEY`) y una sesión que no sea de
+    demostración: en demo el cambio no surtiría efecto sobre nada real.
+    """
+    if clave not in secrets_service.PROVEEDORES:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Clave desconocida: {clave}. Conocidas: {sorted(secrets_service.PROVEEDORES)}",
+        )
+    require_demo_disabled()
+    if actor["is_demo"]:
+        raise HTTPException(
+            status_code=403,
+            detail="En sesión de demostración los cambios no afectan a servicios reales",
+        )
+    if not vault.clave_maestra_configurada():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "No hay clave maestra configurada (NEURAL_MASTER_KEY): "
+                "no se pueden guardar secretos cifrados"
+            ),
+        )
+    if not payload.value.strip():
+        raise HTTPException(status_code=422, detail="El valor está vacío")
+    try:
+        secrets_service.guardar_clave(db, clave, payload.value.strip())
+    except vault.ClaveMaestraAusente as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    db.commit()
+    return {"ok": True, "provider": secrets_service.nombre_proveedor(clave)}
+
+
+@router.delete("/config/secrets/{clave}")
+def borrar_secreto(
+    clave: str,
+    db=Depends(get_db),
+    actor=Depends(get_current_actor),
+) -> dict:
+    """Borra el secreto de la bóveda (vuelve al valor del entorno, si lo hay)."""
+    if clave not in secrets_service.PROVEEDORES:
+        raise HTTPException(status_code=404, detail=f"Clave desconocida: {clave}")
+    require_demo_disabled()
+    if actor["is_demo"]:
+        raise HTTPException(
+            status_code=403,
+            detail="En sesión de demostración los cambios no afectan a servicios reales",
+        )
+    borrado = secrets_service.borrar_clave(db, clave)
+    db.commit()
+    return {"ok": True, "deleted": borrado, "provider": secrets_service.nombre_proveedor(clave)}
+
+
 @router.get("/provider-status")
 def provider_status(db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
     settings = get_settings()
-    keys = settings.secrets_status()
+    # Estado **efectivo**: la bóveda tiene prioridad sobre el entorno.
+    efectivo = {
+        clave: bool(secrets_service.clave_de_proveedor(clave))
+        for clave in secrets_service.PROVEEDORES
+    }
     demo = settings.demo_mode
     items = [
         {
@@ -104,36 +180,36 @@ def provider_status(db=Depends(get_db), actor=Depends(get_current_actor)) -> dic
         {
             "key": "youtube",
             "name": "YouTube (metadatos)",
-            "configured": keys["youtube_api_key"],
-            "state": "implementado" if keys["youtube_api_key"] else "sin_clave",
+            "configured": efectivo["youtube_api_key"],
+            "state": "implementado" if efectivo["youtube_api_key"] else "sin_clave",
             "note": "Adaptador real preparado con YouTube Data API v3; no validado con credenciales en este MVP.",
         },
         {
             "key": "gemini_video",
             "name": "Análisis de vídeo (Gemini)",
-            "configured": keys["gemini_api_key"],
-            "state": "implementado" if keys["gemini_api_key"] else "mock",
+            "configured": efectivo["gemini_api_key"],
+            "state": "implementado" if efectivo["gemini_api_key"] else "mock",
             "note": "Adaptador preparado (salida marcada como análisis, nunca transcripción literal); no validado sin clave.",
         },
         {
             "key": "spotify",
             "name": "Spotify / pódcast (metadatos)",
-            "configured": keys["spotify_access_token"],
-            "state": "implementado" if keys["spotify_access_token"] else "sin_clave",
+            "configured": efectivo["spotify_access_token"],
+            "state": "implementado" if efectivo["spotify_access_token"] else "sin_clave",
             "note": "Adaptador preparado (get-an-episode exige autorización de usuario); no validado. Sin transcripción: estado «Solo información básica».",
         },
         {
             "key": "search",
             "name": "Búsqueda para investigación",
-            "configured": keys["search_api_key"],
-            "state": "implementado" if keys["search_api_key"] else "mock",
+            "configured": efectivo["search_api_key"],
+            "state": "implementado" if efectivo["search_api_key"] else "mock",
             "note": "Adaptador Brave preparado; no validado. En demo, evidencia ficticia marcada (dominio .invalid).",
         },
         {
             "key": "editorial_llm",
             "name": "Modelo editorial (extracción y guiones)",
-            "configured": keys["llm_api_key"],
-            "state": "implementado" if keys["llm_api_key"] else "mock",
+            "configured": efectivo["llm_api_key"],
+            "state": "implementado" if efectivo["llm_api_key"] else "mock",
             "note": "Adaptador REST compatible OpenAI preparado; no validado. Modo demo determinista verificado.",
         },
         {
@@ -151,7 +227,12 @@ def provider_status(db=Depends(get_db), actor=Depends(get_current_actor)) -> dic
             "note": "Fuera del MVP. Se entregan prompts y storyboard para uso manual.",
         },
     ]
-    return {"demo_mode": demo, "paid_services_enabled": get_budget(db)["paid_services_enabled"], "providers": items}
+    return {
+        "demo_mode": demo,
+        "paid_services_enabled": get_budget(db)["paid_services_enabled"],
+        "providers": items,
+        "vault_available": vault.clave_maestra_configurada(),
+    }
 
 
 @router.get("/settings/score-weights")

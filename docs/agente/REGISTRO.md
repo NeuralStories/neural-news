@@ -186,6 +186,43 @@ parsea con `ConvertFrom-Json`.
 
 ---
 
+## 2026-11-02 — NN-117: reintegración selectiva del motor editorial (3 de 5)
+
+**Decisión general (ADR-016):** el repo hermano se porta **capacidad a capacidad**, con test de
+equivalencia, y **no** se copia ninguna carpeta. Lo que no entra, se descarta **con el motivo
+escrito** — que es lo que evita que el port se convierta en deuda invisible.
+
+### Lo que resultó ser el plan equivocado (y se corrigió)
+
+El plan decía portar «zonas seguras / cámara» de `app/domain/camera.py`. Al mirarlo:
+
+- `camera.py` del hermano **no** trata de zonas seguras: trata de **presets de cámara y límites de
+  glitch** (NN-052).
+- Las zonas seguras (`SAFE_ZONE`) están en `app/domain/graphics.py` del hermano, y **no se usan en
+  ningún sitio**: es código muerto.
+
+Portar `SAFE_ZONE` tal cual habría sido **traer código muerto**. La carencia real estaba en el
+**repo activo**: el gráfico de barras usaba el sistema de márgenes (`MARGIN_L/R/T/B`) y el **rótulo
+usaba coordenadas fijas (80, 500)**, que no respetaban ese margen. Es decir: el rótulo podía salirse
+del área que la interfaz de la plataforma cubre.
+
+**Decisión:** NN-117.2 se resuelve **arreglando la incoherencia del repo activo** — el rótulo ahora
+usa la zona segura compartida (`CARD_MARGIN_*`) y recorta el texto **por ancho real**, no por número
+de caracteres. No se ha copiado nada del hermano.
+
+### Lo que sí se ha portado
+
+| Capacidad | De dónde | Qué se ha hecho |
+|---|---|---|
+| **Argon2id** (NN-117.5 → cierra NN-111.9) | `app/security/auth.py` | `hash_password` usa Argon2id; **la verificación PBKDF2 se mantiene**, así que las contraseñas ya guardadas siguen funcionando (el formato decide el algoritmo) |
+| **Backup verificado de BD** (NN-117.1) | `scripts/db_backup.py` | Copia SQLite con la API de backup e `integrity_check`; `pg_dump --format=custom` para PostgreSQL; `verify` no toca la base viva. **Mejora sobre el original: la restauración de PostgreSQL sí se automatiza** contra una base aislada y se comparan los recuentos (en el hermano era manual) |
+| **Bóveda de secretos** (NN-117.3) | `app/security/vault.py` | Fernet con `NEURAL_MASTER_KEY`. En la base de datos **sólo hay texto cifrado**; el valor en claro vive en memoria del proceso. Los 5 adaptadores resuelven la clave por «bóveda primero, entorno después» (11 puntos de acceso, todos verificados) |
+
+**Lección aplicada de la Fase 2:** un port no es «copiar el fichero»: es **decidir qué capability
+entra, comprobar que el código de origen hace lo que dice y que se usa**, y traer sólo lo vivo.
+
+---
+
 ## 2026-11-02 — Lección de método (reiterada)
 
 Tres de los hallazgos críticos de la Fase 2 y de la Fase 3 aparecieron **al ejecutar**, no al leer

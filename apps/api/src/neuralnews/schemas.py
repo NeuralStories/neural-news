@@ -171,6 +171,12 @@ class BudgetUpdate(BaseModel):
     daily_limit_eur: float | None = Field(default=None, ge=0)
 
 
+class SecretPayload(BaseModel):
+    """Valor de una clave de proveedor. Se cifra antes de tocar la base de datos."""
+
+    value: str = Field(min_length=1, max_length=4096)
+
+
 class ProviderStatusOut(BaseModel):
     key: str
     name: str

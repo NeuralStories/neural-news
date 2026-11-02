@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import httpx
 
+from ..services import secrets as secrets_service
 from ..config import get_settings
 from .base import ContentDraft, FetchResult, SegmentDraft
 from .fixtures import (
@@ -46,7 +47,7 @@ def normalize_video_url(video_id: str) -> str:
 def fetch_youtube_metadata(video_id: str) -> dict:
     """Metadatos reales con YouTube Data API. Requiere NEURAL_YOUTUBE_API_KEY."""
     settings = get_settings()
-    if not settings.youtube_api_key:
+    if not secrets_service.clave_de_proveedor("youtube_api_key"):
         raise RuntimeError(
             "No hay clave de YouTube configurada. Añade NEURAL_YOUTUBE_API_KEY en .env para "
             "obtener metadatos reales, o usa el modo demo."
@@ -56,7 +57,7 @@ def fetch_youtube_metadata(video_id: str) -> dict:
         params={
             "part": "snippet,contentDetails",
             "id": video_id,
-            "key": settings.youtube_api_key,
+            "key": secrets_service.clave_de_proveedor("youtube_api_key"),
         },
         timeout=15,
     )

@@ -117,7 +117,39 @@ def render_bar_svg(spec: dict) -> str:
 # ---------------------------------------------------------------------------
 CARD_W, CARD_H = 1080, 1920
 CARD_SCALE = CARD_W / W  # 2,25
+
+# Zona segura de la tarjeta: **los mismos márgenes del diseño**, escalados.
+# El rótulo antes usaba coordenadas fijas (80, 500) que no respetaban el
+# margen que sí usa el gráfico de barras: el texto podía salirse del área que
+# la interfaz de la plataforma cubre (hallazgo NN-117.2).
+CARD_MARGIN_L = MARGIN_L * CARD_SCALE
+CARD_MARGIN_R = MARGIN_R * CARD_SCALE
+CARD_MARGIN_T = MARGIN_T * CARD_SCALE
+CARD_MARGIN_B = MARGIN_B * CARD_SCALE
+CARD_SAFE_W = CARD_W - CARD_MARGIN_L - CARD_MARGIN_R
+
 _CARD_FONT_CACHE: dict[int, Any] = {}
+
+
+def _cabe_en_ancho(draw: Any, texto: str, font: Any, ancho: float) -> bool:
+    if not texto:
+        return True
+    caja = draw.textbbox((0, 0), texto, font=font)
+    return (caja[2] - caja[0]) <= ancho
+
+
+def _ajustar_a_ancho(draw: Any, texto: str, font: Any, ancho: float) -> str:
+    """Recorta el texto hasta que quepa en el ancho útil.
+
+    Recorta por **ancho real**, no por número de caracteres: una fuente de
+    otro tamaño no daría el mismo resultado.
+    """
+    if _cabe_en_ancho(draw, texto, font, ancho):
+        return texto
+    recortado = texto
+    while recortado and not _cabe_en_ancho(draw, recortado + "…", font, ancho):
+        recortado = recortado[:-1]
+    return (recortado + "…") if recortado else ""
 
 
 def _card_font(px_design: int) -> Any:
@@ -175,20 +207,42 @@ def render_chart_png_1080x1920(spec: dict) -> bytes:
 
 
 def render_title_png_1080x1920(title: str, lines: list[str], source_note: str = "") -> bytes:
-    """Rótulo/titular 1080x1920 con la misma identidad (paleta única)."""
+    """Rótulo/titular 1080x1920 con la misma identidad (paleta y zona segura).
+
+    El bloque se compone **dentro de la zona segura** —los mismos márgenes que
+    usa el gráfico de barras— y el texto se recorta por ancho real para que
+    nunca se salga del área que la interfaz de la plataforma puede cubrir.
+    """
     from io import BytesIO
 
     from PIL import Image, ImageDraw
     img = Image.new("RGB", (CARD_W, CARD_H), COLORS["bg"])
     d = ImageDraw.Draw(img)
-    d.text((80, 500), title[:34], font=_card_font(FONT_TITLE_PX), fill=COLORS["title"])
-    y = 640
-    for line in lines:
-        d.text((80, y), line[:30], font=_card_font(FONT_VALUE_PX), fill=COLORS["value"])
-        y += 160
+
+    fuente_titulo = _card_font(FONT_TITLE_PX)
+    fuente_valor = _card_font(FONT_VALUE_PX)
+    fuente_fuente = _card_font(FONT_SOURCE_PX)
+
+    paso = round(FONT_VALUE_PX * CARD_SCALE * 6)
+    lineas = [_ajustar_a_ancho(d, linea, fuente_valor, CARD_SAFE_W) for linea in lines]
+    titulo_ajustado = _ajustar_a_ancho(d, title, fuente_titulo, CARD_SAFE_W)
+
+    alto_bloque = round(FONT_TITLE_PX * CARD_SCALE) + len(lineas) * paso
+    zona_sup, zona_inf = CARD_MARGIN_T, CARD_H - CARD_MARGIN_B
+    y = zona_sup + max(0, (zona_inf - zona_sup - alto_bloque) // 2)
+
+    d.text((CARD_MARGIN_L, y), titulo_ajustado, font=fuente_titulo, fill=COLORS["title"])
+    y += round(FONT_TITLE_PX * CARD_SCALE) + paso
+    for linea in lineas:
+        d.text((CARD_MARGIN_L, y), linea, font=fuente_valor, fill=COLORS["value"])
+        y += paso
     if source_note:
-        d.text((80, CARD_H - 200), source_note[:60], font=_card_font(FONT_SOURCE_PX),
-               fill=COLORS["source"])
+        d.text(
+            (CARD_MARGIN_L, zona_inf - round(FONT_SOURCE_PX * CARD_SCALE)),
+            _ajustar_a_ancho(d, source_note, fuente_fuente, CARD_SAFE_W),
+            font=fuente_fuente,
+            fill=COLORS["source"],
+        )
     buf = BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()

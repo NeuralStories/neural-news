@@ -19,6 +19,7 @@ from datetime import datetime
 import httpx
 from pydantic import ValidationError
 
+from ..services import secrets as secrets_service
 from ..config import get_settings
 from ..models import Story, StorySource, UsageEvent
 from ..models import utcnow
@@ -64,7 +65,7 @@ class EditorialLLMProvider:
     def __init__(self, demo: bool | None = None) -> None:
         settings = get_settings()
         self.demo = settings.demo_mode if demo is None else demo
-        self.has_key = bool(settings.llm_api_key)
+        self.has_key = bool(secrets_service.clave_de_proveedor("llm_api_key"))
 
     # ---------------------------------------------------------------- extracción
     def extract_stories(self, text: str, *, published_at: datetime | None = None) -> list[StoryDraft]:
@@ -416,7 +417,7 @@ class EditorialLLMProvider:
             )
         response = httpx.post(
             f"{settings.llm_base_url.rstrip('/')}/chat/completions",
-            headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+            headers={"Authorization": f"Bearer {secrets_service.clave_de_proveedor('llm_api_key')}"},
             json={
                 "model": settings.llm_model,
                 "temperature": 0.2,

@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from ..services import secrets as secrets_service
 from ..config import get_settings
 from .base import ContentDraft, FetchResult
 
@@ -36,14 +37,14 @@ def extract_show_id(url: str) -> str | None:
 def fetch_spotify_episode_metadata(episode_id: str) -> dict:
     """Metadatos reales con Spotify Web API. Requiere token de usuario (no validado en MVP)."""
     settings = get_settings()
-    if not settings.spotify_access_token:
+    if not secrets_service.clave_de_proveedor("spotify_access_token"):
         raise RuntimeError(
             "No hay token de Spotify configurado. Añade NEURAL_SPOTIFY_ACCESS_TOKEN (autorización "
             "de usuario) para leer metadatos reales, pega el feed RSS del pódcast, o usa el modo demo."
         )
     response = httpx.get(
         f"https://api.spotify.com/v1/episodes/{episode_id}",
-        headers={"Authorization": f"Bearer {settings.spotify_access_token}"},
+        headers={"Authorization": f"Bearer {secrets_service.clave_de_proveedor('spotify_access_token')}"},
         params={"market": "ES"},
         timeout=15,
     )

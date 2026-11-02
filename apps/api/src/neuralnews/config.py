@@ -74,6 +74,10 @@ class Settings(BaseSettings):
     search_api_key: str = ""
     search_base_url: str = "https://api.search.brave.com/res/v1/web/search"
 
+    # Clave maestra de la bóveda de secretos (NN-117.3). Formato Fernet
+    # urlsafe-b64 de 32 bytes. Nunca se guarda en la base de datos.
+    master_key: str = ""
+
     # ------------------------------------------------------------------
     # Entorno (ADR-017)
     # ------------------------------------------------------------------

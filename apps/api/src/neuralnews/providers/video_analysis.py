@@ -12,6 +12,7 @@ import re
 
 import httpx
 
+from ..services import secrets as secrets_service
 from ..config import get_settings
 from .base import ContentDraft, FetchResult, SegmentDraft
 
@@ -30,7 +31,7 @@ PROMPT_VIDEO_ANALYSIS = (
 def call_gemini_video_analysis(video_url: str) -> FetchResult:
     """Llamada real a Gemini. Requiere NEURAL_GEMINI_API_KEY. Sin validar en este MVP."""
     settings = get_settings()
-    if not settings.gemini_api_key:
+    if not secrets_service.clave_de_proveedor("gemini_api_key"):
         raise RuntimeError(
             "No hay clave de Gemini configurada. Añade NEURAL_GEMINI_API_KEY para analizar vídeos "
             "reales, o usa el modo demo."
@@ -49,7 +50,7 @@ def call_gemini_video_analysis(video_url: str) -> FetchResult:
     }
     response = httpx.post(
         url,
-        params={"key": settings.gemini_api_key},
+        params={"key": secrets_service.clave_de_proveedor("gemini_api_key")},
         json=payload,
         timeout=120,
     )

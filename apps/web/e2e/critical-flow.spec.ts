@@ -51,7 +51,25 @@ test("recorrido crítico completo: fuente → noticias → guion → aprobación
   await expect(panelAfirmaciones).toContainText(/Sin verificar|Confirmada/, { timeout: 40_000 });
 
   // 5) Generar borrador de guion.
-  await page.getByRole("button", { name: "Generar borrador de guion" }).click();
+  //    Se espera a que el trabajo **termine** antes de seguir: en demo las
+  //    noticias se fusionan por tema, así que una prueba puede dejar un
+  //    borrador en marcha que, si landing durante la edición, crea una versión
+  //    posterior y deja la aprobación apuntando a una versión que ya no es la
+  //    última.
+  const storyId = Number(new URL(page.url()).pathname.split("/").pop());
+  const borrador = await page.request.post(`/api/v1/stories/${storyId}/draft`);
+  const borradorJob = (await borrador.json()) as { job_id: number };
+  await expect
+    .poll(
+      async () => {
+        const j = await (await page.request.get(`/api/v1/jobs/${borradorJob.job_id}`)).json();
+        return j.status as string;
+      },
+      { timeout: 60_000, intervals: [500] },
+    )
+    .toMatch(/DONE|FAILED|RETRYABLE_FAILED/);
+  await page.reload();
+
   const editor = page.getByLabel("Editor de guion");
   await expect(editor).toBeVisible({ timeout: 40_000 });
   await expect(editor).not.toHaveValue("");

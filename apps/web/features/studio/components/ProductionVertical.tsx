@@ -6,7 +6,7 @@
  * exportable → importación del MP4 generado externamente → revisión y
  * aprobación humana. Nada simula generación ni conexión con Flow.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useJobPolling } from '@/lib/hooks';
 import {
   ProjectConflict,
@@ -455,6 +455,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
                 #{g.id} {g.title} · <strong className={g.status === 'INVALIDADO' ? 'text-rose-400' : 'text-emerald-400'}>{g.status}</strong>
               </p>
               {g.status !== 'INVALIDADO' && (
+                // eslint-disable-next-line @next/next/no-img-element -- SVG servido por la API con cookie de sesion; next/image no lo optimiza.
                 <img
                   alt={`Gráfico ${g.title}`}
                   className="w-full rounded border border-neutral-800"

@@ -19,6 +19,25 @@ class BudgetExceeded(RuntimeError):
     """Se ha alcanzado el límite de gasto o los servicios de pago están desactivados."""
 
 
+# Coste estimado por llamada, en euros.
+#
+# Antes las llamadas de búsqueda y de modelo se registraban con `cost_estimate=0.0`:
+# el gasto acumulado nunca crecía y **el límite diario no llegaba a dispararse**
+# (hallazgo P6 de la auditoría, NN-116.3). Ahora cada llamada de pago tiene un
+# coste declarado y el presupuesto se consume de verdad.
+COSTE_ESTIMADO_EUR: dict[str, float] = {
+    "search": 0.005,
+    "editorial_llm": 0.010,
+    "gemini": 0.010,
+    "extraction": 0.010,
+}
+
+
+def coste_estimado(proveedor: str) -> float:
+    """Coste estimado de una llamada a ese proveedor (0 si no se conoce)."""
+    return COSTE_ESTIMADO_EUR.get(proveedor, 0.0)
+
+
 def get_budget(db: Session) -> dict:
     settings = get_settings()
     row = db.get(Setting, "budget")

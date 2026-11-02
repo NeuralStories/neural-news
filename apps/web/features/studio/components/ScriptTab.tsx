@@ -201,7 +201,7 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
                     />
                   ) : (
                     <p className="text-xs text-neutral-300 font-mono leading-relaxed">
-                      "{scene.scriptSnippet}"
+                      &quot;{scene.scriptSnippet}&quot;
                     </p>
                   )}
 

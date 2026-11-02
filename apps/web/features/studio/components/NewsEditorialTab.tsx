@@ -1,20 +1,19 @@
 import React, { useState, useRef } from 'react';
-import { 
-  NewsArticle, 
-  ArticleApprovalStatus, 
-  VerificationStatus, 
-  ProductionEpisodeBlock, 
-  VisualReferenceItem, 
-  EditorialReferenceItem 
+import {
+  NewsArticle,
+  ArticleApprovalStatus,
+  VerificationStatus,
+  ProductionEpisodeBlock,
+  VisualReferenceItem,
 } from '../types';
 import { BATCH_5_NEWS_SAMPLE } from '../constants';
-import { checkArticleDuplicate, DuplicateMatchResult } from '../utils/newsDeduplication';
+import { checkArticleDuplicate } from '../utils/newsDeduplication';
+import { errorMessage as mensajeDeError } from '../utils/errorMessage';
 
 interface NewsEditorialTabProps {
   articles: NewsArticle[];
   episodeBlocks: ProductionEpisodeBlock[];
   visualReferences: VisualReferenceItem[];
-  editorialReferences: EditorialReferenceItem[];
   onAddArticle: (article: Omit<NewsArticle, 'id' | 'orderIndex'>) => void;
   onImportBatchArticles: (articles: NewsArticle[]) => { importedCount: number; duplicateCount: number; duplicateDetails: string[] };
   onUpdateArticle: (id: string, updates: Partial<NewsArticle>) => void;
@@ -22,14 +21,28 @@ interface NewsEditorialTabProps {
   onSelectArticleForProduction: (article: NewsArticle) => void;
   activeProductionArticleId?: string;
   onAddEpisodeBlock: (title: string, notes?: string) => void;
-  onAssignArticleToBlock: (articleId: string, blockTitle: string) => void;
 }
+
+/**
+ * Noticia importada de un JSON: admite los nombres en inglés (el contrato del
+ * Studio) y losalias en español que llegan de exportaciones antiguas.
+ */
+type NoticiaImportada = Partial<NewsArticle> & {
+  titulo?: string;
+  resumen?: string;
+  script?: string;
+  guion?: string;
+  fecha?: string;
+  bloque?: string;
+  fuentes?: string[];
+  externalId?: string;
+  metadata?: { externalId?: string; [clave: string]: unknown };
+};
 
 export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
   articles,
   episodeBlocks,
   visualReferences,
-  editorialReferences,
   onAddArticle,
   onImportBatchArticles,
   onUpdateArticle,
@@ -37,7 +50,6 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
   onSelectArticleForProduction,
   activeProductionArticleId,
   onAddEpisodeBlock,
-  onAssignArticleToBlock,
 }) => {
   const [filterStatus, setFilterStatus] = useState<ArticleApprovalStatus | 'todas'>('todas');
   const [filterBlock, setFilterBlock] = useState<string>('todos');
@@ -54,12 +66,12 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
   const [fullScript, setFullScript] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('en_revision');
-  const [approvalStatus, setApprovalStatus] = useState<ArticleApprovalStatus>('pendiente');
+  const [approvalStatus] = useState<ArticleApprovalStatus>('pendiente');
   const [selectedBlock, setSelectedBlock] = useState('Bloque 1: Titulares Principales');
   const [sourcesInput, setSourcesInput] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [selectedVisualRefs, setSelectedVisualRefs] = useState<string[]>(['REF-CHAR-01', 'REF-BG-CRT-01']);
-  const [selectedEditorialRefs, setSelectedEditorialRefs] = useState<string[]>([]);
+  const [selectedEditorialRefs] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Formulario Lote JSON
@@ -148,7 +160,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
       setBatchFeedback(null);
       setBatchDupeList([]);
       const parsed = JSON.parse(jsonString);
-      let list: any[] = [];
+      let list: NoticiaImportada[] = [];
 
       if (Array.isArray(parsed)) {
         list = parsed;
@@ -191,8 +203,8 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
           setBatchFeedback(null);
         }, 2200);
       }
-    } catch (err: any) {
-      setBatchFeedback(`Error en validación JSON: ${err.message}`);
+    } catch (err) {
+      setBatchFeedback(`Error en validación JSON: ${mensajeDeError(err) ?? 'error desconocido'}`);
     }
   };
 

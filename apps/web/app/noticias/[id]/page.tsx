@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
@@ -32,7 +32,6 @@ const KIND_LABEL: Record<string, string> = {
 
 export default function StoryDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -42,6 +41,9 @@ export default function StoryDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [wordsPerMinute, setWordsPerMinute] = useState(150);
   const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
+  // Mientras se guarda una versión, aprobar o volver a guardar actuaría sobre
+  // una versión que el servidor puede haber descartado: los botones se bloquean.
+  const [saving, setSaving] = useState(false);
   const { waiting, poll } = useJobPolling();
 
   const refresh = useCallback(async () => {
@@ -77,11 +79,15 @@ export default function StoryDetailPage() {
   };
 
   const saveEdit = async () => {
-    if (!latest) return;
+    if (!latest || saving) return;
+    setSaving(true);
     try {
       const res = await api.saveScript(story!.id, content, latest.version);
-      setNotice(`Guardado como versión ${res.script_version.version}. Si estaba aprobada, la aprobación queda anulada.`);
+      // El estado se actualiza **antes** de avisar: si el aviso saliera antes,
+      // quien pulse «Aprobar esta versión» podría aprobar la versión anterior
+      // (la API exige la más reciente) y el guardado parecería un fallo.
       await refresh();
+      setNotice(`Guardado como versión ${res.script_version.version}. Si estaba aprobada, la aprobación queda anulada.`);
     } catch (e) {
       const err = e as Error & { status?: number };
       if (err.status === 409) {
@@ -89,11 +95,13 @@ export default function StoryDetailPage() {
       } else {
         setError(err.message);
       }
+    } finally {
+      setSaving(false);
     }
   };
 
   const approve = async () => {
-    if (!latest) return;
+    if (!latest || saving) return;
     try {
       await api.approve(story!.id, latest.id);
       setNotice("Guion aprobado. Si editas el texto después, tendrás que aprobar la nueva versión.");
@@ -311,10 +319,10 @@ export default function StoryDetailPage() {
               aria-label="Editor de guion"
             />
             <div className="flex flex-wrap gap-2">
-              <button className="btn-primary" onClick={saveEdit} disabled={!latest || content === latest.content}>
-                Guardar borrador
+              <button className="btn-primary" onClick={saveEdit} disabled={!latest || content === latest.content || saving}>
+                {saving ? "Guardando…" : "Guardar borrador"}
               </button>
-              <button className="btn" onClick={approve} disabled={!latest || approvedActive}>
+              <button className="btn" onClick={approve} disabled={!latest || approvedActive || saving}>
                 Aprobar esta versión
               </button>
               <Link href="/lotes" className="btn">

@@ -125,13 +125,13 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 
 | ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
 |---|---|---|---|---|---|
-| NN-113.1 | `loading.tsx` / `error.tsx` / `not-found.tsx` por sección | — | Ninguna sección puede quedar en blanco por un error de render | PENDIENTE | — |
-| NN-113.2 | ESLint real (`eslint-config-next`) + `npm run lint` | — | El script se ejecuta y no falla | PENDIENTE | — |
-| NN-113.3 | `npm run typecheck` + `strict` + `noUnusedLocals` + `noUncheckedIndexedAccess` | — | Script en verde; 0 `any` en el Studio | PENDIENTE | — |
+| NN-113.1 | `loading.tsx` / `error.tsx` / `not-found.tsx` por sección | — | Ninguna sección puede quedar en blanco por un error de render | **COMPLETADA** | `app/error.tsx` (con reintentar), `app/not-found.tsx`, `app/loading.tsx` + 6 de sección (`components/marcador-carga.tsx`) — **E** |
+| NN-113.2 | ESLint real (`eslint-config-next`) + `npm run lint` | — | El script se ejecuta y no falla | **COMPLETADA** | `eslint@9` + `eslint-config-next@15.1.6` + `eslint.config.mjs` · **0 problemas** (antes: el script no era ejecutable) — **E** |
+| NN-113.3 | `npm run typecheck` + `strict` + `noUnusedLocals` + `noUncheckedIndexedAccess` | — | Script en verde; 0 `any` en el Studio | **COMPLETADA** | `npm run typecheck` → 0 errores — **E** |
 | NN-113.4 | Cliente HTTP único con `ApiError` tipado | — | 1 solo `fetch`; 1 solo modelo de error | PENDIENTE | — |
 | NN-113.5 | Propagar el error de `useJobPolling` | — | Las páginas muestran el fallo del trabajo | PENDIENTE | — |
 | NN-113.6 | Un solo mapa de estado, compartido y generado | — | 0 duplicados del mapa de estados | PENDIENTE | — |
-| NN-113.7 | Eliminar los `any` | NN-113.3 | 0 `any` en el Studio | PENDIENTE | — |
+| NN-113.7 | Eliminar los `any` | NN-113.3 | 0 `any` en el Studio | **COMPLETADA** | Los 10 `any` sustituidos por tipos reales (`ConfiguracionImportada`, `NoticiaImportada`, `mensajeDeError`) — **E** |
 | NN-113.8 | A11y: teclado, `aria-label`, foco, contraste AA | — | Auditoría sin bloqueantes | PENDIENTE | — |
 | NN-113.9 | Lint de clases inexistentes | — | `scrollbar-none`/`studio-root` sustituidas o definidas | PENDIENTE | — |
 | NN-113.10 | `next/font` en vez de `<link>` externo | — | 0 peticiones bloqueantes a terceros | PENDIENTE | — |

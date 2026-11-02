@@ -189,3 +189,12 @@ export interface StudioExportPackage {
     permanentBackgroundMediaId?: string;
   };
 }
+
+/**
+ * Configuración **importada**: un paquete de exportación del que sólo se usan
+ * algunas partes. Antes era `any`, lo que impedía que TypeScript detectara un
+ * cambio en el contrato de importación (NN-113.3).
+ */
+export type ConfiguracionImportada = Partial<Omit<StudioExportPackage, 'studioConfig'>> & {
+  studioConfig?: Partial<StudioExportPackage['studioConfig']>;
+};

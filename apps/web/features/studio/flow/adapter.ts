@@ -19,7 +19,8 @@ export interface FlowMedia {
   name?: string;
 }
 
-export interface FlowImageResult extends FlowMedia {}
+/** Una imagen de Flow es un medio: se declara como alias, no como interfaz vacía. */
+export type FlowImageResult = FlowMedia;
 
 export interface FlowVideoResult {
   base64: string;

@@ -37,6 +37,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.pytest.ini_options]
-testpaths = ["../../tests"]
-timeout = 120
+# La configuración de pytest vive en el `pytest.ini` de la RAÍZ del repositorio
+# (NN-114.6). Si se declarase aquí, pytest tomaría `apps/api` como raíz y los
+# imports `from tests.… import …` volverían a fallar al ejecutar la suite
+# desde este directorio.

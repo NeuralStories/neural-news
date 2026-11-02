@@ -86,11 +86,20 @@ def create_app() -> FastAPI:
 
     @app.get("/api/v1/health")
     def health() -> dict:
+        """Estado real del sistema, no sólo «la API está viva» (NN-115.2).
+
+        Comprueba lo que de verdad puede romper el producto: la base de datos,
+        FFmpeg (montaje), yt-dlp (transcripción) y las claves de proveedor.
+        """
+        from .health import comprobar_salud
+
         return {
             "ok": True,
             "app": settings.app_name,
             "version": __version__,
             "demo_mode": settings.demo_mode,
+            "env": settings.env,
+            "checks": comprobar_salud(),
         }
 
     return app

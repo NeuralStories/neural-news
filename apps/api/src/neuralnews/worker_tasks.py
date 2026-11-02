@@ -65,7 +65,10 @@ def handle_process_source(db: Session, job: Job) -> str:
         model="demo" if source.demo else None,
         job_id=job.id,
         event="call",
-        cost_estimate=0.0,
+        # La extracción real usa el modelo editorial: su coste se cuenta.
+        cost_estimate=(
+            0.0 if source.demo else budget_service.coste_estimado("extraction")
+        ),
     )
     return f"Fuente procesada; {len(stories)} candidato(s) de noticias"
 
@@ -181,7 +184,7 @@ def handle_analyze_video(db: Session, job: Job) -> str:
         model=settings.llm_model,
         job_id=job.id,
         event="call",
-        cost_estimate=0.01,
+        cost_estimate=budget_service.coste_estimado("gemini"),
     )
     return "Análisis del vídeo guardado (no es transcripción literal)"
 
@@ -209,7 +212,9 @@ def handle_research_story(db: Session, job: Job) -> str:
         model=None,
         job_id=job.id,
         event="call",
-        cost_estimate=0.0,
+        # El coste real estimado: antes se registraba 0,0 € y el presupuesto
+        # diario nunca llegaba a consumirse (hallazgo P6).
+        cost_estimate=0.0 if provider.demo else budget_service.coste_estimado("search"),
     )
     return "Investigación completada; la noticia queda pendiente de revisión"
 
@@ -220,14 +225,31 @@ def handle_draft_script(db: Session, job: Job) -> str:
     story = db.get(Story, story_id)
     if story is None:
         raise RuntimeError("La noticia ya no existe")
+    settings = get_settings()
+    if not settings.demo_mode:
+        # La llamada al modelo es de pago: se comprueba el presupuesto ANTES de
+        # llamarla. Antes esta ruta no comprobaba nada y el límite diario no le
+        # afectaba (hallazgo P6).
+        try:
+            budget_service.assert_paid_call_allowed(
+                db, "editorial_llm", estimated_cost_eur=budget_service.coste_estimado("editorial_llm")
+            )
+        except budget_service.BudgetExceeded as exc:
+            budget_service.record_usage(
+                db, provider="editorial_llm", job_id=job.id, event="blocked"
+            )
+            mark_failed(db, job, str(exc), kind="budget")
+            return "bloqueado por presupuesto"
     script_service.create_draft_version(db, story)
     budget_service.record_usage(
         db,
-        provider="demo_llm" if get_settings().demo_mode else "editorial_llm",
-        model="demo" if get_settings().demo_mode else get_settings().llm_model,
+        provider="demo_llm" if settings.demo_mode else "editorial_llm",
+        model="demo" if settings.demo_mode else settings.llm_model,
         job_id=job.id,
         event="call",
-        cost_estimate=0.0,
+        cost_estimate=(
+            0.0 if settings.demo_mode else budget_service.coste_estimado("editorial_llm")
+        ),
     )
     return "Borrador de guion creado"
 

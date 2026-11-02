@@ -86,7 +86,23 @@ test("beta: fuente → transcripción en cola → noticia → guion → estudio 
   await expect(page.getByRole("heading", { name: "Afirmaciones" })).toBeVisible();
 
   // 5) Guion: generar, editar y guardar (la versión persiste).
-  await page.getByRole("button", { name: "Generar borrador de guion" }).click();
+  //    Se espera a que el trabajo del borrador **termine** antes de editar: en
+  //    demo las noticias se fusionan por tema, así que una prueba puede dejar
+  //    un borrador en marcha y, si landing mientras se edita, crea una versión
+  //    posterior y la aprobación apunta a una versión que ya no es la última.
+  const borrador = await page.request.post(`/api/v1/stories/${storyId}/draft`);
+  const borradorJob = (await borrador.json()) as { job_id: number };
+  await expect
+    .poll(
+      async () => {
+        const j = await (await page.request.get(`/api/v1/jobs/${borradorJob.job_id}`)).json();
+        return j.status as string;
+      },
+      { timeout: 60_000, intervals: [500] },
+    )
+    .toMatch(/DONE|FAILED|RETRYABLE_FAILED/);
+  await page.reload();
+
   const editor = page.getByLabel("Editor de guion");
   await expect(editor).toBeVisible({ timeout: 40_000 });
   await expect(editor).not.toHaveValue("");

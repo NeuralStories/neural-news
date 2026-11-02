@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Flow } from '../flow/adapter';
 import { REAL_SOURCE_METADATA, computeSha256 } from '../data/sourceManifest';
+import { errorMessage as mensajeDeError } from '../utils/errorMessage';
 
 interface FileAuditRecord {
   path: string;
@@ -123,10 +124,10 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       setDownloadStatus('done');
       setStatusMessage(`✓ Paquete de código descargado exitosamente (${totalFiles} archivos íntegros).`);
       setTimeout(() => setDownloadStatus('idle'), 4000);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setDownloadStatus('error');
-      setStatusMessage(`Error al descargar: ${err.message || 'Fallo desconocido'}`);
+      setStatusMessage(`Error al descargar: ${mensajeDeError(err) || 'Fallo desconocido'}`);
     }
   };
 

@@ -5,9 +5,13 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * - Usa el navegador Edge/Chrome ya instalado en el sistema (canal `msedge`):
  *   no hace falta descargar navegadores de Playwright.
- * - La API y el worker deben estar en marcha (ver docs/OPERATIONS.md §2).
+ * - **La pila se levanta sola** (NN-113.14): antes había que tener el API, el
+ *   worker y la web en marcha a mano en tres terminales, y el E2E fallaba con
+ *   un error confuso si se olvidaba uno.
  * - Cada test parte de una base limpia: usa una fuente y una noticia propias.
  */
+const reutilizar = !process.env.CI;
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 180_000,
@@ -26,4 +30,31 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [{ name: "edge", use: { ...devices["Desktop Edge"] } }],
+  webServer: [
+    {
+      command: "python -m uvicorn neuralnews.main:app --host 127.0.0.1 --port 8000",
+      cwd: "../api",
+      url: "http://127.0.0.1:8000/api/v1/health",
+      reuseExistingServer: reutilizar,
+      timeout: 120_000,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+    {
+      command: "python -m neuralnews.worker",
+      cwd: "../api",
+      reuseExistingServer: reutilizar,
+      timeout: 120_000,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+    {
+      command: "npm run start",
+      url: "http://127.0.0.1:3000",
+      reuseExistingServer: reutilizar,
+      timeout: 180_000,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  ],
 });

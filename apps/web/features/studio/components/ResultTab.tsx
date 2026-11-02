@@ -1,27 +1,22 @@
 import React, { useState } from 'react';
-import { 
-  MasterSheetState, 
-  BackgroundPreset, 
-  VoiceConfig, 
-  CameraMovement, 
-  VisualReferenceItem, 
-  MultiSceneScriptAnalysis, 
-  SceneProductionPlan, 
+import {
+  MasterSheetState,
+  VoiceConfig,
+  VisualReferenceItem,
+  MultiSceneScriptAnalysis,
+  SceneProductionPlan,
   NewsArticle 
 } from '../types';
 
 interface ResultTabProps {
   finalPrompt: string;
-  onCopyPrompt: () => Promise<void>;
   onGenerateVideo: (promptToUse?: string) => Promise<void>;
   isGeneratingVideo: boolean;
   generatedVideoBase64?: string;
   generatedVideoMime?: string;
   sheetState: MasterSheetState;
-  selectedBackground: BackgroundPreset;
   aspectRatio: '16:9' | '9:16';
   voiceConfig: VoiceConfig;
-  activeMovements: CameraMovement[];
   multiSceneAnalysis: MultiSceneScriptAnalysis;
   selectedReferences: VisualReferenceItem[];
   activeArticle?: NewsArticle;
@@ -39,16 +34,13 @@ interface ResultTabProps {
 
 export const ResultTab: React.FC<ResultTabProps> = ({
   finalPrompt,
-  onCopyPrompt,
   onGenerateVideo,
   isGeneratingVideo,
   generatedVideoBase64,
   generatedVideoMime,
   sheetState,
-  selectedBackground,
   aspectRatio,
   voiceConfig,
-  activeMovements,
   multiSceneAnalysis,
   selectedReferences,
   activeArticle,

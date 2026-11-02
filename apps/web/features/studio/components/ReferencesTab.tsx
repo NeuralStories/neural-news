@@ -1,25 +1,25 @@
 import React, { useState, useRef } from 'react';
 import { Flow } from '../flow/adapter';
-import { 
-  VisualReferenceItem, 
-  EditorialReferenceItem, 
-  VisualReferenceCategory, 
-  EditorialSourceType, 
-  ApprovalStatus 
+import {
+  VisualReferenceItem,
+  EditorialReferenceItem,
+  VisualReferenceCategory,
+  EditorialSourceType,
+  ApprovalStatus,
+  ConfiguracionImportada,
 } from '../types';
 
 interface ReferencesTabProps {
   visualReferences: VisualReferenceItem[];
   editorialReferences: EditorialReferenceItem[];
   onToggleSelectVisualRef: (id: string) => void;
-  onUpdateVisualRefStatus: (id: string, status: ApprovalStatus) => void;
   onTogglePermanentVisualRef: (id: string) => void;
   onAddVisualRef: (item: Omit<VisualReferenceItem, 'id' | 'createdAt' | 'refType'>) => void;
   onDeleteVisualRef: (id: string) => void;
   onAddEditorialRef: (item: Omit<EditorialReferenceItem, 'id' | 'createdAt' | 'refType'>) => void;
   onDeleteEditorialRef: (id: string) => void;
   onExportConfiguration: () => Promise<void>;
-  onImportConfigurationJson: (imported: any) => void;
+  onImportConfigurationJson: (imported: ConfiguracionImportada) => void;
   isExporting: boolean;
 }
 
@@ -27,7 +27,6 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
   visualReferences,
   editorialReferences,
   onToggleSelectVisualRef,
-  onUpdateVisualRefStatus,
   onTogglePermanentVisualRef,
   onAddVisualRef,
   onDeleteVisualRef,
@@ -38,8 +37,6 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
   isExporting,
 }) => {
   const [activeTypeTab, setActiveTypeTab] = useState<'audiovisual' | 'editorial'>('audiovisual');
-  const [visualCategory, setVisualCategory] = useState<VisualReferenceCategory | 'todos'>('todos');
-  const [searchQuery, setSearchQuery] = useState('');
   const [filterApprovedOnly, setFilterApprovedOnly] = useState(false);
 
   // Formulario de referencia audiovisual
@@ -50,10 +47,10 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
   const [vImageUrl, setVImageUrl] = useState('');
   const [vMediaId, setVMediaId] = useState<string | undefined>(undefined);
   const [vDescription, setVDescription] = useState('');
-  const [vVersion, setVVersion] = useState('v1.0');
-  const [vStatus, setVStatus] = useState<ApprovalStatus>('aprobado');
+  const [vVersion] = useState('v1.0');
+  const [vStatus] = useState<ApprovalStatus>('aprobado');
   const [vIsPermanent, setVIsPermanent] = useState(false);
-  const [vTags, setVTags] = useState('');
+  const [vTags] = useState('');
 
   // Formulario de referencia editorial
   const [showAddEditorialModal, setShowAddEditorialModal] = useState(false);
@@ -62,10 +59,9 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
   const [eSourceType, setESourceType] = useState<EditorialSourceType>('enlace');
   const [eUrl, setEUrl] = useState('');
   const [eExcerpt, setEExcerpt] = useState('');
-  const [eAuthor, setEAuthor] = useState('');
+  const [eAuthor] = useState('');
 
   const configFileInputRef = useRef<HTMLInputElement>(null);
-  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   // Selección directa desde Flow Media Gallery para comprobar transferibilidad real
   const handleSelectFromFlowGallery = async () => {
@@ -243,7 +239,8 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
                   }`}
                 >
                   <div className="relative aspect-video bg-neutral-950 overflow-hidden flex items-center justify-center border-b border-neutral-800/80">
-                    <img src={ref.imageUrl} alt={ref.name} className="w-full h-full object-cover" />
+                    {/* eslint-disable-next-line @next/next/no-img-element -- la URL la aporta el operador; next/image exige dominios configurados. */}
+                <img src={ref.imageUrl} alt={ref.name} className="w-full h-full object-cover" />
                     <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-neutral-950/85 backdrop-blur text-neutral-300 border border-neutral-700/80">
                       {ref.category}
                     </span>
@@ -330,7 +327,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
 
                 <h4 className="text-xs font-bold text-white">{ed.title}</h4>
                 <p className="text-xs text-neutral-300 leading-relaxed font-mono bg-neutral-950 p-2 rounded border border-neutral-800/60">
-                  "{ed.summaryOrExcerpt}"
+                  &quot;{ed.summaryOrExcerpt}&quot;
                 </p>
 
                 {ed.urlOrCitation && (

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Flow } from '../flow/adapter';
 import { MasterSheetState } from '../types';
 import { MAXDOTAI_CANONICAL, DEFAULT_MASTER_SHEET_PROMPT } from '../constants';
 
@@ -91,6 +90,7 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
 
           <div className="aspect-video w-full rounded-lg border-2 border-neutral-800 bg-neutral-950 overflow-hidden relative flex items-center justify-center group shadow-inner">
             {sheetState.base64 ? (
+              // eslint-disable-next-line @next/next/no-img-element -- la hoja es un data URL en base64; next/image no lo admite.
               <img
                 src={`data:${sheetState.mimeType || 'image/jpeg'};base64,${sheetState.base64}`}
                 alt="Hoja de personaje maxDotAi"

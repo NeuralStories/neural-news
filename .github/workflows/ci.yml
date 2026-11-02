@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "beta/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # --- Backend ---------------------------------------------------------------
+  api:
+    name: API (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: neural
+          POSTGRES_PASSWORD: ""
+          POSTGRES_DB: neuralnews
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U neural"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEURAL_ENV: local
+      NEURAL_DEMO_MODE: "true"
+      NEURAL_DATABASE_URL: postgresql+psycopg://neural@127.0.0.1:5432/neuralnews
+      NEURAL_ADMIN_PASSWORD: clave-de-prueba
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: neural-news/apps/api/pyproject.toml
+      - name: Instalar el backend
+        working-directory: neural-news/apps/api
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+      - name: Migraciones sobre PostgreSQL limpio
+        working-directory: neural-news/infra/migrations
+        run: python -m alembic upgrade head
+      - name: El esquema migrado coincide con los modelos
+        working-directory: neural-news
+        run: python tools/compare_schema.py "$NEURAL_DATABASE_URL"
+      - name: Suite de pruebas
+        working-directory: neural-news
+        run: python -m pytest -q
+      - name: Escaneo de secretos
+        working-directory: neural-news
+        run: python tools/scan_secrets.py .
+
+  # --- Frontend --------------------------------------------------------------
+  web:
+    name: Web (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["20"]
+    env:
+      NEURAL_ENV: local
+      NEURAL_DEMO_MODE: "true"
+      NEURAL_DATABASE_URL: sqlite:///./storage/neural-news-ci.db
+      NEURAL_ADMIN_PASSWORD: clave-de-prueba
+    defaults:
+      run:
+        working-directory: neural-news
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: neural-news/apps/web/package-lock.json
+      - name: Instalar la web
+        working-directory: neural-news/apps/web
+        run: npm ci --no-audit --no-fund
+      - name: Tipos
+        working-directory: neural-news/apps/web
+        run: npx tsc --noEmit
+      - name: Lint
+        working-directory: neural-news/apps/web
+        run: npx eslint .
+      - name: Build
+        working-directory: neural-news/apps/web
+        run: npm run build
+      - name: El build sin destino debe fallar (gate G5)
+        working-directory: neural-news/apps/web
+        env:
+          NEURAL_ENV: beta
+        run: |
+          if npm run build; then
+            echo "::error::el build ha compilado sin NEURAL_API_URL: la web se desplegaría sin destino"
+            exit 1
+          fi
+          echo "OK: el build falla sin destino, como debe."
+      - name: Preparar el navegador
+        working-directory: neural-news/apps/web
+        run: npx playwright install --with-deps chromium
+      - name: E2E (levanta API, worker y web)
+        working-directory: neural-news/apps/web
+        run: npm run e2e

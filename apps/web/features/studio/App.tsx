@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Flow, flowRuntime } from './flow/adapter';
 import { useStudioProject } from './lib/useStudioProject';
 import { projectApi } from './lib/projectApi';
+import { errorMessage as mensajeDeError } from './utils/errorMessage';
 import { WORDS_PER_SECOND } from './utils/scriptAnalyzer';
 import {
   StudioTab,
@@ -10,14 +11,12 @@ import {
   CameraMovement,
   VisualReferenceItem,
   EditorialReferenceItem,
-  ApprovalStatus,
   NewsArticle,
   ProductionEpisodeBlock,
   StudioExportPackage,
-  SceneProductionPlan,
+  ConfiguracionImportada,
 } from './types';
 import {
-  MAXDOTAI_CANONICAL,
   BACKGROUND_PRESETS,
   ALGENIB_VOICE_CONFIG,
   CAMERA_MOVEMENTS_CATALOG,
@@ -369,7 +368,7 @@ export default function App({ projectId }: { projectId: number | null }) {
     setCurrentTab('guion');
     setSuccessToast(`Noticia aprobada cargada en el analizador de escenas para producción.`);
     setTimeout(() => setSuccessToast(null), 3000);
-  }, []);
+  }, [projectId]);
 
   const handleAddEpisodeBlock = useCallback((title: string, notes?: string) => {
     const newBlock: ProductionEpisodeBlock = {
@@ -385,12 +384,6 @@ export default function App({ projectId }: { projectId: number | null }) {
     setTimeout(() => setSuccessToast(null), 3000);
   }, []);
 
-  const handleAssignArticleToBlock = useCallback((articleId: string, blockTitle: string) => {
-    setArticles((prev) =>
-      prev.map((a) => (a.id === articleId ? { ...a, episodeBlock: blockTitle } : a))
-    );
-  }, []);
-
   // -----------------------------------------------------------------
   // REFERENCIAS
   // -----------------------------------------------------------------
@@ -400,19 +393,6 @@ export default function App({ projectId }: { projectId: number | null }) {
         if (r.id !== id) return r;
         if (r.status !== 'aprobado') return r;
         return { ...r, selectedForPrompt: !r.selectedForPrompt };
-      })
-    );
-  }, []);
-
-  const handleUpdateVisualRefStatus = useCallback((id: string, status: ApprovalStatus) => {
-    setVisualReferences((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        return {
-          ...r,
-          status,
-          selectedForPrompt: status === 'aprobado' ? r.selectedForPrompt : false,
-        };
       })
     );
   }, []);
@@ -540,9 +520,9 @@ export default function App({ projectId }: { projectId: number | null }) {
       ]);
       setSuccessToast('Hoja generada, auto-guardada en galería e incorporada.');
       setTimeout(() => setSuccessToast(null), 3500);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || 'Error al generar la hoja maestra.');
+      setErrorMessage(mensajeDeError(err) || 'Error al generar la hoja maestra.');
     } finally {
       setIsGeneratingSheet(false);
     }
@@ -619,15 +599,15 @@ export default function App({ projectId }: { projectId: number | null }) {
 
       setSuccessToast('Paquete de producción neural.news exportado exitosamente.');
       setTimeout(() => setSuccessToast(null), 3000);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || 'Error al exportar el proyecto con Flow.download.');
+      setErrorMessage(mensajeDeError(err) || 'Error al exportar el proyecto con Flow.download.');
     } finally {
       setIsExporting(false);
     }
   };
 
-  const handleImportConfigurationJson = useCallback((imported: any) => {
+  const handleImportConfigurationJson = useCallback((imported: ConfiguracionImportada) => {
     try {
       if (Array.isArray(imported.articles)) {
         setArticles(imported.articles);
@@ -641,20 +621,21 @@ export default function App({ projectId }: { projectId: number | null }) {
       if (Array.isArray(imported.editorialReferences)) {
         setEditorialReferences(imported.editorialReferences);
       }
-      if (imported.studioConfig) {
-        if (imported.studioConfig.aspectRatio) setAspectRatio(imported.studioConfig.aspectRatio);
-        if (imported.studioConfig.voiceSpeedMultiplier) setVoiceSpeed(imported.studioConfig.voiceSpeedMultiplier);
-        if (imported.studioConfig.permanentCharacterMediaId) {
-          setSheetState(prev => ({ ...prev, mediaId: imported.studioConfig.permanentCharacterMediaId, isApproved: true }));
+      const studioConfig = imported.studioConfig;
+      if (studioConfig) {
+        if (studioConfig.aspectRatio) setAspectRatio(studioConfig.aspectRatio);
+        if (studioConfig.voiceSpeedMultiplier) setVoiceSpeed(studioConfig.voiceSpeedMultiplier);
+        if (studioConfig.permanentCharacterMediaId) {
+          setSheetState(prev => ({ ...prev, mediaId: studioConfig.permanentCharacterMediaId, isApproved: true }));
         }
-        if (imported.studioConfig.permanentBackgroundMediaId) {
-          setCustomBgMediaId(imported.studioConfig.permanentBackgroundMediaId);
+        if (studioConfig.permanentBackgroundMediaId) {
+          setCustomBgMediaId(studioConfig.permanentBackgroundMediaId);
         }
       }
       setSuccessToast('Proyecto y redacción editorial restaurados correctamente.');
       setTimeout(() => setSuccessToast(null), 3500);
-    } catch (err: any) {
-      setErrorMessage(`Error en formato de importación: ${err.message}`);
+    } catch (err) {
+      setErrorMessage(`Error en formato de importación: ${mensajeDeError(err) ?? 'error desconocido'}`);
     }
   }, []);
 
@@ -707,7 +688,14 @@ export default function App({ projectId }: { projectId: number | null }) {
         }
       });
 
-      const options: any = {
+      const options: {
+        prompt: string;
+        modelDisplayName: string;
+        aspectRatio: '16:9' | '9:16';
+        durationSeconds: number;
+        resolution: string;
+        referenceImageMediaIds?: string[];
+      } = {
         prompt: promptToUse || finalPrompt,
         modelDisplayName: 'Omni 1.1 Flash',
         aspectRatio,
@@ -727,9 +715,9 @@ export default function App({ projectId }: { projectId: number | null }) {
       setCurrentTab('resultado');
       setSuccessToast('Toma generada con éxito en Omni 1.1 Flash.');
       setTimeout(() => setSuccessToast(null), 3000);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || 'Error al generar la toma en Omni 1.1 Flash.');
+      setErrorMessage(mensajeDeError(err) || 'Error al generar la toma en Omni 1.1 Flash.');
     } finally {
       setIsGeneratingVideo(false);
     }
@@ -809,7 +797,6 @@ export default function App({ projectId }: { projectId: number | null }) {
             articles={articles}
             episodeBlocks={episodeBlocks}
             visualReferences={visualReferences}
-            editorialReferences={editorialReferences}
             onAddArticle={handleAddArticle}
             onImportBatchArticles={handleImportBatchArticles}
             onUpdateArticle={handleUpdateArticle}
@@ -817,7 +804,6 @@ export default function App({ projectId }: { projectId: number | null }) {
             onSelectArticleForProduction={handleSelectArticleForProduction}
             activeProductionArticleId={activeArticleId}
             onAddEpisodeBlock={handleAddEpisodeBlock}
-            onAssignArticleToBlock={handleAssignArticleToBlock}
           />
           </>
         )}
@@ -872,7 +858,6 @@ export default function App({ projectId }: { projectId: number | null }) {
             visualReferences={visualReferences}
             editorialReferences={editorialReferences}
             onToggleSelectVisualRef={handleToggleSelectVisualRef}
-            onUpdateVisualRefStatus={handleUpdateVisualRefStatus}
             onTogglePermanentVisualRef={handleTogglePermanentVisualRef}
             onAddVisualRef={handleAddVisualRef}
             onDeleteVisualRef={handleDeleteVisualRef}
@@ -896,18 +881,13 @@ export default function App({ projectId }: { projectId: number | null }) {
             )}
             <ResultTab
             finalPrompt={finalPrompt}
-            onCopyPrompt={async () => {
-              await navigator.clipboard.writeText(finalPrompt);
-            }}
             onGenerateVideo={handleGenerateVideo}
             isGeneratingVideo={isGeneratingVideo}
             generatedVideoBase64={videoResult?.base64}
             generatedVideoMime={videoResult?.mimeType}
             sheetState={sheetState}
-            selectedBackground={selectedBackground}
             aspectRatio={aspectRatio}
             voiceConfig={{ ...ALGENIB_VOICE_CONFIG, speedMultiplier: voiceSpeed }}
-            activeMovements={movements.filter((m) => m.selected)}
             multiSceneAnalysis={multiSceneAnalysis}
             selectedReferences={visualReferences.filter(
               (r) => r.status === 'aprobado' && (r.isEpisodePermanent || r.selectedForPrompt)

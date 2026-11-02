@@ -141,9 +141,10 @@ def mark_done(db, job: Job) -> None:
     job.lease_until = None
 
 
-def mark_retryable(db, job: Job, error: str, backoff_seconds: int = 30) -> None:
+def mark_retryable(db, job: Job, error: str, backoff_seconds: int = 30, kind: str | None = None) -> None:
     job.status = "RETRYABLE_FAILED"
     job.error = error
+    job.error_kind = kind
     job.lease_until = None
     if job.attempt >= job.max_attempts:
         job.status = "FAILED"
@@ -153,10 +154,11 @@ def mark_retryable(db, job: Job, error: str, backoff_seconds: int = 30) -> None:
         job.next_run_at = utcnow() + timedelta(seconds=backoff_seconds * job.attempt)
 
 
-def mark_failed(db, job: Job, error: str) -> None:
+def mark_failed(db, job: Job, error: str, kind: str | None = None) -> None:
     """Fallo definitivo: no se reintenta (p. ej., presupuesto agotado o entrada inválida)."""
     job.status = "FAILED"
     job.error = error
+    job.error_kind = kind
     job.lease_until = None
     job.finished_at = utcnow()
     job.next_run_at = None

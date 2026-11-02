@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .config import get_settings
-from .errors import safe_error
+from .errors import ConectorFallido, MaterialFaltante, safe_error
 from .models import Job, Source, Story
 from .queue import mark_done, mark_failed, mark_retryable
 from .services import budget as budget_service
@@ -121,7 +121,8 @@ def handle_build_montage(db: Session, job: Job) -> str:
         raise RuntimeError("El proyecto ya no existe")
     result = montage_service.build_animatica(db, project)
     if not result.get("ok"):
-        raise RuntimeError(result.get("error") or "No se ha podido construir la animática")
+        # Falta material (o no hay FFmpeg): reintentar no cambiaría el resultado.
+        raise MaterialFaltante(result.get("error") or "No se ha podido construir la animática")
     montage_service.persist_animatica(db, project, result, job.payload.get("actor_id"))
     db.flush()
     return f"Animática construida: {result.get('duration_s', '?')} s ({result.get('label', '')})"
@@ -167,7 +168,7 @@ def handle_analyze_video(db: Session, job: Job) -> str:
         budget_service.assert_paid_call_allowed(db, "gemini", estimated_cost_eur=0.01)
     except budget_service.BudgetExceeded as exc:
         budget_service.record_usage(db, provider="gemini", job_id=job.id, event="blocked")
-        mark_failed(db, job, str(exc))
+        mark_failed(db, job, str(exc), kind="budget")
         return "bloqueado por presupuesto"
 
     result = call_gemini_video_analysis(source.canonical_url or "")
@@ -244,7 +245,9 @@ def handle_export_batch(db: Session, job: Job) -> str:
 def run_job(db: Session, job: Job) -> None:
     fn = HANDLERS.get(job.type)
     if fn is None:
-        mark_failed(db, job, f"Tipo de trabajo desconocido: {job.type}")
+        mark_failed(
+            db, job, f"Tipo de trabajo desconocido: {job.type}", kind="unknown"
+        )
         return
     try:
         summary = fn(db, job)
@@ -252,9 +255,15 @@ def run_job(db: Session, job: Job) -> None:
             job.progress = summary
             mark_done(db, job)
     except budget_service.BudgetExceeded as exc:
-        mark_failed(db, job, str(exc))
+        mark_failed(db, job, str(exc), kind="budget")
+    except MaterialFaltante as exc:
+        # Reintentar sin material daría el mismo resultado: no se reintenta.
+        mark_failed(db, job, safe_error(exc), kind="material")
+    except ConectorFallido as exc:
+        # Fallo de proveedor: suele ser transitorio, se reintenta.
+        mark_retryable(db, job, safe_error(exc), kind="connector")
     except Exception as exc:  # noqa: BLE001 — el worker registra y decide reintento
         # `job.error` se devuelve al cliente en GET /api/v1/jobs: se guarda un
         # resumen sin rutas ni secretos, y el detalle completo queda en el log.
         logger.exception("Fallo el trabajo %s (%s)", job.id, job.type)
-        mark_retryable(db, job, safe_error(exc))
+        mark_retryable(db, job, safe_error(exc), kind="unknown")

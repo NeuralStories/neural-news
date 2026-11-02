@@ -6,6 +6,7 @@ from sqlalchemy import select
 
 from ..config import get_settings
 from ..db import get_db
+from ..errors import error_kind_label
 from ..models import Job, Setting
 from ..schemas import BudgetUpdate, JobOut
 from ..security import get_current_actor
@@ -29,6 +30,8 @@ def get_job(job_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -
         "max_attempts": job.max_attempts,
         "progress": job.progress,
         "error": job.error,
+        "error_kind": job.error_kind,
+        "error_kind_label": error_kind_label(job.error_kind),
         "payload": job.payload,
         "created_at": job.created_at.isoformat(),
         "finished_at": job.finished_at.isoformat() if job.finished_at else None,
@@ -47,6 +50,8 @@ def list_jobs(db=Depends(get_db), actor=Depends(get_current_actor), limit: int =
                 "status_label": JOB_LABELS.get(j.status, j.status),
                 "attempt": j.attempt,
                 "error": j.error,
+                "error_kind": j.error_kind,
+                "error_kind_label": error_kind_label(j.error_kind),
                 "created_at": j.created_at.isoformat(),
             }
             for j in rows

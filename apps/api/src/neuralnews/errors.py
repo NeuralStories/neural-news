@@ -36,3 +36,45 @@ def safe_error(exc: BaseException, *, max_length: int = 240) -> str:
         message = message[: max_length - 1].rstrip() + "…"
     name = type(exc).__name__
     return f"{name}: {message}" if message else name
+
+
+# ---------------------------------------------------------------------------
+# Motivo normalizado del fallo (NN-110.e)
+# ---------------------------------------------------------------------------
+#
+# El motivo se registra CUANDO ocurre el fallo, no se deduce después del texto:
+# adivinarlo por el mensaje es frágil y mezcla «presupuesto» con «conector».
+
+ERROR_KIND_LABELS: dict[str, str] = {
+    "budget": "Presupuesto agotado",
+    "connector": "Fallo del conector",
+    "material": "Falta material",
+    "interrupted": "Trabajo interrumpido",
+    "timeout": "Tiempo agotado",
+    "unknown": "Motivo desconocido",
+}
+
+
+def error_kind_label(kind: str | None) -> str:
+    """Etiqueta legible del motivo normalizado."""
+    if not kind:
+        return ""
+    return ERROR_KIND_LABELS.get(kind, kind)
+
+
+class MaterialFaltante(RuntimeError):
+    """El trabajo no puede ejecutarse porque falta material (tomas sin MP4, etc.).
+
+    No tiene sentido reintentar: reintentar sin material da el mismo resultado.
+    """
+
+    kind = "material"
+
+
+class ConectorFallido(RuntimeError):
+    """Un proveedor externo falló (red, credenciales, formato de la respuesta).
+
+    Suele ser transitorio: se reintenta y se registra el motivo «conector».
+    """
+
+    kind = "connector"

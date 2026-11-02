@@ -18,6 +18,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models import Source, SourceContent
+from ..errors import ConectorFallido
+from ..providers.safety import FetchBlocked
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +119,14 @@ def transcribe_source_content(db: Session, source: Source) -> TranscriptionOutco
 
     if source.provider == "youtube":
         video_id = source.external_id or ""
-        draft = auto_transcript(video_id)
+        try:
+            draft = auto_transcript(video_id)
+        except (FetchBlocked, ValueError):
+            raise
+        except Exception as exc:  # noqa: BLE001 — el proveedor falló, no el código
+            raise ConectorFallido(
+                f"El proveedor de subtítulos falló para el vídeo {video_id}: {exc}"
+            ) from exc
         if draft is not None:
             _store_content(db, source, draft)
             db.flush()
@@ -163,9 +172,14 @@ def transcribe_source_content(db: Session, source: Source) -> TranscriptionOutco
             )
         from ..providers.transcript import fetch_podcast_transcript_from_feed
 
-        draft = fetch_podcast_transcript_from_feed(
-            feed_url, source.external_id, source.title
-        )
+        try:
+            draft = fetch_podcast_transcript_from_feed(
+                feed_url, source.external_id, source.title
+            )
+        except (FetchBlocked, ValueError):
+            raise
+        except Exception as exc:  # noqa: BLE001 — el proveedor falló, no el código
+            raise ConectorFallido(f"El feed RSS no pudo consultarse: {exc}") from exc
         if draft is None:
             return TranscriptionOutcome(
                 found=False,
@@ -199,7 +213,12 @@ def extract_web_content(db: Session, source: Source) -> TranscriptionOutcome:
     from ..providers.web_rss import fetch_web
     from ..services.sources import _store_content
 
-    result = fetch_web(source.canonical_url)
+    try:
+        result = fetch_web(source.canonical_url)
+    except (FetchBlocked, ValueError):
+        raise
+    except Exception as exc:  # noqa: BLE001 — el proveedor falló, no el código
+        raise ConectorFallido(f"No se pudo extraer el artículo: {exc}") from exc
     if result.status in ("READY", "PARTIAL") and result.contents:
         for draft in result.contents:
             _store_content(db, source, draft)

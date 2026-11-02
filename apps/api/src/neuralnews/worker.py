@@ -19,6 +19,7 @@ from typing import Iterator
 
 from .config import get_settings
 from .db import session_scope
+from .logging_setup import configure_logging, log_event
 from .models import Job
 from .queue import claim_next_job, recover_stale_jobs, renew_lease
 from .worker_tasks import run_job
@@ -102,8 +103,18 @@ def tick() -> int:
             if job is None:
                 return 0
             print(f"[worker] job #{job.id} tipo={job.type} intento={job.attempt}", flush=True)
+            log_event(
+                logger,
+                "job.start",
+                f"job #{job.id} ({job.type}) empieza",
+                job_id=job.id,
+                job_type=job.type,
+                attempt=job.attempt,
+            )
+            inicio = time.monotonic()
             run_job(db, job)
             estado, error = job.status, job.error
+            duracion = round(time.monotonic() - inicio, 3)
     # Fuera de la transacción: escribir el estado no puede revertir un trabajo
     # que ya ha terminado.
     try:
@@ -113,11 +124,22 @@ def tick() -> int:
         )
     except Exception:  # noqa: BLE001 — el log nunca puede tumbar el bucle
         pass
+    log_event(
+        logger,
+        "job.done",
+        f"job #{job_id} terminó como {estado}",
+        job_id=job_id,
+        status=estado,
+        duration_s=duracion,
+        error=error,
+        error_kind=getattr(job, "error_kind", None),
+    )
     return 1
 
 
 def run(poll_seconds: float = 1.0, once: bool = False) -> None:
     configure_streams()
+    configure_logging()
     settings = get_settings()
     recovered = sweep_stale_jobs(settings.job_lease_seconds)
     if recovered:
@@ -145,6 +167,12 @@ def run(poll_seconds: float = 1.0, once: bool = False) -> None:
                     print(
                         f"[worker] barrido: recuperados {len(vencidos)} trabajos vencidos: {vencidos}",
                         flush=True,
+                    )
+                    log_event(
+                        logger,
+                        "jobs.recovered",
+                        f"barrido: {len(vencidos)} trabajos vencidos recuperados",
+                        recovered=vencidos,
                     )
         except KeyboardInterrupt:
             print("[worker] parando por interrupción del usuario", flush=True)

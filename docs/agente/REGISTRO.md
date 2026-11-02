@@ -496,3 +496,37 @@ refactor del Studio y no lo era).
 **Regla general:** antes de un E2E, `stop.ps1`; después de un `npm run build`, comprobar que
 nadie sirve ese puerto.
 
+---
+
+## 2026-11-02 — Supervisor externo añadido por petición del propietario
+
+El propietario ha añadido al proyecto un **mecanismo externo de relanzamiento**: `PROMPT.md` (el
+prompt que se pasa al agente) y `supervisor.sh` (el guion de Bash que lo lanza, lee su etiqueta de
+salida y gestiona la espera por cuota).
+
+**Lo que había que adaptar para que encajara con este proyecto:**
+
+1. El supervisor valida el proyecto con `grep -q "\[ \]" docs/agente/PLAN.md`: hacía falta ese
+   fichero, con **casillas**, y no existía (el plan maestro es una tabla). Se añade
+   `tools/generar_plan_casillas.py`, que **genera** `docs/agente/PLAN.md` desde
+   `PLAN_MAESTRO.md`: una sola fuente de verdad y ninguna lista que pueda divergir.
+   `tests/test_plan_casillas.py` falla si se desfasas.
+2. **Bug real del generador (encontrado al ejecutarlo):** las tablas del plan maestro contienen
+   pipes escapados (``local\|beta\|prod``). Partir la fila por cualquier pipe **desplazaba las
+   columnas** y una fila completada (`NN-111.1`) aparecía como pendiente: el supervisor nunca
+   habría dado el proyecto por terminado. Corregido partiendo solo por pipes **no** escapados.
+3. Las decisiones del propietario **no** se marcan como `[ ]` en `PLAN.md`: no son tareas
+   ejecutables y, de estarlo, el supervisor no cerraría nunca el proyecto. Viven en
+   `docs/agente/TAREAS.md` (`DEC-01`, `DEC-02`, `SUP-01`, `SUP-02`).
+4. `docs/agente/TERMINADO` e `docs/agente/espera.txt` son **estado de máquina**: se ignoran en git.
+   `TERMINADO` está creado, así que el supervisor no relanza; **bórralo** para retomar el trabajo.
+5. `AGENTE_CMD` en `supervisor.sh:5` sigue siendo un marcador de posición: hay que poner el comando
+   real de esta máquina (`SUP-01`). Y el guion es **Bash** con `crontab`: en Windows hace falta
+   WSL o Git Bash (`SUP-02`). **No se ha configurado ningún `crontab`**: no hay un programador
+   real verificado en este sistema, y el mecanismo `cron_create` de la plataforma no se configura
+   mientras el plan esté cerrado (§6.6.6).
+
+**Corrección de un recuento:** se afirmaba que el plan tenía «95 filas COMPLETADAS»; el
+número real de **filas de tarea es 89** (las 6 de más eran líneas de texto que contienen la
+palabra). El checkpoint dice 89.
+

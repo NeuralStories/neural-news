@@ -47,3 +47,9 @@ apps/api/_*.log
 apps/web/_*.log
 test-results/
 playwright-report/
+
+# Marcadores de runtime del supervisor externo (`supervisor.sh`): son estado de
+# la máquina, no del repositorio. `docs/agente/TERMINADO` evita que el
+# supervisor relancee el agente; bórralo para retomar el trabajo pendiente.
+docs/agente/TERMINADO
+docs/agente/espera.txt

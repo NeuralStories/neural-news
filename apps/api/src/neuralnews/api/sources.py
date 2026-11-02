@@ -12,12 +12,15 @@ from ..db import get_db
 from ..models import Claim, Job, Source, SourceContent, Story, StorySource
 from ..queue import enqueue
 from ..schemas import ProcessRequest, SourceCreate, SourceDetailOut, SourceOut
-from ..providers.safety import FetchBlocked
+from ..providers.safety import FetchBlocked  # noqa: F401  (re-exportado para los routers)
 from ..security import get_current_actor
 from ..services.sources import DuplicateSource, create_source
-from ..services.transcription import TranscriptionOutcome
 from ..states import CONTENT_TYPE_LABELS, SOURCE_LABELS, STORY_LABELS
-from ..worker_tasks import ANALYZE_VIDEO, PROCESS_SOURCE  # noqa: F401  (ANALYZE_VIDEO usado)
+from ..worker_tasks import (  # noqa: F401  (ANALYZE_VIDEO re-exportado)
+    ANALYZE_VIDEO,
+    PROCESS_SOURCE,
+    TRANSCRIBE_SOURCE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -192,36 +195,46 @@ def get_transcript(source_id: int, db=Depends(get_db), actor=Depends(get_current
     return {"found": False, "message": "Esta fuente todavía no tiene transcripción"}
 
 
-@router.post("/{source_id}/transcribe")
-def transcribe_source(source_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
-    """Busca o crea la transcripción de la fuente según su tipo:
-    YouTube → subtítulos públicos; pódcast → podcast:transcript del feed;
-    artículo web → texto del artículo; manual → el texto aportado.
-    Nada se inventa: si no hay transcripción accesible, se responde el motivo."""
+@router.post("/{source_id}/transcribe", status_code=202)
+def transcribe_source(
+    source_id: int,
+    db=Depends(get_db),
+    actor=Depends(get_current_actor),
+) -> dict:
+    """Encola la búsqueda de la transcripción de la fuente.
+
+    **No se hace aquí.** Buscar la transcripción puede tardar minutos (yt-dlp,
+    feed RSS del pódcast, extracción del artículo) y no debe bloquear el hilo
+    de la petición (gate G3). La respuesta es `202` con el identificador del
+    trabajo; el resultado se consulta en `/sources/{id}/transcript` cuando el
+    trabajo termina.
+
+    - YouTube → subtítulos públicos; pódcast → podcast:transcript del feed;
+      artículo web → texto del artículo; manual → el texto aportado.
+    Nada se inventa: si no hay transcripción accesible, el trabajo termina con
+    el motivo y ese motivo llega a la interfaz.
+    """
     source = db.get(Source, source_id)
     if source is None:
         raise HTTPException(status_code=404, detail="Esa fuente no existe")
 
-    from ..services import transcription as transcription_service
-
-    try:
-        outcome = transcription_service.transcribe_source_content(db, source)
-    except FetchBlocked as exc:
-        return TranscriptionOutcome(
-            found=False, message=f"Bloqueado por seguridad: {exc}"
-        ).to_out()
-    except Exception:  # noqa: BLE001 — el fallo se registra; al cliente solo un motivo seguro
-        # No se filtra el texto crudo de la excepción al cliente: puede contener rutas
-        # del sistema o stderr de herramientas. El detalle completo queda en el log.
-        logger.exception("Fallo al obtener la transcripción de la fuente %s", source.id)
-        return TranscriptionOutcome(
-            found=False,
-            message=(
-                "No se ha podido obtener la transcripción por un fallo del conector; "
-                "inténtalo de nuevo o aporta la transcripción manualmente"
-            ),
-        ).to_out()
-    return outcome.to_out()
+    job, created = enqueue(
+        db,
+        TRANSCRIBE_SOURCE,
+        {"source_id": source.id, "actor_id": actor["actor_id"]},
+        dedupe_key=f"transcribe:{source.id}",
+    )
+    db.flush()
+    return {
+        "job_id": job.id,
+        "created": created,
+        "status": job.status,
+        "message": (
+            "Transcripción en cola; se avisará cuando termine."
+            if created
+            else "Ya había una transcripción en marcha; se reutiliza."
+        ),
+    }
 
 
 @router.post("/{source_id}/process")

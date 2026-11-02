@@ -42,7 +42,7 @@ export const api = {
   processSource: (id: number) => request<{ job_id: number; created: boolean }>(`/v1/sources/${id}/process`, { method: "POST", body: JSON.stringify({}) }),
   analyzeVideo: (id: number) => request<{ job_id: number; created: boolean }>(`/v1/sources/${id}/analyze`, { method: "POST" }),
   transcribeSource: (id: number) =>
-    request<{ found: boolean; created: boolean; message?: string; transcript?: { text: string; provider: string; segments: number } }>(
+    request<{ job_id: number; created: boolean; status: string; message: string }>(
       `/v1/sources/${id}/transcribe`, { method: "POST", body: JSON.stringify({}) },
     ),
   getTranscript: (id: number) =>

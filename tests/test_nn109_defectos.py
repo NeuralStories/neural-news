@@ -107,7 +107,7 @@ def _asignar_feed(demo_client, source_id: int, feed_url: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_b1_spotify_sin_feed_informa_sin_fugar_error_interno(demo_client):
+def test_b1_spotify_sin_feed_informa_sin_fugar_error_interno(demo_client, worker):
     """Sin feed RSS la respuesta es honesta y NO menciona `metadata`.
 
     Antes: `source.metadata` lanzaba AttributeError y el `except Exception`
@@ -115,15 +115,18 @@ def test_b1_spotify_sin_feed_informa_sin_fugar_error_interno(demo_client):
     """
     sid = _crear_fuente_spotify(demo_client, "ep-neuralnews-001")
     r = demo_client.post(f"/api/v1/sources/{sid}/transcribe")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["found"] is False
-    assert "feed RSS" in body["message"]
-    assert "has no attribute" not in body["message"]
-    assert "Traceback" not in body["message"]
+    assert r.status_code == 202
+    job_id = r.json()["job_id"]
+    worker()
+
+    job = demo_client.get(f"/api/v1/jobs/{job_id}").json()
+    assert job["status"] == "DONE"
+    assert "feed RSS" in (job["progress"] or "")
+    assert "has no attribute" not in (job["progress"] or "")
+    assert "Traceback" not in (job["progress"] or "")
 
 
-def test_b1_spotify_con_feed_descarga_la_transcripcion(demo_client, podcast_site):
+def test_b1_spotify_con_feed_descarga_la_transcripcion(demo_client, worker, podcast_site):
     """Con feed RSS aportado, la transcripción del episodio se recupera y guarda.
 
     Cubre B1 (leer `metadata_json`) y B16 (leer `url` en vez de `href`).
@@ -132,11 +135,8 @@ def test_b1_spotify_con_feed_descarga_la_transcripcion(demo_client, podcast_site
     _asignar_feed(demo_client, sid, f"{podcast_site}/feed.xml")
 
     r = demo_client.post(f"/api/v1/sources/{sid}/transcribe")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["found"] is True, body
-    assert body["created"] is True
-    assert "transcripción real del episodio" in body["transcript"]["text"]
+    assert r.status_code == 202
+    worker()
 
     # Y queda almacenada: se puede volver a leer.
     stored = demo_client.get(f"/api/v1/sources/{sid}/transcript").json()
@@ -165,7 +165,7 @@ def test_b16_feedparser_expone_url_y_el_codigo_lo_acepta():
 # ---------------------------------------------------------------------------
 
 
-def test_b7_el_error_del_conector_no_filtra_internals(demo_client, monkeypatch):
+def test_b7_el_error_del_conector_no_filtra_internals(demo_client, worker, monkeypatch):
     """Un fallo del proveedor se registra, pero el cliente recibe un motivo seguro."""
     from neuralnews.providers import transcript as transcript_mod
 
@@ -177,14 +177,17 @@ def test_b7_el_error_del_conector_no_filtra_internals(demo_client, monkeypatch):
     _asignar_feed(demo_client, sid, "http://127.0.0.1:1/feed.xml")
 
     r = demo_client.post(f"/api/v1/sources/{sid}/transcribe")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["found"] is False
-    assert "C:" not in body["message"]
-    assert "secreto" not in body["message"]
-    assert "Traceback" not in body["message"]
+    assert r.status_code == 202
+    job_id = r.json()["job_id"]
+    worker()
+
+    job = demo_client.get(f"/api/v1/jobs/{job_id}").json()
+    error = job.get("error") or ""
+    assert "C:" not in error
+    assert "secreto" not in error
+    assert "Traceback" not in error
     # Y el motivo sigue siendo accionable para el operador.
-    assert "manualmente" in body["message"]
+    assert "RuntimeError" in error or "conector" in error.lower()
 
 
 def test_b7_el_error_del_trabajo_no_filtra_internals(demo_client, monkeypatch, worker):

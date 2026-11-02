@@ -99,8 +99,8 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 |---|---|---|---|---|---|
 | NN-110.a | Renovación de lease + recuperación periódica + `release_job` limpio | NN-109.14 | Un job largo no pierde el lease; un job vencido se recupera sin reiniciar el worker; `lease_until`/`attempt` se limpian | **COMPLETADA** | `tests/test_queue_leases.py` (8 pruebas, rojas antes) · suite **167 passed, 1 skipped** — **E** |
 | NN-110.b | Tipos de job `transcribe_source`, `build_montage`, `probe_media`, `extract_web` + handlers | NN-110.a | Cada handler es idempotente y tiene test | **COMPLETADA** | `tests/test_worker_jobs.py` (8 pruebas) · `services/transcription.py` y `services/montage.persist_animatica` · suite **175 passed, 1 skipped** — **E** |
-| NN-110.c | `transcribe_source` → `202 + job_id` | NN-110.b | El handler responde en <2 s; la UI muestra el progreso y el resultado | PENDIENTE | — |
-| NN-110.d | `build_montage` → `202 + job_id` + `ffprobe` al worker | NN-110.b | Ídem; el MP4 importado nunca se destruye | PENDIENTE | — |
+| NN-110.c | `transcribe_source` → `202 + job_id` | NN-110.b | El handler responde en <2 s; la UI muestra el progreso y el resultado | **COMPLETADA** | `test_transcribe_responde_de_inmediato` (el handler tarda <1 s con un proveedor lento) · UI: `/fuentes` sigue el trabajo y distingue aviso de error — **E** |
+| NN-110.d | `build_montage` → `202 + job_id` + `ffprobe` al worker | NN-110.b | Ídem; el MP4 importado nunca se destruye | **COMPLETADA** | `tests/test_montage.py` y `test_transiciones_movimiento.py` reescritos al recorrido encolar→worker→comprobar · E2E **7 passed** — **E** |
 | NN-110.e | Logging estructurado + motivo de fallo normalizado | NN-110.a | El fallo queda en `Job.error` legible y en el log estructurado | PENDIENTE | — |
 | NN-110.f | Verificación de latencia y E2E del recorrido | NN-110.c, NN-110.d | p95 < 2 s por endpoint; `beta-journey` en verde | PENDIENTE | — |
 

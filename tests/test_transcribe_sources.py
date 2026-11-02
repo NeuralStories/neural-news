@@ -19,21 +19,30 @@ def test_manual_source_text_is_its_transcription(demo_client):
     assert "Radar" in body["text"]
 
 
-def test_transcribe_on_manual_source_reports_honestly(demo_client):
+def test_transcribe_on_manual_source_reports_honestly(demo_client, worker):
     """No hay de dónde buscar una transcripción en una fuente manual sin URL:
-    se responde el motivo en lugar de inventar texto."""
+    se responde el motivo en lugar de inventar texto.
+
+    La API encola el trabajo (202) y el motivo llega cuando el trabajo
+    termina: la transcripción no se busca dentro de la petición (gate G3).
+    """
     src = demo_client.post("/api/v1/sources", json={"text": "Texto corto sin más."}).json()
     sid = src["source"]["id"]
     r = demo_client.post(f"/api/v1/sources/{sid}/transcribe")
-    assert r.status_code == 200  # la respuesta es honesta, no un error de servidor
+    assert r.status_code == 202  # la respuesta es honesta, no un error de servidor
     body = r.json()
-    assert body["found"] is False and body["created"] is False
-    assert "manual" in body["message"].lower()
+    assert body["job_id"] > 0
+    assert body["status"] in ("QUEUED", "RUNNING")
+
+    worker()
+    job = demo_client.get(f"/api/v1/jobs/{body['job_id']}").json()
+    assert job["status"] == "DONE"
+    assert "manual" in (job["progress"] or "").lower()
 
 
 def test_youtube_demo_transcript_is_returned(demo_client, worker):
     """En demo, la fuente de YouTube trae transcripción simulada tras procesarse;
-    transcribe la devuelve tal cual sin crear otra."""
+    el trabajo la devuelve tal cual sin crear otra."""
     src = demo_client.post(
         "/api/v1/sources",
         json={"text": GUION_NOTICIA, "url": "https://www.youtube.com/watch?v=demo1234567"},
@@ -41,10 +50,38 @@ def test_youtube_demo_transcript_is_returned(demo_client, worker):
     worker()
     sid = src["source"]["id"]
     r = demo_client.post(f"/api/v1/sources/{sid}/transcribe")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["found"] is True and body["created"] is False
-    assert body["transcript"]["text"]
+    assert r.status_code == 202
+    worker()
+    transcript = demo_client.get(f"/api/v1/sources/{sid}/transcript").json()
+    assert transcript["found"] is True
+    assert transcript["text"]
+
+
+def test_transcribe_responde_de_inmediato(demo_client, worker, monkeypatch):
+    """El handler NO hace la transcripción: solo encola. Eso es el gate G3."""
+    import time
+
+    from neuralnews.providers import transcript as transcript_mod
+
+    def _lento(*_args, **_kwargs):
+        time.sleep(2)
+        return None
+
+    monkeypatch.setattr(transcript_mod, "fetch_youtube_transcript_auto", _lento)
+    src = demo_client.post(
+        "/api/v1/sources",
+        json={"text": GUION_NOTICIA, "url": "https://www.youtube.com/watch?v=demo1234567"},
+    ).json()
+    sid = src["source"]["id"]
+
+    inicio = time.monotonic()
+    r = demo_client.post(f"/api/v1/sources/{sid}/transcribe")
+    transcurrido = time.monotonic() - inicio
+
+    assert r.status_code == 202
+    assert transcurrido < 1.0, (
+        f"el handler tardó {transcurrido:.2f} s: la transcripción sigue dentro de la petición"
+    )
 
 
 def test_unknown_source_returns_404(demo_client):

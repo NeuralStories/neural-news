@@ -37,7 +37,7 @@ def test_director_assigns_movements_without_consecutive_repeats(demo_client):
     assert all(s["data"]["movement_instruction"] for s in full["shots"])
 
 
-def test_transitions_assigned_and_applied_in_montage(demo_client):
+def test_transitions_assigned_and_applied_in_montage(demo_client, worker):
     """FASE 3 punto 5: transiciones reales (xfade glitch/pan/zoom/fade) entre
     segmentos; el MP4 resultante es más corto que la suma cruda por solape."""
     project = demo_client.post("/api/v1/projects", json={"name": "Transiciones", "ratio": "9:16"}).json()
@@ -77,14 +77,21 @@ def test_transitions_assigned_and_applied_in_montage(demo_client):
             )
             assert up.status_code == 200
 
-        built = demo_client.post(f"/api/v1/projects/{pid}/montage").json()
+        # El montaje lo hace el worker (gate G3): la API encola y responde al instante.
+        enqueued = demo_client.post(f"/api/v1/projects/{pid}/montage")
+        assert enqueued.status_code == 202, enqueued.text
+        worker()
 
-    xfades = [t for t in built["transitions"] if t["transition"] != "corte_directo"]
+    built = demo_client.get(f"/api/v1/projects/{pid}/montage").json()
+    animatica = built["animatica"]
+    assert animatica is not None
+
+    xfades = [t for t in animatica["transitions"] if t["transition"] != "corte_directo"]
     assert xfades, "debe haber al menos una transición xfade aplicada"
     assert all(t["duration_s"] == 0.4 for t in xfades)
     # El solape acorta: duración real < suma de ventanas
     total_windows = sum(s["end_s"] - s["start_s"] for s in full["shots"])
-    assert built["duration_s"] < total_windows
+    assert animatica["duration_s"] < total_windows
 
     served = demo_client.get(f"/api/v1/projects/{pid}/montage.mp4")
     assert served.status_code == 200

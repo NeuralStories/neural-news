@@ -226,14 +226,28 @@ function SourceRow({ source }: { source: SourceListItem }) {
     setBusy(true);
     setMsg(null);
     try {
-      const body = await api.transcribeSource(source.id);
-      // `found: false` NO es un error: es una respuesta honesta con su motivo.
-      setMsg({
-        text: body.message ?? (body.created ? "Transcripción creada y almacenada." : "Transcripción encontrada."),
-        kind: body.found ? "ok" : "warn",
+      // La transcripción se busca en segundo plano (gate G3): la API encola el
+      // trabajo y devuelve enseguida. El resultado se lee cuando termina.
+      const res = await api.transcribeSource(source.id);
+      setMsg({ text: "Buscando transcripción…", kind: "ok" });
+      const info = await poll(res.job_id, async () => {
+        setTranscriptData(await api.getTranscript(source.id));
+        setDetail(await api.getSource(source.id));
       });
-      setTranscriptData(await api.getTranscript(source.id));
-      setDetail(await api.getSource(source.id));
+      if (info.status === "DONE") {
+        const t = await api.getTranscript(source.id);
+        setMsg({
+          text: t.found
+            ? "Transcripción almacenada."
+            : t.message || "No se ha encontrado transcripción accesible.",
+          kind: t.found ? "ok" : "warn",
+        });
+      } else {
+        setMsg({
+          text: info.error || "No se ha podido obtener la transcripción.",
+          kind: "error",
+        });
+      }
     } catch (e) {
       setMsg({ text: (e as Error).message, kind: "error" });
     } finally {

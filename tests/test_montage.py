@@ -41,7 +41,7 @@ def _valid_mp4(path: Path, seconds: int, color: str) -> None:
     ], check=True, timeout=120)
 
 
-def test_montage_builds_real_916_mp4_from_imported_clips(demo_client):
+def test_montage_builds_real_916_mp4_from_imported_clips(demo_client, worker):
     project = demo_client.post("/api/v1/projects", json={"name": "Montaje", "ratio": "9:16"}).json()
     pid = project["id"]
     demo_client.put(
@@ -63,12 +63,18 @@ def test_montage_builds_real_916_mp4_from_imported_clips(demo_client):
             )
             assert up.status_code == 200, up.text
 
+    # El montaje lo hace el worker (gate G3): la API encola y responde al instante.
     built = demo_client.post(f"/api/v1/projects/{pid}/montage")
-    assert built.status_code == 200, built.text
-    result = built.json()
-    assert result["ok"] is True
+    assert built.status_code == 202, built.text
+    job_id = built.json()["job_id"]
+    worker()
+
+    job = demo_client.get(f"/api/v1/jobs/{job_id}").json()
+    assert job["status"] == "DONE", job
+    result = demo_client.get(f"/api/v1/projects/{pid}/montage").json()
+    assert result["animatica"] is not None
     assert result["missing"] == []
-    assert result["duration_s"] >= 8  # dos ventanas como mínimo
+    assert result["animatica"]["duration_s"] >= 8  # dos ventanas como mínimo
 
     served = demo_client.get(f"/api/v1/projects/{pid}/montage.mp4")
     assert served.status_code == 200
@@ -78,10 +84,10 @@ def test_montage_builds_real_916_mp4_from_imported_clips(demo_client):
     # Persistencia: la animática sobrevive en el paso Resultado
     state = demo_client.get(f"/api/v1/projects/{pid}").json()
     animatica = state["steps"]["resultado"]["payload"]["animatica"]
-    assert animatica["duration_s"] == result["duration_s"]
+    assert animatica["duration_s"] == result["animatica"]["duration_s"]
 
 
-def test_montage_lists_exactly_what_is_missing(demo_client):
+def test_montage_lists_exactly_what_is_missing(demo_client, worker):
     """Sin MP4 importados, el montaje no se construye y lista el material
     que falta con su tipo (cap. 7) — sin fingir producción."""
     project = demo_client.post("/api/v1/projects", json={"name": "Sin materiales"}).json()
@@ -92,10 +98,19 @@ def test_montage_lists_exactly_what_is_missing(demo_client):
     demo_client.post(f"/api/v1/projects/{project['id']}/director/plan", json={}).json()
 
     built = demo_client.post(f"/api/v1/projects/{project['id']}/montage")
-    assert built.status_code == 409
-    detail = built.json()["detail"]
-    assert detail["missing"], "debe listar exactamente qué falta"
-    for item in detail["missing"]:
+    assert built.status_code == 202, built.text
+    job_id = built.json()["job_id"]
+    worker()
+
+    job = demo_client.get(f"/api/v1/jobs/{job_id}").json()
+    assert job["status"] in ("FAILED", "RETRYABLE_FAILED")
+    assert job["error"]
+
+    # El material que falta lo dice GET /montage, con su tipo y su motivo.
+    estado = demo_client.get(f"/api/v1/projects/{project['id']}/montage").json()
+    assert estado["missing"], "debe listar exactamente qué falta"
+    assert estado["animatica"] is None
+    for item in estado["missing"]:
         assert item["shot_kind"] in ("FLOW_MAXDOTAI", "GENERATIVE_BROLL", "DOCUMENTARY",
                                      "USER_VIDEO", "PENDING")
         assert item["reason"]

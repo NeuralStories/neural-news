@@ -95,7 +95,7 @@ export const projectApi = {
   uploadTakeMedia: (id: number, takeId: number, file: File) => {
     const form = new FormData();
     form.append('file', file);
-    return call<{ take_id: number; status: string; media: Record<string, unknown> }>(
+    return call<{ take_id: number; status: string; media: Record<string, unknown>; probe_job_id?: number }>(
       `/api/v1/projects/${id}/takes/${takeId}/media`,
       { method: 'POST', body: form },
     );

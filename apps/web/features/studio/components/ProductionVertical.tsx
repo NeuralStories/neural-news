@@ -7,6 +7,7 @@
  * aprobación humana. Nada simula generación ni conexión con Flow.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useJobPolling } from '@/lib/hooks';
 import {
   ProjectConflict,
   projectApi,
@@ -74,6 +75,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
 }) => {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { poll } = useJobPolling();
   const [planNote, setPlanNote] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<Record<number, File>>({});
   const [graphics, setGraphics] = useState<Array<{ id: number; title: string; status: string }>>([]);
@@ -163,7 +165,12 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
     run(`import-${take.id}`, async () => {
       const file = selectedFile[take.id];
       if (!file) throw new Error('Selecciona antes el MP4 generado en Flow');
-      await projectApi.uploadTakeMedia(projectId, take.id, file);
+      const res = await projectApi.uploadTakeMedia(projectId, take.id, file);
+      // El sondeo con ffprobe lo hace el worker (gate G3): se espera para que la
+      // duración y la orientación sean las reales, no «desconocida».
+      if (res.probe_job_id) {
+        await poll(res.probe_job_id);
+      }
     });
 
   const loadGraphics = async () => {
@@ -172,7 +179,10 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
   };
   const loadMontage = async () => {
     const res = await fetch(`/api/v1/projects/${projectId}/montage`, { credentials: 'same-origin' });
-    if (res.ok) setMontageState(await res.json());
+    if (!res.ok) return null;
+    const datos = await res.json();
+    setMontageState(datos);
+    return datos;
   };
   useEffect(() => {
     void loadGraphics();
@@ -202,21 +212,26 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
 
   const buildMontage = () =>
     run('montage', async () => {
+      // El montaje lo hace el worker (gate G3): la API encola y responde al
+      // instante. FFmpeg puede tardar minutos.
       const res = await fetch(`/api/v1/projects/${projectId}/montage`, {
         method: 'POST', credentials: 'same-origin',
       });
-      const body = await res.json();
       if (!res.ok) {
-        setError(body?.detail?.message ?? 'El montaje no puede construirse aún');
-        setMontageState({ missing: body?.detail?.missing ?? [], animatica: null });
+        const detail = (await res.json().catch(() => null))?.detail;
+        throw new Error(typeof detail === 'string' ? detail : 'No se pudo encolar el montaje');
+      }
+      const body = await res.json();
+      const info = await poll(body.job_id);
+      const estado = await loadMontage();
+      if (info.status !== 'DONE') {
+        // El material que falta lo dice GET /montage (el error del trabajo es texto).
+        setMontageState({ missing: estado?.missing ?? [], animatica: null });
+        setError(info.error || 'El montaje no puede construirse aún');
         onChanged();
         return;
       }
-      setMontageState({ missing: body.missing ?? [], animatica: {
-        duration_s: body.duration_s, label: body.label, built_at: new Date().toISOString(),
-      } });
       setMontageUrl(`/api/v1/projects/${projectId}/montage.mp4?ts=${Date.now()}`);
-      await loadMontage();
     });
 
   const approveTake = (take: TakeOut, status: 'APROBADA' | 'RECHAZADA') =>

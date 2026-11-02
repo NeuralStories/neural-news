@@ -68,12 +68,15 @@ def test_transcribe_stores_auto_transcript_for_any_youtube_video(demo_client, wo
 
     monkeypatch.setattr(transcription_mod, "auto_transcript", fake_auto)
     r = demo_client.post(f"/api/v1/sources/{sid_src}/transcribe")
-    assert r.status_code == 200, r.text
+    assert r.status_code == 202, r.text
     body = r.json()
-    assert body["found"] is True and body["created"] is True, body
-    assert body["transcript"]["provider"] == "youtube_asr"
+    assert body["job_id"] > 0
+
+    worker()
+
     assert captured["video_id"] == "auto1234567"
 
     # Persistida: GET transcript la devuelve
     got = demo_client.get(f"/api/v1/sources/{sid_src}/transcript").json()
     assert got["found"] is True and "automática" in got["text"]
+    assert got["provider"] == "youtube_asr"

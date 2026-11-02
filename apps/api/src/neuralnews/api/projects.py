@@ -45,6 +45,8 @@ from ..services.director import build_plan
 from ..services import montage as montage_service
 from ..services.graphics import render_bar_svg
 from ..services.media_library import MediaUploadError, asset_to_out, upload_media
+from ..queue import enqueue
+from ..worker_tasks import BUILD_MONTAGE, PROBE_MEDIA
 
 router = APIRouter(prefix="/api/v1", tags=["projects"])
 
@@ -532,13 +534,33 @@ async def upload_take_media(
         raise HTTPException(status_code=404, detail="Esa toma no pertenece al proyecto")
     data = await file.read()
     try:
-        asset = upload_media(db, data, file.content_type or "application/octet-stream", file.filename)
+        # El sondeo con ffprobe NO se hace aquí: puede tardar y la subida no
+        # debe esperar. Queda pendiente en el trabajo `probe_media` (NN-110).
+        asset = upload_media(
+            db,
+            data,
+            file.content_type or "application/octet-stream",
+            file.filename,
+            probe=False,
+        )
     except MediaUploadError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     take.imported_media_id = asset.id
     take.status = "IMPORTADA"
     db.flush()
-    return {"take_id": take.id, "status": take.status, "media": asset_to_out(asset)}
+    job, _ = enqueue(
+        db,
+        PROBE_MEDIA,
+        {"media_id": asset.id},
+        dedupe_key=f"probe:{asset.id}",
+    )
+    db.flush()
+    return {
+        "take_id": take.id,
+        "status": take.status,
+        "media": asset_to_out(asset),
+        "probe_job_id": job.id,
+    }
 
 
 @router.post("/projects/{project_id}/takes/{take_id}/approval")
@@ -613,10 +635,24 @@ async def upload_media_endpoint(
 ) -> dict:
     data = await file.read()
     try:
-        asset = upload_media(db, data, file.content_type or "application/octet-stream", file.filename)
+        # El sondeo con ffprobe va en el worker (NN-110), no en la petición.
+        asset = upload_media(
+            db,
+            data,
+            file.content_type or "application/octet-stream",
+            file.filename,
+            probe=False,
+        )
     except MediaUploadError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return asset_to_out(asset)
+    job, _ = enqueue(
+        db,
+        PROBE_MEDIA,
+        {"media_id": asset.id},
+        dedupe_key=f"probe:{asset.id}",
+    )
+    db.flush()
+    return {**asset_to_out(asset), "probe_job_id": job.id}
 
 
 @router.get("/media")
@@ -1021,37 +1057,32 @@ def montage_status(project_id: int, db=Depends(get_db), actor=Depends(get_curren
     }
 
 
-@router.post("/projects/{project_id}/montage")
+@router.post("/projects/{project_id}/montage", status_code=202)
 def build_montage(project_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
-    """Construye la animática 9:16 real con FFmpeg a partir de las tomas con
-    MP4 importado y las tarjetas programáticas. Sin locución (pendiente)."""
+    """Encola la construcción de la animática 9:16 real con FFmpeg.
+
+    **No se construye aquí.** FFmpeg puede tardar minutos (hasta 10 con el
+    `timeout=600` del render) y no debe bloquear el hilo de la petición
+    (gate G3). La respuesta es `202` con el identificador del trabajo; el
+    estado y el material que falta se consultan en `GET /projects/{id}/montage`.
+    """
     project = _get_project(db, project_id)
-    try:
-        result = montage_service.build_animatica(db, project)
-    except Exception as exc:  # noqa: BLE001 — el fallo se registra; al cliente solo un motivo seguro
-        # No se filtra el texto crudo de la excepción: puede contener rutas del
-        # sistema o el stderr de FFmpeg. El detalle completo queda en el log.
-        logger.exception("Fallo al construir el montaje del proyecto %s", project_id)
-        raise HTTPException(
-            status_code=500,
-            detail="No se ha podido construir el montaje por un fallo del motor de render; "
-                   "revisa el registro del servidor",
-        ) from exc
-    if not result.get("ok"):
-        raise HTTPException(status_code=409, detail={
-            "message": result.get("error", "El montaje no puede construirse"),
-            "missing": result.get("missing", []),
-        })
-    # Persistir en el paso Resultado (una sola fuente de datos)
-    animatica = montage_service.persist_animatica(db, project, result, actor["actor_id"])
+    job, created = enqueue(
+        db,
+        BUILD_MONTAGE,
+        {"project_id": project.id, "actor_id": actor["actor_id"]},
+        dedupe_key=f"montage:{project.id}",
+    )
+    db.flush()
     return {
-        "ok": True,
-        "duration_s": result["duration_s"],
-        "segments": result["segments"],
-        "missing": result["missing"],
-        "transitions": result.get("transitions", []),
-        "label": result["label"],
-        "download_url": f"/api/v1/projects/{project.id}/montage.mp4",
+        "job_id": job.id,
+        "created": created,
+        "status": job.status,
+        "message": (
+            "Montaje en cola; se avisará cuando termine."
+            if created
+            else "Ya había un montaje en marcha; se reutiliza."
+        ),
     }
 
 

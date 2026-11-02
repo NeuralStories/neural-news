@@ -53,6 +53,7 @@ def persist_animatica(db: Any, project: Any, result: dict, actor_id: str | None)
         "path": result["path"],
         "duration_s": result["duration_s"],
         "segments": result["segments"],
+        "transitions": result.get("transitions", []),
         "label": result["label"],
         "built_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
     }

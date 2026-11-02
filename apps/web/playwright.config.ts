@@ -10,8 +10,22 @@ import { defineConfig, devices } from "@playwright/test";
  *   un error confuso si se olvidaba uno.
  * - Cada test parte de una base limpia: usa una fuente y una noticia propias.
  */
-const reutilizar = !process.env.CI;
+const reutilizar = false;
 
+/**
+ * Por qué `reuseExistingServer` es **false** (NN-113.14):
+ *
+ * Si el E2E reutiliza un servidor que ya estaba en marcha, puede estar
+ * sirviendo un build **anterior**: al reconstruir (`npm run build`) los
+ * ficheros de los chunks se sustituyen, el servidor viejo sigue sirviendo el
+ * manifiesto viejo y el navegador pide chunks que ya no existen (HTTP 400).
+ * La página se queda en «Cargando…» sin hidratar y el E2E se agota esperando
+ * un botón que nunca aparece (pasó dos veces).
+ *
+ * Con `false`, Playwright levanta **siempre** su propia pila: si el puerto
+ * está ocupado, lo dice con claridad («port 3000 is used…») en vez de
+ * envenenar la ejecución.
+ */
 export default defineConfig({
   testDir: "./e2e",
   timeout: 180_000,

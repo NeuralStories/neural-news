@@ -251,12 +251,40 @@ class Job(Base):
     lease_until: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     next_run_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     progress: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Instantánea de la ruta de modelo con la que se encoló el trabajo (NN-117.4):
+    # cambiar las rutas después no altera un trabajo que ya está en marcha.
+    model_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_kind: Mapped[str | None] = mapped_column(String(24), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
     started_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
+class ModelRoute(Base):
+    """Ruta de modelo por tarea (NN-117.4).
+
+    Port de `model_routes` del hermano congelado. La combinación es única por
+    (tarea, proveedor): una tarea no puede tener dos rutas del mismo proveedor.
+    """
+
+    __tablename__ = "model_routes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    task: Mapped[str] = mapped_column(String(64), index=True)
+    provider: Mapped[str] = mapped_column(String(64))
+    model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    timeout_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    config_revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("task", "provider", name="uq_model_routes_task_provider"),
+    )
 
 
 class ProductionPackage(Base):

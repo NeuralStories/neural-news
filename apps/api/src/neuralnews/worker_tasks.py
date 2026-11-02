@@ -17,6 +17,7 @@ from .models import Job, Source, Story
 from .queue import mark_done, mark_failed, mark_retryable
 from .services import budget as budget_service
 from .services import batches as batch_service
+from .services import model_routes
 from .services import research as research_service
 from .services import scripts as script_service
 from .services.sources import SourceNotAnalyzable, extract_stories_from_source, run_fetch
@@ -241,10 +242,13 @@ def handle_draft_script(db: Session, job: Job) -> str:
             mark_failed(db, job, str(exc), kind="budget")
             return "bloqueado por presupuesto"
     script_service.create_draft_version(db, story)
+    # El modelo es el de la **instantánea** del trabajo (NN-117.4): si la ruta
+    # cambió después de encolarlo, este trabajo sigue usando el que tenía.
+    modelo = model_routes.modelo_del_trabajo(job, settings.llm_model)
     budget_service.record_usage(
         db,
         provider="demo_llm" if settings.demo_mode else "editorial_llm",
-        model="demo" if settings.demo_mode else settings.llm_model,
+        model="demo" if settings.demo_mode else modelo,
         job_id=job.id,
         event="call",
         cost_estimate=(

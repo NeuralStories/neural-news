@@ -162,24 +162,24 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 | NN-117.1 | Port de `backup/verify` de BD | NN-108.1 | Backup → restore en BD limpia → verificación de hash | **COMPLETADA** | `scripts/db_backup.py`: verificado en ejecución (626 filas restauradas en base aislada, viva intacta) — **E** |
 | NN-117.2 | Zonas seguras (el plan apuntaba al fichero equivocado) | NN-108.1 | Test de etiqueta fuera de margen | **COMPLETADA** | El `SAFE_ZONE` del hermano **no se usa** (código muerto): se corrigió la incoherencia real — el rótulo ahora usa la zona segura compartida — `tests/test_zona_segura.py` — **E** |
 | NN-117.3 | Port del vault (`app/security/vault.py`) | NN-108.1 | Round-trip Fernet + `secret_status` | **COMPLETADA** | `neuralnews/vault.py` + `services/secrets.py`: sólo texto cifrado en la base; 5 adaptadores resuelven «bóveda primero, entorno después» — **E** |
-| NN-117.4 | Port de rutas de modelo (`c0f68f32807d`) | NN-108.1 | Resolución de modelo en el job con snapshot | PENDIENTE | — |
+| NN-117.4 | Port de rutas de modelo (`c0f68f32807d`) | NN-108.1 | Resolución de modelo en el job con snapshot | **COMPLETADA** | Migración `e7a1b3c9d4f2` (tabla `model_routes` + `jobs.model_snapshot`), `services/model_routes.py` (resolución por prioridad, instantánea y lectura del modelo del trabajo) y endpoints `GET`/`PUT /api/v1/model-routes`. El trabajo se ata a la ruta que tenía **al encolarse**: cambiarla después no altera el trabajo en marcha · `tests/test_model_routes.py` (9) — **E** |
 | NN-117.5 | Port de Argon2id (`app/security/auth.py`) | NN-108.1, NN-111.9 | Test de sesión | **COMPLETADA** | Argon2id con verificación PBKDF2 conservada (las contraseñas existentes siguen funcionando) — `tests/test_argon2id.py` — **E** |
-| NN-117.6 | Port de subtítulos SRT/VTT (`app/domain/subtitles.py`) | NN-117.1 | SRT/VTT desde los segmentos de transcripción | PENDIENTE | — |
-| NN-117.7 | Port de contradicciones de cifras (`app/domain/contradictions.py`) | NN-117.1 | Test de contradicción sin auto-cambio | PENDIENTE | — |
-| NN-117.8 | ADR de los descartes (scheduler, briefs, prompt catalog) | NN-108.1 | ADR-016 con la justificación | PENDIENTE | — |
+| NN-117.6 | Port de subtítulos SRT/VTT (`app/domain/subtitles.py`) | NN-117.1 | SRT/VTT desde los segmentos de transcripción | **COMPLETADA** | `services/subtitles.py`: SRT y VTT desde los `SourceSegment` reales, con el texto **íntegro** (round-trip) y tiempos monótonos comprobados · `tests/test_subtitulos_contradicciones.py` — **E** |
+| NN-117.7 | Port de contradicciones de cifras (`app/domain/contradictions.py`) | NN-117.1 | Test de contradicción sin auto-cambio | **COMPLETADA** | `services/contradictions.py`: propone la contradicción (`action: "PROPOSED"`, estado sugerido `CONTRADICTED` del vocabulario de este producto) y **no cambia** ningún estado: quien revisa es una persona · `tests/test_subtitulos_contradicciones.py` — **E** |
+| NN-117.8 | ADR de los descartes (scheduler, briefs, prompt catalog) | NN-108.1 | ADR-016 con la justificación | **COMPLETADA** | `docs/adr/ADR-022-descartes-del-port.md`: cada capacidad del hermano que **no** entra tiene su motivo escrito (planificador de feeds, *briefs* versionados, catálogo de prompts, gráficos line/timeline/percentage, ZIP de Flow, CAS/clasificador de riesgo) y se distingue lo que entra **con adaptación** de lo que se descarta — **A** |
 
-### Fase 8 — Observabilidad y presupuesto · **PENDIENTE**
+### Fase 8 — Observabilidad y presupuesto · **COMPLETADA**
 
 | ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
 |---|---|---|---|---|---|
-| NN-115.1 | Página `/ops`: trabajos, uso, presupuesto, salud | NN-110.e | La UI los muestra | PENDIENTE | — |
-| NN-115.2 | `/health` que comprueba BD, FFmpeg, yt-dlp y proveedores | NN-115.1 | Un proveedor caído se ve en el health | PENDIENTE | — |
-| NN-115.3 | Métricas: p95, tasa de fallo, duración y profundidad de cola | NN-115.1 | Métricas consultables | PENDIENTE | — |
-| NN-115.4 | Alertas: cola parada, lease vencido, presupuesto 80 %, proveedor repetido | NN-115.3 | Alerta visible | PENDIENTE | — |
-| NN-115.5 | Verificación E: un fallo de proveedor se ve en la UI en <60 s | NN-115.1 | Test cronometrado | PENDIENTE | — |
-| NN-116.1 | Presupuesto verificado **antes** de la llamada | — | La llamada se corta, no se registra después | PENDIENTE | — |
-| NN-116.2 | Tope diario real con contador | NN-116.1 | El tope frena de verdad | PENDIENTE | — |
-| NN-116.3 | Coste estimado real por llamada, visible en `/ops/usage` | NN-116.1 | Coste ≠ 0.0 | PENDIENTE | — |
+| NN-115.1 | Página `/ops`: trabajos, uso, presupuesto, salud | NN-110.e | La UI los muestra | **COMPLETADA** | `apps/web/app/ops/page.tsx`: salud de dependencias, consumo de hoy, estado de proveedores, trabajos recientes con su motivo normalizado, **métricas** y **alertas**; refresco automático cada 15 s — **A** |
+| NN-115.2 | `/health` que comprueba BD, FFmpeg, yt-dlp y proveedores | NN-115.1 | Un proveedor caído se ve en el health | **COMPLETADA** | `neuralnews/health.py`: la base responde (`SELECT 1`), FFmpeg y yt-dlp se comprueban (con caché), los proveedores se listan con si tienen clave; `/api/v1/health` lo expone — **E** (`tests/test_salud.py`) |
+| NN-115.3 | Métricas: p95, tasa de fallo, duración y profundidad de cola | NN-115.1 | Métricas consultables | **COMPLETADA** | `neuralnews/metrics.py` + `GET /api/v1/metrics`: p95 y media de duración (percentil por rango más cercano), tasa de fallo, profundidad de cola, desglose por tipo y por `error_kind`. Todo se calcula **de la base de datos**, no de memoria — **E** |
+| NN-115.4 | Alertas: cola parada, lease vencido, presupuesto 80 %, proveedor repetido | NN-115.3 | Alerta visible | **COMPLETADA** | `neuralnews/metrics.py::alertas`: cola parada (trabajo en cola sin recoger >5 min), lease vencido, presupuesto al 80 % y fallo repetido (≥3 del mismo tipo). La página `/ops` los muestra arriba, con `role="alert"` — **E** |
+| NN-115.5 | Verificación E: un fallo de proveedor se ve en la UI en <60 s | NN-115.1 | Test cronometrado | **COMPLETADA** | `tests/test_metricas_alertas.py::test_nn115_5_el_fallo_de_proveedor_se_ve_en_menos_de_60_segundos`: cronometra el tiempo desde el fallo hasta que la alerta aparece en lo que consume la UI; **< 60 s** — **E** |
+| NN-116.1 | Presupuesto verificado **antes** de la llamada | — | La llamada se corta, no se registra después | **COMPLETADA** | `budget_service.assert_paid_call_allowed()` se llama **antes** de `call_gemini_video_analysis`, de la búsqueda y de la redacción; si se agota, el trabajo se marca `FAILED` con `error_kind="budget"` y se registra el uso como `blocked` — **E** (`tests/test_presupuesto.py`) |
+| NN-116.2 | Tope diario real con contador | NN-116.1 | El tope frena de verdad | **COMPLETADA** | El gasto se suma de `UsageEvent` del día (`cost_actual` o `cost_estimate`); `spent + coste_estimado > límite` corta la llamada — **E** |
+| NN-116.3 | Coste estimado real por llamada, visible en `/ops/usage` | NN-116.1 | Coste ≠ 0.0 | **COMPLETADA** | `COSTE_ESTIMADO_EUR` por proveedor (búsqueda 0,005 €, modelo 0,010 €…) y `usage_summary` expone `today_spent_eur`; antes se registraba 0,0 € y el tope **nunca** disparaba — **E** |
 
 ---
 
@@ -187,8 +187,20 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 
 Se anotan aquí para no perderlas y **no** se ejecutan sin decisión del propietario:
 
-1. **Subtítulos SRT/VTT y contradicciones de cifras** están portados en el plan (NN-117.6/7) pero no son requisito de la beta.
-2. **`/ops` con métricas persistentes**: se prevé métricas en memoria + health; un histórico exigiría otra base de datos.
-3. **Caché distribuida de transcripciones**: hoy es por proceso; con más de una instancia habría que moverla a tabla.
-4. **Pruebas de carga**: el plan pide «p95 por endpoint», no un test de carga sostenida.
-5. **Migrar `newsV2/` al control de versiones** (riesgo R-26): requiere decisión porque cambia rutas ya documentadas.
+1. **Métricas persistentes en histórico**: lo que hay son métricas de la ventana (24 h) calculadas
+   de la base de datos; un histórico exigiría otra base de datos o una tabla de series.
+2. **Caché distribuida de transcripciones**: hoy es por proceso; con más de una instancia habría que
+   moverla a tabla.
+3. **Pruebas de carga**: el plan pide «p95 por endpoint», no un test de carga sostenida.
+4. **Migrar `newsV2/` al control de versiones** (riesgo R-26): requiere decisión porque cambia rutas
+   ya documentadas.
+5. **Crear un remoto remoto (GitHub/GitLab)**: es una acción externa; el remoto actual es local
+   (`.remotes/neural-news.git`).
+6. **Vídeo de la instalación** (NN-114.7): esta sesión no tiene capacidad de grabación; queda la
+   transcripción literal en `evidence/instalacion_desde_clon_limpio.md`.
+7. **Capacidades del hermano descartadas** (planificador de feeds, *briefs* versionados, catálogo
+   de prompts, gráficos line/timeline/percentage, CAS/clasificador de riesgo): el motivo escrito de
+   cada una está en `docs/adr/ADR-022-descartes-del-port.md`.
+8. **Lo que el encargo de la beta declara fuera de alcance**: TTS/voz real, render final con
+   locución, publicación en plataformas, generación programática de imagen o vídeo, director LLM,
+   gráficos, episodios compuestos, multiusuario y material real de MaxDotAi.

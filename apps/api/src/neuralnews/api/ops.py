@@ -66,6 +66,80 @@ def usage(db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
     return usage_summary(db)
 
 
+@router.get("/metrics")
+def metricas(db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Métricas y alertas del sistema (NN-115.3 y NN-115.4).
+
+    Todo se calcula de la base de datos (no de memoria): las métricas sobreviven
+    a un reinicio y funcionan con varios workers.
+    """
+    from ..metrics import estado_operativo
+
+    return estado_operativo(db)
+
+
+@router.get("/model-routes")
+def listar_model_routes(db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Rutas de modelo por tarea y cómo se resolvería cada una (NN-117.4)."""
+    from ..services import model_routes
+
+    rutas = model_routes.listar_rutas(db)
+    return {
+        "items": [model_routes.payload_de_ruta(ruta) for ruta in rutas],
+        "tareas": list(model_routes.TAREAS),
+        "resolucion": {
+            tarea: model_routes.instantanea(db, tarea).get("model")
+            for tarea in model_routes.TAREAS
+        },
+    }
+
+
+@router.put("/model-routes")
+def guardar_model_route(
+    payload: dict, db=Depends(get_db), actor=Depends(get_current_actor)
+) -> dict:
+    """Crea o actualiza la ruta de una tarea (NN-117.4).
+
+    Cambiar una ruta **no** altera los trabajos ya encolados: cada uno guarda su
+    instantánea.
+    """
+    from ..models import ModelRoute
+    from ..services import model_routes
+
+    tarea = str(payload.get("task") or "").strip()
+    proveedor = str(payload.get("provider") or "").strip()
+    if not tarea or not proveedor:
+        raise HTTPException(status_code=422, detail="Indica «task» y «provider».")
+    if tarea not in model_routes.TAREAS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Tarea desconocida: {tarea}. Conocidas: {list(model_routes.TAREAS)}",
+        )
+    require_demo_disabled()
+    if actor["is_demo"]:
+        raise HTTPException(
+            status_code=403,
+            detail="En sesión de demostración los cambios no afectan a servicios reales",
+        )
+    modelo = payload.get("model")
+    ruta = db.scalar(
+        select(ModelRoute).where(ModelRoute.task == tarea, ModelRoute.provider == proveedor)
+    )
+    if ruta is None:
+        ruta = ModelRoute(task=tarea, provider=proveedor)
+        db.add(ruta)
+    ruta.model = str(modelo) if modelo else None
+    ruta.priority = int(payload.get("priority", ruta.priority) or 0)
+    ruta.enabled = bool(payload.get("enabled", True))
+    ruta.timeout_seconds = payload.get("timeout_seconds")
+    # Cada cambio de configuración sube la revisión: es lo que se ve en la
+    # instantánea de los trabajos que se encolen a partir de ahora.
+    ruta.config_revision = ruta.config_revision + 1
+    db.flush()
+    db.commit()
+    return model_routes.payload_de_ruta(ruta)
+
+
 @router.put("/config/budget")
 def update_budget(
     payload: BudgetUpdate, db=Depends(get_db), actor=Depends(get_current_actor)

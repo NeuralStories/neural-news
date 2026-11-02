@@ -1619,6 +1619,98 @@
         ]
       }
     },
+    "/api/v1/metrics": {
+      "get": {
+        "description": "Métricas y alertas del sistema (NN-115.3 y NN-115.4).\n\nTodo se calcula de la base de datos (no de memoria): las métricas sobreviven\na un reinicio y funcionan con varios workers.",
+        "operationId": "metricas_api_v1_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Metricas Api V1 Metrics Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Metricas",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/api/v1/model-routes": {
+      "get": {
+        "description": "Rutas de modelo por tarea y cómo se resolvería cada una (NN-117.4).",
+        "operationId": "listar_model_routes_api_v1_model_routes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Listar Model Routes Api V1 Model Routes Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Listar Model Routes",
+        "tags": [
+          "ops"
+        ]
+      },
+      "put": {
+        "description": "Crea o actualiza la ruta de una tarea (NN-117.4).\n\nCambiar una ruta **no** altera los trabajos ya encolados: cada uno guarda su\ninstantánea.",
+        "operationId": "guardar_model_route_api_v1_model_routes_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Guardar Model Route Api V1 Model Routes Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Guardar Model Route",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "operationId": "list_projects_api_v1_projects_get",

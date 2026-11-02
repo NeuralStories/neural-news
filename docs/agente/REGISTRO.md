@@ -409,3 +409,90 @@ Los dos pasos están en el CI.
 `evidence/instalacion_desde_clon_limpio.md` con la transcripción literal de la instalación real y
 el hallazgo B30 que salió de ella.
 
+---
+
+## 2026-11-02 — Fase 8: métricas, alertas y presupuesto
+
+**NN-115.3/.4 — `neuralnews/metrics.py`.** Antes el operador sólo veía trabajos sueltos. Ahora
+`GET /api/v1/metrics` devuelve **métricas** (p95 y media de duración por rango más cercano, tasa
+de fallo, profundidad de cola, desglose por tipo y por `error_kind`) y **alertas** (cola parada,
+lease vencido, presupuesto al 80 % y fallo repetido del mismo tipo). Todo se calcula **de la base
+de datos**, no de memoria: sobrevive a un reinicio y funciona con varios workers. La página
+`/ops` los enseña arriba, con `role="alert"`.
+
+**NN-115.5 — prueba cronometrada.** `tests/test_metricas_alertas.py` mide el tiempo desde el
+fallo hasta que la alerta aparece en lo que consume la UI: **menos de 60 s**.
+
+**NN-116 — el presupuesto ya se verificaba antes de la llamada** (`assert_paid_call_allowed` antes
+de llamar al modelo, a la búsqueda o al análisis de vídeo; si se agota, el trabajo queda `FAILED`
+con `error_kind="budget"`). Lo que faltaba era **decirlo**: estaba implementado y sin marcar en el
+plan. Ahora las tres filas están con su evidencia.
+
+**B32 (nuevo, real):** `tools/exportar_openapi.py` importaba la aplicación, y **importar la
+aplicación aplica las migraciones pendientes**: al exportarlo con el E2E en marcha, la DDL de
+SQLite tomó el bloqueo y la API en marcha **dejó de responder** (el E2E se quedó sin servicio y
+tardó 25 min en expirar). El exportador ahora usa una **base temporal aislada**: el contrato
+OpenAPI no depende de los datos. **Regla: ninguna herramienta que importe la aplicación puede
+tocarla con la pila en marcha.**
+
+---
+
+## 2026-11-02 — NN-117.4, .6, .7 y .8: lo que faltaba del hermano
+
+**NN-117.4 — rutas de modelo con instantánea.** Port de `model_routes` (migración `c0f68f32807d`
+del hermano): tabla `model_routes` (tarea, proveedor, modelo, prioridad, revisión de configuración),
+`jobs.model_snapshot` y `services/model_routes.py`. El trabajo **resuelve** su ruta al encolarse y
+guarda la instantánea: cambiar la ruta después **no** altera un trabajo en marcha. Sin rutas
+configuradas se usa el modelo de la configuración: **el comportamiento no cambia** por tener la
+tabla.
+
+**NN-117.6 — subtítulos SRT/VTT.** `services/subtitles.py` genera SRT y VTT desde los
+`SourceSegment` reales, con el texto **íntegro** (un subtítulo que «mejora» el texto de la fuente
+sería una falsificación) y tiempos monótonos comprobados.
+
+**NN-117.7 — contradicciones de cifras.** `services/contradictions.py` **propone** la contradicción
+(`action: "PROPOSED"`) y no cambia ningún estado: quien revisa es una persona. Adaptación al
+vocabulario de este producto: el estado sugerido es `CONTRADICTED`, no `DISPUTED`.
+
+**NN-117.8 — ADR de los descartes.** `docs/adr/ADR-022-descartes-del-port.md` deja por escrito, una
+por una, las capacidades del hermano que **no** entran y por qué: planificador de feeds, *briefs*
+versionados, catálogo de prompts, gráficos line/timeline/percentage, ZIP de Flow (que entra **con
+adaptación**, no íntegro), CAS/clasificador de riesgo. Un descarte sin motivo escrito es deuda
+invisible: al menos queda decidido y revisable.
+
+---
+
+## 2026-11-02 — B32 y B33: dos formas de romper la ejecución sin tocar el producto
+
+Estos dos hallazgos no son del producto: son de **orquestación**, y los dos costaron
+una tanda de E2E entera (25 minutos de espera y dos E2E cancelados).
+
+**B32 — importar la aplicación aplica migraciones.** `tools/exportar_openapi.py` importa la
+aplicación para leer su contrato OpenAPI; al importarla, la aplicación **aplica las migraciones
+pendientes** sobre la base configurada. Con la pila en marcha, la DDL de SQLite tomó el bloqueo y la
+API dejó de responder: el E2E se quedó sin servicio. El exportador ahora usa una **base temporal
+aislada** (el contrato no depende de los datos) y deja `NEURAL_EXPORT_USE_LIVE_DB=1` para quien
+quiera la base real a propósito. **Regla: ninguna herramienta que importe la aplicación puede
+tocarla con la pila en marcha.**
+
+**B33 — `stop.ps1` no paraba el servidor del E2E.** El patrón `next/dist/bin/next` (con barras
+normales) no encaja con la ruta real en Windows
+(`node_modules\.bin\\..\next\dist\bin\next`, con barras invertidas): el servidor se quedaba vivo.
+**Regla:** lo que no se detiene, lo hereda la siguiente ejecución.
+
+**La consecuencia encadenada (la que costó el tiempo):** un `next start` superviviente sirvió un
+build **anterior**; al reconstruir, los chunks se sustituyeron en disco pero el servidor viejo
+seguía sirviendo el manifiesto viejo, así que el navegador pedía chunks inexistentes (**HTTP
+400**), la página se quedaba en «Cargando…» sin hidratar y el E2E agotaba el tiempo esperando un
+botón que no aparecía nunca. **Esto ya había pasado una vez** (se creyó que era culpa del
+refactor del Studio y no lo era).
+
+**Se blindó por los dos lados:**
+1. `scripts/stop.ps1` usa expresiones regulares que cubren las dos rutas de Next (B33).
+2. `apps/web/playwright.config.ts` pone **`reuseExistingServer: false`**: el E2E levanta **siempre**
+   su propia API, worker y web. Si un puerto está ocupado, Playwright lo dice con claridad en vez
+   de envenenar la ejecución, y un servidor viejo ya no puede hacer de guía silencioso.
+
+**Regla general:** antes de un E2E, `stop.ps1`; después de un `npm run build`, comprobar que
+nadie sirve ese puerto.
+

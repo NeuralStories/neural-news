@@ -10,16 +10,21 @@ param([switch]$Forzar)
 
 $ErrorActionPreference = "SilentlyContinue"
 
+# Expresiones regulares (no comodines): en Windows la ruta del ejecutable de
+# Next es «…\node_modules\.bin\\..\next\dist\bin\next», con **barras
+# invertidas**, y el patrón con barras normales no encajaba: el servidor del
+# E2E se quedaba vivo y el siguiente E2E reutilizaba un build viejo (chunks
+# 400 y página sin hidratar). Hallazgo B33.
 $patrones = @(
-  "neuralnews.main:app",
-  "-m neuralnews.worker",
-  "next/dist/bin/next"
+  'neuralnews\.main:app',
+  '-m\s+neuralnews\.worker',
+  'next[\\/]dist[\\/]bin[\\/]next'
 )
 
 $procesos = Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='node.exe'"
 $objetivos = $procesos | Where-Object {
   $cmd = $_.CommandLine
-  $cmd -and ($patrones | Where-Object { $cmd -like "*$_*" })
+  $cmd -and ($patrones | Where-Object { $cmd -match $_ })
 }
 
 if (-not $objetivos) {
@@ -36,7 +41,7 @@ Start-Sleep -Seconds 2
 $restantes = Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='node.exe'" |
   Where-Object {
     $cmd = $_.CommandLine
-    $cmd -and ($patrones | Where-Object { $cmd -like "*$_*" })
+    $cmd -and ($patrones | Where-Object { $cmd -match $_ })
   }
 if ($restantes) {
   Write-Host "Quedan procesos sin detener:"

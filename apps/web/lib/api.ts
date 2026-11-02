@@ -55,6 +55,11 @@ export const api = {
 
   providerStatus: () =>
     request<{ demo_mode: boolean; paid_services_enabled: boolean; providers: import("./types").ProviderStatus[] }>("/v1/provider-status"),
+  metrics: () =>
+    request<{
+      metricas: Record<string, unknown>;
+      alertas: Array<{ codigo: string; severidad: string; mensaje: string; trabajos?: number[] }>;
+    }>("/v1/metrics"),
   health: () =>
     request<{
       ok: boolean;

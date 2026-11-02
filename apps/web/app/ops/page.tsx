@@ -13,27 +13,47 @@ import { api } from "@/lib/api";
 
 type Estado = "cargando" | "listo" | "error";
 
+type Alerta = { codigo: string; severidad: string; mensaje: string; trabajos?: number[] };
+
+type Metricas = {
+  jobs_total: number;
+  jobs_terminados_ok: number;
+  jobs_fallidos: number;
+  jobs_reintentables: number;
+  tasa_fallo: number;
+  duracion_media_s: number | null;
+  p95_duracion_s: number | null;
+  profundidad_cola: number;
+  ventana_horas: number;
+  por_error_kind: Record<string, number>;
+};
+
 export default function OperacionPage() {
   const [salud, setSalud] = useState<Awaited<ReturnType<typeof api.health>> | null>(null);
   const [trabajos, setTrabajos] = useState<Array<Record<string, unknown>>>([]);
   const [uso, setUso] = useState<Record<string, unknown> | null>(null);
   const [proveedores, setProveedores] = useState<Awaited<ReturnType<typeof api.providerStatus>> | null>(null);
+  const [metricas, setMetricas] = useState<Metricas | null>(null);
+  const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [estado, setEstado] = useState<Estado>("cargando");
   const [error, setError] = useState<string | null>(null);
 
   const cargar = async () => {
     setEstado("cargando");
     try {
-      const [s, j, u, p] = await Promise.all([
+      const [s, j, u, p, m] = await Promise.all([
         api.health(),
         api.listJobs(),
         api.usage(),
         api.providerStatus(),
+        api.metrics(),
       ]);
       setSalud(s);
       setTrabajos(j.items as unknown as Array<Record<string, unknown>>);
       setUso(u as unknown as Record<string, unknown>);
       setProveedores(p);
+      setMetricas(m.metricas as unknown as Metricas);
+      setAlertas((m.alertas as unknown as Alerta[]) ?? []);
       setError(null);
       setEstado("listo");
     } catch (e) {
@@ -65,6 +85,69 @@ export default function OperacionPage() {
         <p className="text-sm text-red-400" role="alert">
           No se ha podido leer el estado: {error}
         </p>
+      ) : null}
+
+      {/* Alertas (NN-115.4): lo que el operador tiene que ver, arriba del todo. */}
+      {alertas.length > 0 ? (
+        <section className="card space-y-2" aria-label="Alertas">
+          <h2 className="text-sm font-semibold text-neutral-300">
+            Alertas ({alertas.length})
+          </h2>
+          <ul className="space-y-1 text-sm">
+            {alertas.map((a) => (
+              <li
+                key={a.codigo}
+                role="alert"
+                className={a.severidad === "error" ? "badge-err" : "badge-warn"}
+              >
+                {a.mensaje}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {metricas ? (
+        <section className="card space-y-2">
+          <h2 className="text-sm font-semibold text-neutral-300">
+            Métricas (últimas {metricas.ventana_horas} h)
+          </h2>
+          <ul className="space-y-1 text-sm">
+            <li className="flex flex-wrap items-baseline gap-2">
+              <span className="text-neutral-500">p95 de duración</span>
+              <span className="font-mono text-neutral-200">
+                {metricas.p95_duracion_s === null ? "—" : `${metricas.p95_duracion_s} s`}
+              </span>
+            </li>
+            <li className="flex flex-wrap items-baseline gap-2">
+              <span className="text-neutral-500">duración media</span>
+              <span className="font-mono text-neutral-200">
+                {metricas.duracion_media_s === null ? "—" : `${metricas.duracion_media_s} s`}
+              </span>
+            </li>
+            <li className="flex flex-wrap items-baseline gap-2">
+              <span className="text-neutral-500">tasa de fallo</span>
+              <span className="font-mono text-neutral-200">
+                {(metricas.tasa_fallo * 100).toFixed(1)} % ({metricas.jobs_fallidos} de{" "}
+                {metricas.jobs_total})
+              </span>
+            </li>
+            <li className="flex flex-wrap items-baseline gap-2">
+              <span className="text-neutral-500">profundidad de cola</span>
+              <span className="font-mono text-neutral-200">{metricas.profundidad_cola}</span>
+            </li>
+            {Object.keys(metricas.por_error_kind).length > 0 ? (
+              <li className="flex flex-wrap items-baseline gap-2">
+                <span className="text-neutral-500">fallos por motivo</span>
+                <span className="font-mono text-neutral-200">
+                  {Object.entries(metricas.por_error_kind)
+                    .map(([motivo, n]) => `${motivo}: ${n}`)
+                    .join(" · ")}
+                </span>
+              </li>
+            ) : null}
+          </ul>
+        </section>
       ) : null}
 
       {salud ? (

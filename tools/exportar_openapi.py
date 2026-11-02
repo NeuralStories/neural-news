@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -29,6 +30,18 @@ if str(API_SRC) not in sys.path:
 
 # La configuración exige un entorno explícito: sin él la aplicación no arranca.
 os.environ.setdefault("NEURAL_ENV", "local")
+
+# **Base de datos aislada.** Importar la aplicación aplica las migraciones
+# pendientes: si se hiciese contra la base viva, la DDL de SQLite tomaría el
+# bloqueo y dejaría **caída la API que esté en marcha** (pasó: el E2E se quedó
+# sin servicio). El contrato OpenAPI no depende de los datos, así que se
+# exporta contra una base temporal. Para usar la base real a propósito:
+# NEURAL_EXPORT_USE_LIVE_DB=1.
+if not os.environ.get("NEURAL_EXPORT_USE_LIVE_DB"):
+    _temporal = tempfile.mkdtemp(prefix="neuralnews-openapi-")
+    os.environ["NEURAL_DATABASE_URL"] = "sqlite:///" + (
+        Path(_temporal) / "openapi.db"
+    ).as_posix()
 
 
 def contrato() -> str:

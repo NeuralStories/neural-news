@@ -53,9 +53,28 @@ def enqueue(db, job_type: str, payload: dict, dedupe_key: str | None = None) -> 
         max_attempts=3,
         status="QUEUED",
     )
+    # Instantánea de la ruta de modelo (NN-117.4): el trabajo queda atado a la
+    # configuración que tenía al encolarse. Si no hay rutas configuradas, se
+    # guarda la instantánea de la configuración (comportamiento anterior).
+    job.model_snapshot = _instantanea_de_ruta(db, job_type)
     db.add(job)
     db.flush()
     return job, True
+
+
+def _instantanea_de_ruta(db, job_type: str) -> dict:
+    """Instantánea de la ruta de modelo para este tipo de trabajo."""
+    from .config import get_settings
+    from .services import model_routes
+
+    if job_type not in model_routes.TAREA_POR_TRABAJO:
+        return {}
+    tarea = model_routes.TAREA_POR_TRABAJO[job_type]
+    try:
+        modelo_por_defecto = get_settings().llm_model
+    except Exception:  # noqa: BLE001 — la instantánea nunca debe impedir encolar
+        modelo_por_defecto = None
+    return model_routes.instantanea(db, tarea, modelo_por_defecto)
 
 
 def recover_stale_jobs(

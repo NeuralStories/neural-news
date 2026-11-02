@@ -2,9 +2,9 @@
 
 ## Última actualización
 
-2026-11-02 16:45 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) **COMPLETADA y
-empujada** (`f8a7b40`, `8fff0d7`); Fase 6 (NN-114) **verificada, sin commitear**; Fase 8
-(NN-115/116) y NN-117.4/.6–.8 pendientes.
+2026-11-02 18:20 (Europe/Madrid) — **Fases 0–8 cerradas y NN-117.4/.6/.7/.8 completadas** (sin
+commitear). Todas las filas del plan maestro están **COMPLETADAS** salvo las declaradas fuera de
+alcance; el plan queda listo para el informe final.
 
 ## Capacidades disponibles
 
@@ -34,7 +34,42 @@ por contenido), `.12` (sistema visual único), `.13` (archivos grandes divididos
 
 ## Último punto verificado
 
-**NN-114.1–.7 — COMPLETADAS con evidencia E** (falta el commit).
+**Verificación final del lote (Fase 8 + NN-117) — TODO EN VERDE:**
+
+- `python -m pytest tests -q` → **exit 0** (suite completa, 1 skip).
+- `npx tsc --noEmit` → **0 errores**; `npx eslint .` → **0 problemas**.
+- `npm run build` → compila; `npx playwright test` → **8 passed (1,6 min)**.
+- `python tools/check_clases.py` → **0 reimplementaciones en línea**.
+- `python tools/check_a11y.py` → **0 bloqueantes · 0 avisos**.
+- `python tools/generate_estados.py --check` y `generar_manifiesto_studio.py --check` → **al día**.
+- `python tools/scan_secrets.py .` → **0 hallazgos de secretos**.
+
+**NN-115.1–.5 y NN-116.1–.3 — COMPLETADAS con evidencia E.**
+
+- `python -m pytest tests -q` → **exit 0** (suite completa, 1 skip).
+- `GET /api/v1/metrics` → métricas (p95, media, tasa de fallo, profundidad de cola, por
+  `error_kind`) y **alertas** (cola parada, lease vencido, presupuesto 80 %, fallo repetido),
+  calculadas **de la base de datos**.
+- La página `/ops` los muestra arriba, con `role="alert"`.
+- **NN-115.5 (cronometrado)**: el fallo de proveedor aparece en lo que consume la UI en
+  **< 60 s** (`tests/test_metricas_alertas.py`).
+- **NN-116**: el presupuesto ya se verificaba **antes** de la llamada; ahora está **documentado
+  con su evidencia** (`assert_paid_call_allowed` antes de llamar al modelo, la búsqueda o el
+  análisis de vídeo; `FAILED` con `error_kind="budget"`).
+
+**NN-117.4 / .6 / .7 / .8 — COMPLETADAS con evidencia E** (falta el commit).
+
+- **NN-117.4**: migración `e7a1b3c9d4f2` (`model_routes` + `jobs.model_snapshot`),
+  `services/model_routes.py` y endpoints `GET`/`PUT /api/v1/model-routes`. El trabajo se ata a la
+  ruta que tenía **al encolarse** · `tests/test_model_routes.py` (9) — **E**.
+- **NN-117.6**: `services/subtitles.py` (SRT/VTT desde los `SourceSegment` reales, texto íntegro,
+  tiempos monótonos) — **E**.
+- **NN-117.7**: `services/contradictions.py` propone la contradicción y **no** cambia ningún
+  estado — **E**.
+- **NN-117.8**: `docs/adr/ADR-022-descartes-del-port.md` — cada descarte del port con su motivo
+  escrito — **A**.
+
+**NN-114.1–.7 — COMPLETADAS con evidencia E y COMMITEADAS** (`cce8054`, empujado).
 
 - `scripts\bootstrap.ps1` ejecutado **de extremo a extremo** → **exit 0**: requisitos (Python 3.12,
   Node 24.20.0) → backend instalado → `.env` creado → migraciones Alembic (5) → web → **suite
@@ -81,39 +116,39 @@ actuaba entonces sobre la versión anterior y la API la rechazaba (exige la más
 estado se refresca **antes** de avisar y los botones se bloquean mientras se guarda. Lo detectó el
 E2E `beta-journey` (falló 1 de 7 en una pasada).
 
-**Falso positivo-costoso (lección):** una tanda de E2E dio **7 fallos de 8** con el error boundary
-de React. La causa **no** era el código: un `next start` de una sesión anterior seguía sirviendo el
-puerto 3000 y, al reconstruir, el navegador pidió chunks inexistentes (HTTP 400). **Regla: antes de
-`npm run build`, detener el servidor del puerto 3000.**
+**Falso positivo-costoso (lección, repetida dos veces):** una tanda de E2E dio **7 fallos de 8**
+con el error boundary de React. La causa **no** era el código: un `next start` de una sesión
+anterior seguía sirviendo el puerto 3000 y, al reconstruir, el navegador pidió chunks
+inexistentes (HTTP 400). **Regla: antes de `npm run build`, detener el servidor del puerto 3000;
+y antes de un E2E, `scripts\stop.ps1`.** La segunda vez el servidor superviviente era el que había
+sobrevivido a un E2E cancelado: por eso `stop.ps1` se corrigió (B33) y el E2E ya no reutiliza
+servidores (`reuseExistingServer: false`).
 
 ## Trabajo a medias sin verificar
 
-- **NN-113**: `.6`, `.8`, `.9`, `.12`, `.13` y `.15` están verificadas pero **sin commitear**.
-- **NN-114**: `pytest.ini` en la raíz (la suite ya pasa desde cualquier directorio),
-  `scripts/bootstrap.ps1`, `scripts/start.ps1`, `scripts/stop.ps1` y `.github/workflows/ci.yml`
-  **escritos pero sin ejecutar de extremo a extremo**.
+- **NN-115/116 y NN-117.4/.6/.7/.8**: verificados y **sin commitear** (el commit va justo
+  después de este checkpoint).
+- **NN-114**: cerrada y commiteada (`cce8054`).
 
 ## Archivos modificados desde el último checkpoint
 
-Sin commitear (desde `f8a7b40`):
+Sin commitear (desde `cce8054`):
 
-- **Backend**: `apps/api/src/neuralnews/states.py` (etiquetas de verificación, tipo de afirmación y
-  paquete; `ESTADOS_DE_LA_APLICACION`).
-- **Herramientas**: `tools/generate_estados.py`, `tools/generar_manifiesto_studio.py`,
-  `tools/check_clases.py`, `tools/check_a11y.py` (nuevos).
-- **Web**: `apps/web/lib/estados.ts`, `lib/estados.generado.ts` (nuevos);
-  `features/studio/data/manifiestoStudio.generado.json` (nuevo, generado);
-  `features/studio/lib/` (7 hooks nuevos); `features/studio/components/news/` (4 ficheros nuevos);
-  `features/studio/App.tsx`, `components/NewsEditorialTab.tsx`, `components/BackupModal.tsx`,
-  `components/TopNavigation.tsx`, `components/DossierPanel.tsx`, `components/ReferencesTab.tsx`,
-  `components/ResultTab.tsx`, `components/ScriptTab.tsx`, `components/CharacterSheetTab.tsx`,
-  `components/BackgroundTab.tsx`, `components/VoiceTab.tsx`, `components/MovementTab.tsx`,
-  `app/noticias/page.tsx`, `app/noticias/[id]/page.tsx`, `app/fuentes/page.tsx`,
-  `app/lotes/page.tsx`, `app/configuracion/page.tsx`, `app/estudio/page.tsx`, `app/globals.css`.
-- **Pruebas**: `tests/test_estados_compartidos.py`, `tests/test_clases_web.py`,
-  `tests/test_manifiesto_studio.py` (nuevos).
-- **Documentación**: `docs/agente/PLAN_MAESTRO.md`, `docs/agente/REGISTRO.md`,
-  `docs/agente/ESTADO.md`.
+- **Backend**: `apps/api/src/neuralnews/metrics.py` (nuevo), `services/model_routes.py` (nuevo),
+  `services/subtitles.py` (nuevo), `services/contradictions.py` (nuevo),
+  `api/ops.py` (endpoints `/metrics` y `/model-routes`, validación de pesos),
+  `queue.py` (instantánea de la ruta), `worker_tasks.py` (usa el modelo de la instantánea),
+  `models.py` (`ModelRoute` + `jobs.model_snapshot`).
+- **Migración**: `infra/migrations/versions/e7a1b3c9d4f2_nn117_model_routes.py` (nueva).
+- **Web**: `apps/web/app/ops/page.tsx` (métricas y alertas), `apps/web/lib/api.ts` (`api.metrics()`),
+  `apps/web/playwright.config.ts` (`reuseExistingServer: false`).
+- **Herramientas**: `tools/exportar_openapi.py` (base **aislada**: no toca la base viva),
+  `tools/scan_secrets.py` (UTF-8 y escaneo de lo versionado).
+- **Scripts**: `scripts/start.ps1` (B30: `npm.cmd`), `scripts/stop.ps1` (B33: rutas de Next).
+- **Pruebas**: `tests/test_metricas_alertas.py`, `tests/test_model_routes.py`,
+  `tests/test_subtitulos_contradicciones.py` (nuevas).
+- **Documentación**: `docs/adr/ADR-022-descartes-del-port.md` (nuevo), `docs/openapi.json`
+  (regenerado), `docs/agente/PLAN_MAESTRO.md`, `docs/agente/REGISTRO.md`, `docs/agente/ESTADO.md`.
 
 ## Bloqueos y lo que se necesita para resolverlos
 
@@ -136,12 +171,13 @@ guardando checkpoint tras cada tarea completada.
 
 ## PRÓXIMA ACCIÓN EXACTA
 
-Commitear el lote de NN-113 verificado (`.6`, `.8`, `.9`, `.12`, `.13`, `.15`) y empujarlo a
-`origin beta/v1` con el mensaje «NN-113: mapa de estado único, auditoría de accesibilidad,
-sistema visual unificado y Studio dividido en hooks». Antes de commitear, comprobar que
-`apps/web/features/studio/data/manifiestoStudio.generado.json` está regenerado
-(`python tools/generar_manifiesto_studio.py`), porque los hooks que has tocado cambian sus
-hashes. Después, seguir con **NN-114** (Fase 6): un solo comando para levantar la pila
-(`scripts/bootstrap.ps1` + `scripts/start.ps1` + `scripts/stop.ps1`), ejecutarlos **de extremo a
-extremo**, y comprobar que `.github/workflows/ci.yml` refleja la matriz real (pytest, eslint,
-tsc, build, E2E).
+Commitear el lote verificado de la Fase 8 y de NN-117 (`.4`, `.6`, `.7`, `.8`) y empujarlo a
+`origin beta/v1` con el mensaje «NN-115/116 y NN-117: métricas, alertas, rutas de modelo,
+subtítulos, contradicciones y ADR de descartes». **Antes de commitear**, comprobar que
+`python -m pytest tests -q` sigue en exit 0 y que `npx playwright test` da 8/8 (el E2E que estaba
+corriendo se canceló porque una herramienta aplicó migraciones sobre la base viva; ya está
+corregido: `tools/exportar_openapi.py` usa una base aislada).
+
+Después, cerrar el plan: revisar que **todas** las filas de `docs/agente/PLAN_MAESTRO.md` están
+COMPLETADAS o declaradas fuera de alcance, y dejar el informe final con las autorizaciones
+pendientes (mover `newsV2/` al control de versiones; crear un remoto remoto).

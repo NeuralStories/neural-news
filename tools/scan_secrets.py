@@ -75,12 +75,49 @@ def _relativo(ruta: Path, raiz: Path) -> str:
         return str(ruta)
 
 
+def _ficheros_versionados(raiz: Path) -> list[Path] | None:
+    """Ficheros que git sigue en el repositorio (o `None` si no es un repo).
+
+    Lo que importa es «¿hay un secreto **en el repositorio**?». El árbol de
+    trabajo incluye ficheros ignorados (`.env` local, `node_modules`, `.next`),
+    que no se versionan: escanearlos daba falsos positivos (el `.env` que crea
+    `scripts/bootstrap.ps1`) y ralentizaba la revisión. Si el repositorio
+    llegara a versionar un `.env`, lo detectaría el escaneo del historial.
+    """
+    try:
+        salida = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=raiz,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if salida.returncode != 0:
+        return None
+    rutas = [raiz / parte for parte in salida.stdout.split("\0") if parte]
+    return rutas or None
+
+
 def escanear_arbol(raiz: Path) -> tuple[list[str], list[str]]:
     """Devuelve (fallos, avisos). Un fallo es un secreto posible; un aviso, algo
     que conviene revisar pero que no bloquea la entrega."""
     fallos: list[str] = []
     avisos: list[str] = []
-    for ruta in raiz.rglob("*"):
+    versionados = _ficheros_versionados(raiz)
+    if versionados is not None:
+        candidatos = versionados
+    else:
+        candidatos = [
+            ruta
+            for ruta in raiz.rglob("*")
+            if ruta.is_file()
+            and not any(parte in EXCLUIDOS for parte in ruta.parts)
+            and ruta.suffix.lower() not in EXCLUIDOS_SUFIJO
+        ]
+    for ruta in candidatos:
         if not ruta.is_file():
             continue
         if any(parte in EXCLUIDOS for parte in ruta.parts):
@@ -151,6 +188,14 @@ def escanear_historial(raiz: Path, profundidad: int = 200) -> tuple[list[str], l
 
 
 def main() -> int:
+    # La consola de Windows puede ir en cp1252: el símbolo «✗» no existe ahí y
+    # el escáner **reventaba al imprimir un hallazgo** (mismo origen que el
+    # hallazgo B19 del worker). Se fuerza UTF-8 con sustitución.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:  # pragma: no cover - stdout sin reconfigure
+        pass
+
     raiz = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd()
     raiz = raiz.resolve()
     print(f"Escaneando secretos en {raiz}…")

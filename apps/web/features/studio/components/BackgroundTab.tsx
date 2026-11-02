@@ -22,7 +22,7 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Cabecera explicativa */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+      <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
@@ -121,7 +121,7 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
 
         <button
           onClick={onSelectCustomBackground}
-          className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded text-xs font-medium transition cursor-pointer"
+          className="btn-sm"
         >
           {customReferenceMediaId ? 'Cambiar referencia de fondo' : 'Seleccionar fondo de galería'}
         </button>

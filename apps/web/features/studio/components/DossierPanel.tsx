@@ -6,6 +6,8 @@
  * una redacción paralela. Importar una noticia no la verifica (F-08/F-03).
  */
 import React, { useEffect, useState } from 'react';
+import { ETIQUETA_NOTICIA, ETIQUETA_VERIFICACION, TONO_DE_VERIFICACION } from '@/lib/estados';
+import { request } from '@/lib/http';
 
 interface DossierData {
   linked: boolean;
@@ -15,12 +17,13 @@ interface DossierData {
   claims?: Array<{ claim_id: number; statement: string; verification_status: string }>;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  UNVERIFIED: 'Sin verificar',
-  SUPPORTED: 'Respaldada',
-  CONTRADICTED: 'Contradicha',
-  CONFIRMED: 'Confirmada',
-  DESACTUALIZADA: 'Desactualizada',
+/** Color del texto según el tono del estado (NN-113.6: el mapa es único). */
+const COLOR_POR_TONO: Record<string, string> = {
+  ok: 'font-mono text-emerald-400',
+  error: 'font-mono text-rose-400',
+  aviso: 'font-mono text-amber-400',
+  info: 'font-mono text-sky-400',
+  neutro: 'font-mono text-neutral-400',
 };
 
 export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => {
@@ -29,8 +32,7 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/v1/projects/${projectId}/dossier`, { credentials: 'same-origin' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Error ${r.status}`))))
+    request<DossierData>(`/api/v1/projects/${projectId}/dossier`)
       .then((data) => {
         if (alive) setDossier(data);
       })
@@ -63,7 +65,8 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
   return (
     <div className="space-y-2 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-3">
       <p className="text-xs font-bold text-sky-300">
-        Dossier editorial vinculado · historia #{dossier.story?.id} · {dossier.story?.status}
+        Dossier editorial vinculado · historia #{dossier.story?.id} ·{' '}
+        {ETIQUETA_NOTICIA[dossier.story?.status ?? ''] ?? dossier.story?.status}
       </p>
       {dossier.sources && dossier.sources.length > 0 && (
         <ul className="space-y-1 text-[11px] text-neutral-300">
@@ -79,16 +82,8 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
         <ul className="space-y-1 text-[11px]">
           {dossier.claims.map((c) => (
             <li key={c.claim_id}>
-              <span
-                className={
-                  c.verification_status === 'CONTRADICTED'
-                    ? 'font-mono text-rose-400'
-                    : c.verification_status === 'SUPPORTED' || c.verification_status === 'CONFIRMED'
-                      ? 'font-mono text-emerald-400'
-                      : 'font-mono text-sky-400'
-                }
-              >
-                {STATUS_LABELS[c.verification_status] ?? c.verification_status}
+              <span className={COLOR_POR_TONO[TONO_DE_VERIFICACION[c.verification_status] ?? 'neutro']}>
+                {ETIQUETA_VERIFICACION[c.verification_status] ?? c.verification_status}
               </span>{' '}
               {c.statement}
             </li>

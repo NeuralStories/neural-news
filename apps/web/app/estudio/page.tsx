@@ -89,7 +89,7 @@ function Launcher() {
           </label>
           <label className="text-xs text-neutral-400 space-y-1 block">
             Proporción (se fija en la creación)
-            <select
+            <select aria-label="Proporción (se fija en la creación)"
               value={ratio}
               onChange={(e) => setRatio(e.target.value as "9:16" | "16:9")}
               className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
@@ -100,7 +100,7 @@ function Launcher() {
           </label>
           <label className="text-xs text-neutral-400 space-y-1 block sm:col-span-2">
             Noticia del motor editorial (opcional; queda activa desde el inicio)
-            <select
+            <select aria-label="Noticia del motor editorial (opcional; queda activa desde el inicio)"
               value={storyId}
               onChange={(e) => setStoryId(e.target.value)}
               className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"

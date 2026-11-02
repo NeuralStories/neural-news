@@ -77,31 +77,31 @@ export const ResultTab: React.FC<ResultTabProps> = ({
     <div className="space-y-6">
       {/* Resumen del paquete de producción */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+        <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Noticia Editorial</span>
           <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1 truncate" title={activeArticle?.title}>
             {activeArticle ? activeArticle.title : 'Guion Manual'}
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+        <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Escenario & Ratio</span>
           <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1">
             CRT {aspectRatio}
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+        <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Voz Algenib</span>
           <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1">
             {voiceConfig.speedMultiplier.toFixed(2)}x (+18%)
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800">
+        <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Refs Canónicas</span>
           <span className="text-xs font-semibold text-sky-400 flex items-center gap-1 mt-1 font-mono">
             {selectedReferences.length} activas
           </span>
         </div>
-        <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 col-span-2 sm:col-span-1">
+        <div className="card-compact col-span-2 sm:col-span-1">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Escenas Generables</span>
           <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 mt-1 font-mono">
             {multiSceneAnalysis.scenes.length || 1} tomas (≈{multiSceneAnalysis.scenes.length > 0 ? Math.round(multiSceneAnalysis.scenes.reduce((acc, sc) => acc + sc.estDurationSeconds, 0) / multiSceneAnalysis.scenes.length * 10) / 10 : 0}s c/u)
@@ -110,7 +110,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
       </div>
 
       {/* Auditoría de Referencias Transmitidas a Google Flow */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+      <div className="card">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
           Auditoría de Insumos para Omni 1.1 Flash (Google Flow)
         </h4>
@@ -171,7 +171,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
 
       {/* Selector de Escenas Audiovisuales para render */}
       {multiSceneAnalysis.scenes.length > 1 && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
+        <div className="card-compact">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               Secuencia de Escenas del Noticiero ({multiSceneAnalysis.scenes.length} fragmentos, duración calculada por palabras)
@@ -207,7 +207,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Lado izquierdo: Prompt de la toma seleccionada */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
+          <div className="card space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
                 Prompt de Toma {selectedSceneIndex + 1} (duración calculada)
@@ -224,7 +224,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
               readOnly
               value={promptToRender}
               rows={8}
-              className="w-full text-xs font-mono bg-neutral-950 border border-neutral-800 rounded p-3 text-neutral-200 leading-relaxed resize-none focus:outline-none"
+              className="w-full text-xs font-mono bg-neutral-950 border border-neutral-800 rounded p-3 text-neutral-200 leading-relaxed resize-none focus:outline-none focus:border-sky-600"
             />
 
             {!flowHosted && (

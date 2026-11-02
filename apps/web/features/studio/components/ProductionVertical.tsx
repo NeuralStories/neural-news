@@ -421,17 +421,17 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           </label>
           <label className="space-y-0.5">
             <span className="text-neutral-500">Etiqueta</span>
-            <input value={graphicLabel} onChange={(e) => setGraphicLabel(e.target.value)}
+            <input aria-label="Etiqueta" value={graphicLabel} onChange={(e) => setGraphicLabel(e.target.value)}
               className="block w-28 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <label className="space-y-0.5">
             <span className="text-neutral-500">Valor</span>
-            <input value={graphicValue} onChange={(e) => setGraphicValue(e.target.value)} inputMode="decimal"
+            <input aria-label="Valor" value={graphicValue} onChange={(e) => setGraphicValue(e.target.value)} inputMode="decimal"
               className="block w-20 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <label className="space-y-0.5">
             <span className="text-neutral-500">Unidad</span>
-            <input value={graphicUnit} onChange={(e) => setGraphicUnit(e.target.value)}
+            <input aria-label="Unidad" value={graphicUnit} onChange={(e) => setGraphicUnit(e.target.value)}
               className="block w-16 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <button onClick={createGraphic} disabled={busy !== null || graphicValue === ''}

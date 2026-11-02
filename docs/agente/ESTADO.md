@@ -2,9 +2,9 @@
 
 ## Última actualización
 
-2026-11-02 15:30 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) **EN CURSO**
-(`.1`–`.5`, `.7`, `.10`, `.11`, `.14`, `.16`, `.17` completadas); Fase 6 (NN-114) y Fase 8
-(NN-115/116) pendientes.
+2026-11-02 16:30 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) **EN CURSO**
+(`.1`–`.5`, `.7`, `.10`, `.11`, `.14`, `.16`, `.17` **commiteadas** en `f8a7b40`; `.6`, `.8`, `.9`,
+`.12`, `.13`, `.15` **verificadas, sin commitear**); Fase 6 (NN-114) y Fase 8 (NN-115/116) pendientes.
 
 ## Capacidades disponibles
 
@@ -25,29 +25,47 @@
 
 Hecho y verificado: `.1` (fronteras de error y estados de carga), `.2` (ESLint ejecutable),
 `.3` (script `typecheck`), `.4` (cliente HTTP único con `ApiError`), `.5` (error del trabajo
-propagado), `.7` (0 `any`), `.10` (fuente de iconos sin bloquear el render), `.11` (idempotencia
-por contenido), `.14` (`webServer` en Playwright), `.16` (B23), `.17` (B24).
+propagado), `.6` (mapa de estado único y generado), `.7` (0 `any`), `.8` (a11y: 0 bloqueantes),
+`.9` (lint de clases inexistentes), `.10` (fuente de iconos sin bloquear), `.11` (idempotencia
+por contenido), `.12` (sistema visual único), `.13` (archivos grandes divididos), `.14`
+(`webServer` en Playwright), `.15` (Centro de mantenimiento cableado), `.16` (B23), `.17` (B24).
 
-Pendiente en esta fase: `.6` (mapa de estado compartido), `.8` (a11y), `.9` (lint de clases
-inexistentes), `.12` (sistema visual único), `.13` (dividir archivos grandes: `features/studio/App.tsx`
-= 840 líneas y `NewsEditorialTab.tsx` = 759), `.15` (cablear `BackupModal`).
+**NN-113 completa salvo el commit de este lote.**
 
 ## Último punto verificado
 
-**NN-113.4 / .5 / .11 + B23 (NN-113.16) + B24 (NN-113.17) — COMPLETADAS con evidencia E.**
+**NN-113.6 / .8 / .9 / .12 / .13 / .15 — COMPLETADAS con evidencia E.**
 
-- `python -m pytest tests -q` → **258 passed, 1 skipped** (259 tests colectados), **exit 0**.
-- `npx eslint .` → **0 problemas**. `npx tsc --noEmit` → **0 errores**.
-- `npx playwright test` → **8 passed, 0 fallos** (exit 0).
-- **B23**: `APPROVED → RESEARCHING` era una transición inválida → el trabajo moría con
-  `ValueError: Transición de estado no permitida` y **se reintentaba 3 veces**. Ahora la transición
-  es válida y `research_story` **invalida la aprobación activa** antes de investigar (igual que al
-  editar el guion).
-- **B24**: el número de versión de guion se calculaba «último + 1»: dos borradores simultáneos
-  chocaban con el UNIQUE `(story_id, version)` y la sesión quedaba rota («This Session's transaction
-  has been rolled back…»). Ahora el intento va dentro de un **savepoint**: si choca, sólo se revierte
-  ese savepoint y se recalcula el número libre.
-- Los dos los destapó el **log del worker**, no las pruebas: **un E2E en verde no basta**.
+- `python -m pytest tests -q` → **exit 0** (suite completa, 1 skip).
+- `npx eslint .` → **0 problemas**. `npx tsc --noEmit` → **0 errores**. `npm run build` → compila.
+- `npx playwright test` → **8 passed, 0 fallos** (1,6 min).
+- **NN-113.6 — un solo mapa de estado.** `tools/generate_estados.py` genera
+  `apps/web/lib/estados.generado.ts` desde `apps/api/src/neuralnews/states.py` (fuente de verdad) y
+  `apps/web/lib/estados.ts` es el único mapa de insignias. Se eliminaron **3 copias** del mapa
+  (noticias, noticias/[id], fuentes) y un **4º mapa distinto** con dos estados inexistentes
+  (`CONFIRMED`, `DESACTUALIZADA` en `DossierPanel`). `tests/test_estados_compartidos.py` (5) falla
+  si el generado se desfasas o si alguien declara un mapa fuera del módulo compartido
+  (rojo→verde verificado con `git stash`).
+- **NN-113.13 — archivos grandes.** `features/studio/App.tsx` 907 → **478** líneas (7 hooks nuevos
+  en `features/studio/lib/`); `NewsEditorialTab.tsx` 759 → **240** (lista y 3 modales en
+  `components/news/`). **Ningún fichero de la web supera las 500 líneas.**
+- **NN-113.8 — a11y.** `tools/check_a11y.py` (auditoría ejecutable): **0 bloqueantes · 0 avisos**
+  (partía de 8 botones sin nombre accesible y 51 campos sin etiqueta). El analizador escanea JSX
+  carácter a carácter: con `[^>]*` las flechas `=>` de los manejadores cortaban la expresión
+  regular y **los botones vacíos no se detectaban** (B27).
+- **NN-113.9 — lint de clases.** `scrollbar-none` y `studio-root` se usaban y **no existían**
+  (B28): la barra de desplazamiento aparecía en Chromium y el envoltorio del Studio no tenía
+  altura. Ahora están definidas y `tools/check_clases.py` + `tests/test_clases_web.py` lo vigilan.
+- **NN-113.12 — sistema visual.** Todos los componentes viven **una sola vez** en
+  `app/globals.css`; 44 composiciones en línea sustituidas por clases del sistema y
+  `tools/check_clases.py` falla si vuelve a haber reimplementación: **0 reimplementaciones**.
+- **NN-113.15 — Centro de mantenimiento.** El botón «Mantenimiento» abre el `BackupModal` con
+  datos veraces: manifiesto de las fuentes generado por `tools/generar_manifiesto_studio.py`
+  (SHA-256 reales) y SHA-256 del estado del Studio calculado en el navegador. La interfaz dice
+  que **no** es un backup de la base de datos (eso es `scripts/db_backup.py`).
+
+**NN-113.4 / .5 / .11 + B23 (NN-113.16) + B24 (NN-113.17) — COMPLETADAS y COMMITEADAS**
+(`f8a7b40`, empujado a `origin beta/v1`).
 
 **NN-113.2 / .3 / .7 — COMPLETADAS con evidencia E.**
 
@@ -67,31 +85,39 @@ actuaba entonces sobre la versión anterior y la API la rechazaba (exige la más
 estado se refresca **antes** de avisar y los botones se bloquean mientras se guarda. Lo detectó el
 E2E `beta-journey` (falló 1 de 7 en una pasada).
 
+**Falso positivo-costoso (lección):** una tanda de E2E dio **7 fallos de 8** con el error boundary
+de React. La causa **no** era el código: un `next start` de una sesión anterior seguía sirviendo el
+puerto 3000 y, al reconstruir, el navegador pidió chunks inexistentes (HTTP 400). **Regla: antes de
+`npm run build`, detener el servidor del puerto 3000.**
+
 ## Trabajo a medias sin verificar
 
-- **NN-113**: las tareas `.4`/`.5`/`.11` y los defectos B23/B24 están verificados pero **sin commitear**
-  (el commit se hace justo después de este checkpoint).
+- **NN-113**: `.6`, `.8`, `.9`, `.12`, `.13` y `.15` están verificadas pero **sin commitear**.
 - **NN-114**: `pytest.ini` en la raíz (la suite ya pasa desde cualquier directorio),
   `scripts/bootstrap.ps1`, `scripts/start.ps1`, `scripts/stop.ps1` y `.github/workflows/ci.yml`
   **escritos pero sin ejecutar de extremo a extremo**.
 
 ## Archivos modificados desde el último checkpoint
 
-Sin commitear (desde `e7b3588`):
+Sin commitear (desde `f8a7b40`):
 
-- `apps/web/lib/http.ts` — **nuevo**: cliente HTTP único (`request`, `ApiError`, `idempotenciaDe`).
-- `apps/web/lib/api.ts` — deja de tener su propio `fetch`; usa `lib/http.ts`.
-- `apps/web/features/studio/lib/projectApi.ts` — usa `lib/http.ts`; traduce el 409 en `ProjectConflict`.
-- `apps/web/features/studio/components/ProductionVertical.tsx` — 0 `fetch` a mano.
-- `apps/web/app/fuentes/page.tsx` — muestra el error del trabajo (NN-113.5) e idempotencia por
-  contenido (NN-113.11).
-- `apps/api/src/neuralnews/states.py` — transición `APPROVED → RESEARCHING` (B23).
-- `apps/api/src/neuralnews/services/research.py` — invalida la aprobación al reinvestigar (B23).
-- `apps/api/src/neuralnews/services/scripts.py` — savepoint + reintento del número de versión (B24).
-- `tests/test_reinvestigar_aprobada.py` — **nuevo** (B23).
-- `tests/test_version_script_concurrente.py` — **nuevo** (B24).
-- `docs/agente/PLAN_MAESTRO.md`, `docs/agente/REGISTRO.md`, `docs/agente/ESTADO.md`.
-- `tools/diag_script.py` — **eliminado** (script de diagnóstico temporal).
+- **Backend**: `apps/api/src/neuralnews/states.py` (etiquetas de verificación, tipo de afirmación y
+  paquete; `ESTADOS_DE_LA_APLICACION`).
+- **Herramientas**: `tools/generate_estados.py`, `tools/generar_manifiesto_studio.py`,
+  `tools/check_clases.py`, `tools/check_a11y.py` (nuevos).
+- **Web**: `apps/web/lib/estados.ts`, `lib/estados.generado.ts` (nuevos);
+  `features/studio/data/manifiestoStudio.generado.json` (nuevo, generado);
+  `features/studio/lib/` (7 hooks nuevos); `features/studio/components/news/` (4 ficheros nuevos);
+  `features/studio/App.tsx`, `components/NewsEditorialTab.tsx`, `components/BackupModal.tsx`,
+  `components/TopNavigation.tsx`, `components/DossierPanel.tsx`, `components/ReferencesTab.tsx`,
+  `components/ResultTab.tsx`, `components/ScriptTab.tsx`, `components/CharacterSheetTab.tsx`,
+  `components/BackgroundTab.tsx`, `components/VoiceTab.tsx`, `components/MovementTab.tsx`,
+  `app/noticias/page.tsx`, `app/noticias/[id]/page.tsx`, `app/fuentes/page.tsx`,
+  `app/lotes/page.tsx`, `app/configuracion/page.tsx`, `app/estudio/page.tsx`, `app/globals.css`.
+- **Pruebas**: `tests/test_estados_compartidos.py`, `tests/test_clases_web.py`,
+  `tests/test_manifiesto_studio.py` (nuevos).
+- **Documentación**: `docs/agente/PLAN_MAESTRO.md`, `docs/agente/REGISTRO.md`,
+  `docs/agente/ESTADO.md`.
 
 ## Bloqueos y lo que se necesita para resolverlos
 
@@ -114,9 +140,12 @@ guardando checkpoint tras cada tarea completada.
 
 ## PRÓXIMA ACCIÓN EXACTA
 
-Commitear lo verificado de NN-113 (`.4`, `.5`, `.11`, B23 y B24) y empujarlo a `origin beta/v1`
-con el mensaje «NN-113: cliente HTTP único, idempotencia por contenido y dos fallos de concurrencia
-corregidos (B23, B24)». Después, seguir con **NN-113.6** (mapa de estado compartido: buscar los
-duplicados del mapa de estados entre `lib/hooks.ts`, `features/studio/constants.ts` y
-`features/studio/types.ts`) y **NN-113.13** (dividir `features/studio/App.tsx`, 840 líneas, y
-`NewsEditorialTab.tsx`, 759).
+Commitear el lote de NN-113 verificado (`.6`, `.8`, `.9`, `.12`, `.13`, `.15`) y empujarlo a
+`origin beta/v1` con el mensaje «NN-113: mapa de estado único, auditoría de accesibilidad,
+sistema visual unificado y Studio dividido en hooks». Antes de commitear, comprobar que
+`apps/web/features/studio/data/manifiestoStudio.generado.json` está regenerado
+(`python tools/generar_manifiesto_studio.py`), porque los hooks que has tocado cambian sus
+hashes. Después, seguir con **NN-114** (Fase 6): un solo comando para levantar la pila
+(`scripts/bootstrap.ps1` + `scripts/start.ps1` + `scripts/stop.ps1`), ejecutarlos **de extremo a
+extremo**, y comprobar que `.github/workflows/ci.yml` refleja la matriz real (pytest, eslint,
+tsc, build, E2E).

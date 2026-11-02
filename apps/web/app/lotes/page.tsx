@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { BADGE_DE_NOTICIA, ETIQUETA_PAQUETE, insigniaDe } from "@/lib/estados";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { BatchDetail, StoryListItem } from "@/lib/types";
 
@@ -112,7 +113,13 @@ export default function LotesPage() {
               {size}
             </button>
           ))}
-          <input className="input max-w-64" placeholder="Nombre del lote (opcional)" value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            className="input max-w-64"
+            placeholder="Nombre del lote (opcional)"
+            aria-label="Nombre del lote"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
           <button className="btn-primary" onClick={create} disabled={checked.size !== targetSize}>
             Crear lote ({checked.size}/{targetSize})
           </button>
@@ -126,7 +133,7 @@ export default function LotesPage() {
               .filter((s) => checked.has(s.id))
               .map((s) => (
                 <div key={s.id} className="flex items-center gap-2 text-sm">
-                  <span className={s.status === "APPROVED" ? "badge-ok" : "badge-warn"}>{s.status_label}</span>
+                  <span className={insigniaDe(BADGE_DE_NOTICIA, s.status)}>{s.status_label}</span>
                   <span className="truncate">{s.title}</span>
                   <button className="ml-auto text-xs text-red-400 hover:underline" onClick={() => toggle(s.id)}>
                     quitar
@@ -139,7 +146,7 @@ export default function LotesPage() {
         {notice && <p className="text-sm text-emerald-400">{notice}</p>}
         {waiting !== null && <p className="text-sm text-sky-400">Exportando (trabajo #{waiting})…</p>}
 
-        <div className="overflow-x-auto rounded-lg border border-neutral-800">
+        <div className="table-wrap">
           <table className="table-base">
             <thead>
               <tr>
@@ -160,7 +167,7 @@ export default function LotesPage() {
                       </Link>
                     </td>
                     <td>
-                      <span className={s.status === "APPROVED" ? "badge-ok" : "badge-warn"}>{s.status_label}</span>
+                      <span className={insigniaDe(BADGE_DE_NOTICIA, s.status)}>{s.status_label}</span>
                     </td>
                     <td className="tabular-nums">{s.editorial_score ?? "—"}</td>
                     <td>
@@ -185,7 +192,7 @@ export default function LotesPage() {
                   #{b.id} {b.name}
                 </button>{" "}
                 <span className="text-neutral-500">
-                  · {b.target_size} noticias · {b.status === "READY_FOR_REVIEW" ? "paquete preparado" : "borrador"} ·{" "}
+                  · {b.target_size} noticias · {ETIQUETA_PAQUETE[b.status] ?? b.status} ·{" "}
                   {fmtDate(b.created_at)}
                 </span>
               </li>

@@ -2,18 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { BADGE_DE_FUENTE, insigniaDe } from "@/lib/estados";
 import { idempotenciaDe } from "@/lib/http";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { SourceDetail, SourceListItem } from "@/lib/types";
-
-const STATUS_BADGE: Record<string, string> = {
-  NEW: "badge-neutral",
-  FETCHING: "badge-info",
-  READY: "badge-ok",
-  PARTIAL: "badge-warn",
-  METADATA_ONLY: "badge-warn",
-  FAILED: "badge-err",
-};
 
 /**
  * Severidad explícita de un mensaje de la interfaz (hallazgo B4).
@@ -140,12 +132,14 @@ export default function FuentesPage() {
             <textarea
               className="input min-h-24"
               placeholder="Texto pegado (se tratará como fuente manual)"
+              aria-label="Texto de la fuente"
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
             <textarea
               className="input min-h-16"
               placeholder="Transcripción (opcional): si el vídeo o episodio no tiene transcripción, pégala aquí para analizar lo que se ha dicho"
+              aria-label="Transcripción opcional de la fuente"
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
             />
@@ -162,7 +156,7 @@ export default function FuentesPage() {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Fuentes registradas</h2>
-        <div className="overflow-x-auto rounded-lg border border-neutral-800">
+        <div className="table-wrap">
           <table className="table-base">
             <thead>
               <tr>
@@ -326,7 +320,7 @@ function SourceRow({ source }: { source: SourceListItem }) {
         </td>
         <td className="capitalize text-neutral-300">{source.provider.replace("_", " ")}</td>
         <td>
-          <span className={STATUS_BADGE[source.status] || "badge-neutral"}>{source.status_label}</span>
+          <span className={insigniaDe(BADGE_DE_FUENTE, source.status)}>{source.status_label}</span>
         </td>
         <td className="text-neutral-400">{fmtDate(source.published_at)}</td>
         <td className="max-w-56 truncate text-sky-400">
@@ -368,7 +362,7 @@ function SourceRow({ source }: { source: SourceListItem }) {
             <div className="space-y-3 p-2">
               {detail.contents.length === 0 && <p className="text-sm text-neutral-400">Sin contenido todavía.</p>}
               {detail.contents.map((c) => (
-                <div key={c.id} className="rounded border border-neutral-800 bg-neutral-900 p-3 text-sm">
+                <div key={c.id} className="card-quiet text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={c.content_type === "TRANSCRIPT" ? "badge-ok" : c.content_type === "METADATA_ONLY" ? "badge-warn" : "badge-info"}>
                       {c.content_type_label}
@@ -422,6 +416,7 @@ function SourceRow({ source }: { source: SourceListItem }) {
                   <input
                     className="input"
                     placeholder="Pega aquí una transcripción para analizar lo que se ha dicho"
+                    aria-label="Transcripción de la fuente"
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
                   />

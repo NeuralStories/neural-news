@@ -9,6 +9,15 @@ body {
 }
 
 /* --- Componentes (sólo utilidades Tailwind reales) --- */
+/*
+ * Sistema de componentes **único** (NN-113.12): toda clase de componente vive
+ * aquí, en este fichero. Antes el Studio reimplementaba en línea las mismas
+ * composiciones (`bg-neutral-900 border border-neutral-800 rounded-lg p-4`,
+ * `bg-neutral-950 border border-neutral-800 rounded p-2`, …) y las páginas
+ * del producto usaban otras: dos sistemas visuales que podían divergir.
+ * `tools/check_clases.py` falla si vuelve a aparecer una reimplementación en
+ * línea de cualquiera de estos componentes.
+ */
 .badge {
   @apply inline-block rounded px-2 py-0.5 text-xs font-medium;
 }
@@ -46,7 +55,52 @@ body {
 }
 
 .card {
-  @apply rounded-lg border border-neutral-800 bg-neutral-900/60 p-4;
+  @apply rounded-lg border border-neutral-800 bg-neutral-900 p-4;
+}
+
+/* Variante compacta: la que usa el Studio en sus paneles y modales. */
+.card-compact {
+  @apply rounded-lg border border-neutral-800 bg-neutral-900 p-3;
+}
+
+/* Variante «hueco»: caja sin relieve, para contenido dentro de una tarjeta. */
+.card-quiet {
+  @apply rounded-lg border border-neutral-800 bg-neutral-950 p-3;
+}
+
+/* Cabecera de un panel: título a la izquierda, acciones a la derecha. */
+.panel-header {
+  @apply flex items-center justify-between pb-3 border-b border-neutral-800;
+}
+
+/* Pie de un modal: acciones a la derecha. */
+.modal-actions {
+  @apply pt-2 border-t border-neutral-800 flex justify-end gap-2;
+}
+
+/* Caja de contenido técnico (código, transcripciones, datos). */
+.inset {
+  @apply rounded border border-neutral-800/60 bg-neutral-950 p-2;
+}
+
+/* Envoltorio con desplazamiento horizontal (tablas anchas). */
+.table-wrap {
+  @apply overflow-x-auto rounded-lg border border-neutral-800;
+}
+
+/* Campo del Studio (compacto, monoespaciado cuando el contexto lo pide). */
+.input-compact {
+  @apply w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-200 outline-none placeholder:text-neutral-500 focus:border-sky-500;
+}
+
+/* Botón secundario compacto (el Studio usa texto pequeño). */
+.btn-sm {
+  @apply inline-flex items-center justify-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+/* Botón principal compacto. */
+.btn-sm-primary {
+  @apply inline-flex items-center justify-center gap-1.5 rounded border border-sky-700 bg-sky-700 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-40;
 }
 
 .table-base {
@@ -58,3 +112,27 @@ body {
 .table-base td {
   @apply border-b border-neutral-800/60 px-3 py-2 align-top;
 }
+
+/* --- Utilidades propias --- */
+
+/*
+ * Oculta la barra de desplazamiento horizontal (navegación del Studio).
+ * Antes la clase se usaba pero **no existía** en este fichero: la barra
+ * aparecía en Chromium. `tools/check_clases.py` lo comprueba.
+ */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * Contenedor del Studio. Sin esta clase el envoltorio no tenía altura y la
+ * raíz del Studio (`min-h-full`) no crecía: la página se quedaba corta.
+ */
+.studio-root {
+  @apply min-h-full w-full;
+}
+

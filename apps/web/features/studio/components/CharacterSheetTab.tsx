@@ -128,20 +128,20 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
 
         {/* Panel lateral de ficha técnica y generador */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
+          <div className="card space-y-3">
             <h4 className="text-xs font-semibold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
               Ficha Canónica
             </h4>
             <div className="space-y-2 text-xs">
-              <div className="p-2 rounded bg-neutral-950 border border-neutral-800/60">
+              <div className="inset">
                 <span className="text-neutral-500 block text-[10px] uppercase font-mono">Gafas y Mirada</span>
                 <span className="text-neutral-200">{MAXDOTAI_CANONICAL.features.glasses}</span>
               </div>
-              <div className="p-2 rounded bg-neutral-950 border border-neutral-800/60">
+              <div className="inset">
                 <span className="text-neutral-500 block text-[10px] uppercase font-mono">Cabello y Barba</span>
                 <span className="text-neutral-200">{MAXDOTAI_CANONICAL.features.hair} • {MAXDOTAI_CANONICAL.features.beard}</span>
               </div>
-              <div className="p-2 rounded bg-neutral-950 border border-neutral-800/60">
+              <div className="inset">
                 <span className="text-neutral-500 block text-[10px] uppercase font-mono">Vestuario</span>
                 <span className="text-neutral-200">{MAXDOTAI_CANONICAL.features.wardrobe}</span>
               </div>
@@ -149,7 +149,7 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
           </div>
 
           {/* Generador de Hoja con Nano Banana Pro */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 space-y-3">
+          <div className="card space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-neutral-200 uppercase tracking-wider">
                 Generar Nueva Hoja (16:9)

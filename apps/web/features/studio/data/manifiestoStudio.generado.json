@@ -1,0 +1,208 @@
+{
+  "manifestVersion": "1.0",
+  "generatedBy": "tools/generar_manifiesto_studio.py",
+  "scope": "apps/web/features/studio",
+  "totalFiles": 33,
+  "totalLines": 6557,
+  "totalChars": 269894,
+  "files": [
+    {
+      "path": "App.tsx",
+      "lines": 538,
+      "chars": 20097,
+      "sha256": "77e57172ac7c16619877ae6154b590f75f2fc36b6258d88e365a7b0142c3c97e"
+    },
+    {
+      "path": "components/BackgroundTab.tsx",
+      "lines": 131,
+      "chars": 5896,
+      "sha256": "a66c982f8cc620b356505361334bead9416abd7110226e8a60dc99cbcd3f276b"
+    },
+    {
+      "path": "components/BackupModal.tsx",
+      "lines": 267,
+      "chars": 11902,
+      "sha256": "56a4f3df89055b50008fbe59d962447a8aaf26b5ca687a1d420fba9a6f555dc0"
+    },
+    {
+      "path": "components/CharacterSheetTab.tsx",
+      "lines": 190,
+      "chars": 9547,
+      "sha256": "9c46dc27efce3f8039784f60787d7b7abad20de1ad5c9a09c311b0c3acefc5d7"
+    },
+    {
+      "path": "components/DossierPanel.tsx",
+      "lines": 98,
+      "chars": 3773,
+      "sha256": "127326706e37b3a28151c34033ec60c0dfde3d8aee3585882cd0bfea8957bb2e"
+    },
+    {
+      "path": "components/MovementTab.tsx",
+      "lines": 65,
+      "chars": 2735,
+      "sha256": "0ff9a674d6b57f19d3404e518153eb96261273f34fe76fa98db9164406a909e3"
+    },
+    {
+      "path": "components/news/ListaNoticias.tsx",
+      "lines": 182,
+      "chars": 8074,
+      "sha256": "3ff010a5f9449cc438eb6b0bc2775dc65a3d35f5f5b51e5ce34cda602fa7fb6f"
+    },
+    {
+      "path": "components/news/ModalImportarLote.tsx",
+      "lines": 209,
+      "chars": 8411,
+      "sha256": "7ab5169a74648d7c4cec2e4289471bd8e53689009534ee759b333e6c2753f2d0"
+    },
+    {
+      "path": "components/news/ModalNoticiaIndividual.tsx",
+      "lines": 263,
+      "chars": 10231,
+      "sha256": "5e5d4e0aa42bbd88a42f58fd9ef5891e91a1a507464c030d11e67bbf26b68c76"
+    },
+    {
+      "path": "components/news/ModalNuevoBloque.tsx",
+      "lines": 84,
+      "chars": 2992,
+      "sha256": "dc99f9933958f90ea4d4d9fd475486f3a54328708a71a8aba9f5fd6502e9bd1b"
+    },
+    {
+      "path": "components/NewsEditorialTab.tsx",
+      "lines": 227,
+      "chars": 9627,
+      "sha256": "70ce8546fdf943ce4d737c55bb5f2083759fbf2ff4af31e40b3ec2cfc4054191"
+    },
+    {
+      "path": "components/ProductionVertical.tsx",
+      "lines": 467,
+      "chars": 21156,
+      "sha256": "a837c59c080039c96ed4fe322a0ffd13291ebf4e30605bc191fa42c1547a8ee8"
+    },
+    {
+      "path": "components/ReferencesTab.tsx",
+      "lines": 517,
+      "chars": 23242,
+      "sha256": "2f11f3fc97cd53ca9317c11cfe85fd1331950a853602cf265b4a728a2cc4cbb9"
+    },
+    {
+      "path": "components/ResultTab.tsx",
+      "lines": 318,
+      "chars": 14896,
+      "sha256": "f5789f543b155a4b8246b8aa20357615f922f1dd4d40391de8bfbca854bdb16e"
+    },
+    {
+      "path": "components/ScriptTab.tsx",
+      "lines": 224,
+      "chars": 10782,
+      "sha256": "e30e85b012000ff7df6db89318896f4d529ead70ec1af5f8422cde1c9e4061de"
+    },
+    {
+      "path": "components/TopNavigation.tsx",
+      "lines": 207,
+      "chars": 8884,
+      "sha256": "9edcf63cce4dde00bf11cc26c1dfd586f01a4c145f7b0df25a9dbea5ad147274"
+    },
+    {
+      "path": "components/VoiceTab.tsx",
+      "lines": 102,
+      "chars": 4664,
+      "sha256": "e2c31f9c89605b7ad30b89354bb39ba66231dc53f0f40a50fa07598d4847140e"
+    },
+    {
+      "path": "constants.ts",
+      "lines": 381,
+      "chars": 18617,
+      "sha256": "9db04fcf8582e00727a6bbc2436efed98f06974e4ca075d049697d2dbe257d3b"
+    },
+    {
+      "path": "data/sourceManifest.ts",
+      "lines": 110,
+      "chars": 4545,
+      "sha256": "645a6aa78cdda25b685947aea149a6a39051ced8852fa7341a74e1bd8a75a91a"
+    },
+    {
+      "path": "flow/adapter.ts",
+      "lines": 117,
+      "chars": 3849,
+      "sha256": "72733d5f6cc156f4fb54b41d353e58ffb9161ff5fae5177e308f6f0e03d74f7b"
+    },
+    {
+      "path": "lib/projectApi.ts",
+      "lines": 136,
+      "chars": 5165,
+      "sha256": "f0ca2e3e6630f40835c8b4d12aec094e1a7151f1cb57b5422b5f28ad30b66d4b"
+    },
+    {
+      "path": "lib/useFlowStudio.ts",
+      "lines": 271,
+      "chars": 9238,
+      "sha256": "2917538fc9eefab9bd7969da84d92a71b45cc7e51d6812936b80ac93e9e70c06"
+    },
+    {
+      "path": "lib/useGuardadoPasos.ts",
+      "lines": 48,
+      "chars": 1653,
+      "sha256": "9146086e4aad971182ff6db9467e58123f4ee520c6f5a4143ae5c4cb5e442c12"
+    },
+    {
+      "path": "lib/useHidratacionStudio.ts",
+      "lines": 166,
+      "chars": 6987,
+      "sha256": "5b53d72663cdf63d8dabc35108fceb22326c1609a3c347239b513285c23524eb"
+    },
+    {
+      "path": "lib/useNoticiasStudio.ts",
+      "lines": 185,
+      "chars": 6404,
+      "sha256": "8b78c70f5f334c1590796760799c876c942596089684629f37326a33db73df3e"
+    },
+    {
+      "path": "lib/usePaqueteProduccion.ts",
+      "lines": 187,
+      "chars": 5949,
+      "sha256": "1602c9fbca77192657c7a97b3a72c9c7e9f766375e5e4d30e0a7ff9ca95efa84"
+    },
+    {
+      "path": "lib/usePromptFinal.ts",
+      "lines": 57,
+      "chars": 2391,
+      "sha256": "d7ac2452e12102b5cb2e1a029810fb46f43ddc6570c5155d5cf34dd82f2d2654"
+    },
+    {
+      "path": "lib/useReferenciasStudio.ts",
+      "lines": 111,
+      "chars": 3633,
+      "sha256": "1ca76ee5371ce1ccc9a6ce347f6b366833a94f633bce3691c1c2c3fe4a6dae33"
+    },
+    {
+      "path": "lib/useStudioProject.ts",
+      "lines": 101,
+      "chars": 3703,
+      "sha256": "0331a100b16ce8361a4a8465f111fbbe671005e1b1d8acfa1f2df83ae6b1b6e9"
+    },
+    {
+      "path": "types.ts",
+      "lines": 200,
+      "chars": 5990,
+      "sha256": "01bc6575d5d05c0f795b037182a254f2b98989b23350e36bc78940467199d209"
+    },
+    {
+      "path": "utils/errorMessage.ts",
+      "lines": 13,
+      "chars": 606,
+      "sha256": "e571392dfe902a6c9c994da06a576c4a6afd1fbc8e512d9d154552741b2cf569"
+    },
+    {
+      "path": "utils/newsDeduplication.ts",
+      "lines": 158,
+      "chars": 5432,
+      "sha256": "49114e8f2050ff5e14ff7fabcb0fbab41531d9a555442916b7de537b0b1344f7"
+    },
+    {
+      "path": "utils/scriptAnalyzer.ts",
+      "lines": 227,
+      "chars": 8823,
+      "sha256": "3d40d7885ecff4c1aee3e768b0e61ce5c22686b075b8c7bb33ad4cb232e06f6b"
+    }
+  ]
+}

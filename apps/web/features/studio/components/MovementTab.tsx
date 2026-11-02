@@ -13,7 +13,7 @@ export const MovementTab: React.FC<MovementTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Cabecera de especificación de 8s */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+      <div className="card">
         <h3 className="text-sm font-semibold text-white flex items-center gap-2">
           Comportamiento Óptico y Dinamismo Visual (duración según proveedor)
         </h3>

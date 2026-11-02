@@ -280,3 +280,87 @@ activo para que el checkpoint quede **bajo control de versiones** (parte del rie
 **Nota sobre R-26:** la gobernanza de `newsV2/` sigue **fuera** de todo repositorio. Decidir si se
 mueve a `neural-news/docs/governance/` (cambia rutas ya documentadas) o se versiona aparte requiere
 autorización del propietario; **no se ejecuta sin ella**.
+
+---
+
+## 2026-11-02 — NN-113.6: un solo mapa de estado, generado desde el backend
+
+**Qué:** el mapa estado→insignia estaba copiado en tres páginas y había un cuarto mapa **distinto**
+en `DossierPanel.tsx`, con dos estados que no existen en el backend (`CONFIRMED`, `DESACTUALIZADA`).
+
+**Decisión:** la fuente de verdad de estados y etiquetas es `apps/api/src/neuralnews/states.py`.
+`tools/generate_estados.py` genera `apps/web/lib/estados.generado.ts` y `apps/web/lib/estados.ts`
+es el **único** lugar donde vive el mapa de insignias (presentación).
+`tests/test_estados_compartidos.py` falla si el fichero generado se desfasas o si alguien declara un
+mapa de estados fuera del módulo compartido.
+
+**B26 (nuevo, menor):** `DossierPanel` hacía su propio `fetch` al API: era un cuarto cliente HTTP y
+se saltaba el cliente único. Corregido al usar `lib/http.ts`.
+
+---
+
+## 2026-11-02 — NN-113.13: el Studio se divide en hooks con nombre
+
+`features/studio/App.tsx` tenía 907 líneas y mezclaba siete responsabilidades. Ahora el componente
+es presentación y cableado, y la lógica vive en `features/studio/lib/`: `useHidratacionStudio`,
+`useGuardadoPasos`, `useNoticiasStudio`, `useReferenciasStudio`, `useFlowStudio`,
+`usePaqueteProduccion` y `usePromptFinal`. `NewsEditorialTab.tsx` (759 líneas) se dividió en la
+lista y tres modales, en `components/news/`.
+
+**Regla que no se toca:** al guardar, el estado del servidor manda en la primera carga. La
+hidratación conserva esa regla (si el servidor trae un paso, gana; si no, se usa el valor objetivo).
+
+---
+
+## 2026-11-02 — NN-113.8 y NN-113.9: auditorías ejecutables, no opiniones
+
+La auditoría de accesibilidad y el lint de clases se escriben como **scripts** que se ejecutan en la
+sesión y devuelven código de salida: sin ellos, decir que la web es accesible no es una evidencia.
+
+**B27 (nuevo, real):** el analizador de JSX usaba `[^>]*` para leer los atributos; dentro de los
+manejadores hay flechas (`=>`) que cortaban la expresión regular a medias y los botones vacíos **no
+se detectaban**. Con el escáner correcto aparecieron 8 botones sin nombre accesible y 51 campos sin
+etiqueta: estaban ahí desde el principio. Corregidos → **0 bloqueantes, 0 avisos**.
+
+**B28 (nuevo, real):** dos clases se usaban y **no existían**: `scrollbar-none` (la barra de
+desplazamiento horizontal aparecía en Chromium) y `studio-root` (el envoltorio del Studio no tenía
+altura, así que la raíz `min-h-full` no crecía). Ahora están definidas y el lint falla si se usa una
+clase propia inexistente.
+
+**Riesgo detectado al automatizar:** una migración que copia la etiqueta visual al `aria-label`
+puede copiar la **equivocada** (la del campo anterior). Se revisaron una a una las 17 etiquetas
+migradas y se corrigieron 8 que estaban mal: un `aria-label` incorrecto es peor que ninguno.
+
+---
+
+## 2026-11-02 — NN-113.12: un único sistema visual
+
+Los componentes vivían en dos sitios: `globals.css` para las páginas del producto y reimplementados
+en línea por el Studio. Ahora todos los componentes están definidos **una sola vez** en
+`apps/web/app/globals.css` (con sus variantes compactas) y 44 composiciones en línea se sustituyen
+por clases del sistema, visualmente idénticas. `tools/check_clases.py` falla si aparece una
+reimplementación: **0 reimplementaciones en línea**.
+
+---
+
+## 2026-11-02 — NN-113.15: el Centro de mantenimiento, con datos veraces
+
+`BackupModal` estaba en el repo **sin usar** (B18) y sus datos (`fullFilesMap`) ya no existían: el
+código del Studio vive en el repositorio, no incrustado en la aplicación. Ahora se cablea con lo que
+es verdad: el manifiesto de las fuentes lo calcula `tools/generar_manifiesto_studio.py` sobre los
+ficheros reales (con SHA-256) y el estado del Studio se audita en el navegador. La interfaz dice de
+forma expresa que **no** es un backup de la base de datos: eso es `scripts/db_backup.py` (dump de
+PostgreSQL verificado).
+
+---
+
+## 2026-11-02 — Lección de método: no reconstruir bajo un servidor en marcha
+
+Una tanda de E2E dio **7 fallos de 8** con el error boundary de React. La causa no era el código: un
+`next start` de una sesión anterior seguía sirviendo el puerto 3000 y, al reconstruir
+(`npm run build`), el navegador pidió chunks que ya no existían (HTTP 400) y React cayó al error
+boundary. Con la pila limpia (web detenido antes de reconstruir): **8 passed**.
+
+**Regla:** antes de `npm run build`, detener el servidor del puerto 3000. Es exactamente el
+`EADDRINUSE` que se vio al intentar arrancar un segundo servidor.
+

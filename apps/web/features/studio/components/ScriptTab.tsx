@@ -107,7 +107,7 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
             </div>
           </div>
 
-          <textarea
+          <textarea aria-label="Guion Editorial Completo (Locución Algenib)"
             value={scriptText}
             onChange={(e) => onChangeScript(e.target.value)}
             rows={8}
@@ -193,11 +193,11 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
                   </div>
 
                   {isEditingThis ? (
-                    <textarea
+                    <textarea aria-label="Editar el guion de la escena"
                       value={editingText}
                       onChange={(e) => setEditingText(e.target.value)}
                       rows={2}
-                      className="w-full text-xs font-mono bg-neutral-950 border border-sky-500/70 rounded p-2 text-neutral-100 focus:outline-none"
+                      className="w-full text-xs font-mono bg-neutral-950 border border-sky-500/70 rounded p-2 text-neutral-100 focus:outline-none focus:border-sky-500"
                     />
                   ) : (
                     <p className="text-xs text-neutral-300 font-mono leading-relaxed">

@@ -95,3 +95,36 @@ CONTENT_TYPE_LABELS = {
     "AUDIO_FILE": "Archivo de audio (pendiente de transcribir)",
     "METADATA_ONLY": "Solo información básica",
 }
+
+PACKAGE_LABELS = {
+    "NOT_STARTED": "Sin empezar",
+    "DRAFT": "Borrador",
+    "READY_FOR_REVIEW": "Listo para revisar",
+    "EXPORTED": "Exportado",
+}
+
+# Estados de verificación de una afirmación (afirmaciones del dossier).
+CLAIM_VERIFICATION_LABELS = {
+    "UNVERIFIED": "Sin verificar",
+    "SUPPORTED": "Confirmada",
+    "CONTRADICTED": "Contradicha",
+    "NOT_VERIFIABLE": "No verificable (opinión)",
+}
+
+# Naturaleza de una evidencia aportada a una afirmación.
+CLAIM_KIND_LABELS = {
+    "PRIMARY": "Fuente primaria",
+    "CORROBORATION": "Corroboración",
+    "CONTRADICTING": "Contradicción",
+    "REFERENCE": "Referencia",
+}
+
+# Todos los mapas de estado de la aplicación, en un solo sitio (NN-113.6).
+# La web los recibe generados (`tools/generate_estados.py` → `lib/estados.generado.ts`)
+# para que no haya dos definiciones que puedan divergir.
+ESTADOS_DE_LA_APLICACION: dict[str, tuple[str, ...]] = {
+    "fuente": SOURCE_STATES,
+    "noticia": STORY_STATES,
+    "trabajo": JOB_STATES,
+    "paquete": PACKAGE_STATES,
+}

@@ -85,7 +85,7 @@ export default function ConfiguracionPage() {
           {providers.map((p) => {
             const badge = STATE_BADGE[p.state] || { cls: "badge-neutral", label: p.state };
             return (
-              <li key={p.key} className="rounded border border-neutral-800 bg-neutral-900 p-3 text-sm">
+              <li key={p.key} className="card-quiet text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{p.name}</span>
                   <span className={badge.cls}>{badge.label}</span>
@@ -113,7 +113,7 @@ export default function ConfiguracionPage() {
           </label>
           <label className="flex items-center gap-2">
             Presupuesto diario (€)
-            <input
+            <input aria-label="Presupuesto diario (€)"
               type="number"
               min={0}
               step="0.5"
@@ -138,7 +138,7 @@ export default function ConfiguracionPage() {
           {(["impacto", "verificacion", "novedad", "visual"] as const).map((key) => (
             <label key={key} className="flex items-center gap-2">
               <span className="capitalize">{key}</span>
-              <input
+              <input aria-label={`Peso de ${key}`}
                 type="number"
                 min={0}
                 max={100}

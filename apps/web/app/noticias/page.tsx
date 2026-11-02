@@ -3,17 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { BADGE_DE_NOTICIA, insigniaDe } from "@/lib/estados";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { StoryListItem } from "@/lib/types";
-
-const STATUS_BADGE: Record<string, string> = {
-  CANDIDATE: "badge-neutral",
-  RESEARCHING: "badge-info",
-  REVIEW_REQUIRED: "badge-warn",
-  SCRIPT_DRAFT: "badge-info",
-  APPROVED: "badge-ok",
-  REJECTED: "badge-neutral",
-};
 
 export default function NoticiasPage() {
   const [items, setItems] = useState<StoryListItem[]>([]);
@@ -59,6 +51,7 @@ export default function NoticiasPage() {
         <input
           className="input max-w-64"
           placeholder="Filtrar por tema o estado…"
+          aria-label="Filtrar noticias por tema o estado"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
@@ -67,7 +60,7 @@ export default function NoticiasPage() {
       {error && <p className="text-sm text-red-400">{error}</p>}
       {waiting !== null && <p className="text-sm text-sky-400">Trabajo #{waiting} en marcha…</p>}
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-800">
+      <div className="table-wrap">
         <table className="table-base">
           <thead>
             <tr>
@@ -113,7 +106,7 @@ export default function NoticiasPage() {
                   )}
                 </td>
                 <td>
-                  <span className={STATUS_BADGE[s.status] || "badge-neutral"}>{s.status_label}</span>
+                  <span className={insigniaDe(BADGE_DE_NOTICIA, s.status)}>{s.status_label}</span>
                 </td>
                 <td className="tabular-nums text-neutral-300">{s.editorial_score ?? "—"}</td>
                 <td className="text-neutral-400">{s.source_count ?? "—"}</td>

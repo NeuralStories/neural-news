@@ -9,6 +9,8 @@ interface TopNavigationProps {
   approvedNewsCount: number;
   /** Modo integrado dentro de neural.news: la identidad la pone el shell externo. */
   embedded?: boolean;
+  /** Abre el Centro de mantenimiento (auditoría SHA-256 y exportación). */
+  onAbrirMantenimiento?: () => void;
 }
 
 /**
@@ -54,6 +56,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
   selectedReferencesCount,
   approvedNewsCount,
   embedded = false,
+  onAbrirMantenimiento,
 }) => {
   const current = TABS.find((t) => t.id === currentTab);
 
@@ -184,6 +187,19 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
             </select>
           </div>
         </nav>
+
+        {/* Centro de mantenimiento (NN-113.15): auditoría de integridad y exportación. */}
+        {onAbrirMantenimiento && (
+          <button
+            onClick={onAbrirMantenimiento}
+            title="Centro de mantenimiento: auditoría SHA-256 de las fuentes y exportación"
+            className={`order-2 shrink-0 px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300 hover:text-white hover:border-sky-600 text-xs font-medium transition cursor-pointer ${
+              embedded ? 'order-1' : ''
+            }`}
+          >
+            Mantenimiento
+          </button>
+        )}
 
       </div>
     </header>

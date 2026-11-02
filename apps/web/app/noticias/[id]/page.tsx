@@ -4,31 +4,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import {
+  BADGE_DE_NOTICIA,
+  BADGE_DE_VERIFICACION,
+  ETIQUETA_TIPO_AFIRMACION,
+  ETIQUETA_VERIFICACION,
+  insigniaDe,
+} from "@/lib/estados";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { StoryDetail, Storyboard } from "@/lib/types";
-
-const STATUS_BADGE: Record<string, string> = {
-  CANDIDATE: "badge-neutral",
-  RESEARCHING: "badge-info",
-  REVIEW_REQUIRED: "badge-warn",
-  SCRIPT_DRAFT: "badge-info",
-  APPROVED: "badge-ok",
-  REJECTED: "badge-neutral",
-};
-
-const VERIF_BADGE: Record<string, { cls: string; label: string }> = {
-  UNVERIFIED: { cls: "badge-warn", label: "Sin verificar" },
-  SUPPORTED: { cls: "badge-ok", label: "Confirmada" },
-  CONTRADICTED: { cls: "badge-err", label: "Contradicha" },
-  NOT_VERIFIABLE: { cls: "badge-neutral", label: "No verificable (opinión)" },
-};
-
-const KIND_LABEL: Record<string, string> = {
-  PRIMARY: "Fuente primaria",
-  CORROBORATION: "Corroboración",
-  CONTRADICTING: "Contradicción",
-  REFERENCE: "Referencia",
-};
 
 export default function StoryDetailPage() {
   const params = useParams<{ id: string }>();
@@ -149,7 +133,7 @@ export default function StoryDetailPage() {
         <div>
           <h1 className="text-xl font-semibold">{story.title}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-            <span className={STATUS_BADGE[story.status] || "badge-neutral"}>{story.status_label}</span>
+            <span className={insigniaDe(BADGE_DE_NOTICIA, story.status)}>{story.status_label}</span>
             {story.is_opinion && <span className="badge-warn">Opinión (no verificable)</span>}
             {story.editorial_score !== null && <span className="badge-neutral">puntuación {story.editorial_score}/100</span>}
             <span className="text-xs text-neutral-500">fecha del acontecimiento: {fmtDate(story.original_event_date)}</span>
@@ -177,7 +161,12 @@ export default function StoryDetailPage() {
       {rejectOpen && (
         <div className="card space-y-2">
           <p className="text-sm">Motivo del descarte (se registra en la auditoría):</p>
-          <input className="input" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <input
+            className="input"
+            aria-label="Motivo del descarte"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
           <button className="btn-danger" onClick={reject}>
             Confirmar descarte
           </button>
@@ -199,12 +188,13 @@ export default function StoryDetailPage() {
           )}
           <ul className="mt-2 space-y-3">
             {story.claims.map((claim) => {
-              const badge = VERIF_BADGE[claim.verification_status] || { cls: "badge-neutral", label: claim.verification_status };
+              const cls = insigniaDe(BADGE_DE_VERIFICACION, claim.verification_status);
+              const label = ETIQUETA_VERIFICACION[claim.verification_status] ?? claim.verification_status;
               return (
                 <li key={claim.id} className="rounded border border-neutral-800 bg-neutral-900 p-3">
                   <p className="text-sm">{claim.statement}</p>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className={badge.cls}>{badge.label}</span>
+                    <span className={cls}>{label}</span>
                     {claim.verification_notes && <span className="text-xs text-neutral-500">{claim.verification_notes}</span>}
                   </div>
                 </li>
@@ -222,9 +212,9 @@ export default function StoryDetailPage() {
           <ul className="mt-2 space-y-3">
             {story.claims.flatMap((claim) =>
               claim.evidence.map((ev) => (
-                <li key={ev.id} className="rounded border border-neutral-800 bg-neutral-900 p-3 text-sm">
+                <li key={ev.id} className="card-quiet text-sm">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="badge-info">{KIND_LABEL[ev.kind] || ev.kind}</span>
+                    <span className="badge-info">{ETIQUETA_TIPO_AFIRMACION[ev.kind] || ev.kind}</span>
                     {ev.demo && <span className="badge-demo">DEMO (ficticia)</span>}
                     <span className="text-xs text-neutral-500">confianza {ev.confidence}</span>
                   </div>
@@ -353,7 +343,7 @@ export default function StoryDetailPage() {
             </p>
             <ol className="space-y-2">
               {storyboard.scenes.map((scene, index) => (
-                <li key={index} className="rounded border border-neutral-800 bg-neutral-900 p-3 text-sm">
+                <li key={index} className="card-quiet text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="badge-info">Escena {index + 1}</span>
                     <span className="badge-neutral">≈{scene.seconds} s</span>

@@ -121,7 +121,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Cabecera y Selección de Tipo de Biblioteca */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+      <div className="card">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -279,8 +279,11 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
                       </button>
                       <button
                         onClick={() => onDeleteVisualRef(ref.id)}
+                        aria-label={`Eliminar la referencia audiovisual ${ref.identifier}`}
+                        title="Eliminar referencia audiovisual"
                         className="text-neutral-500 hover:text-rose-400 cursor-pointer"
                       >
+                        ✕
                         </button>
                     </div>
                   </div>
@@ -326,7 +329,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
                 </div>
 
                 <h4 className="text-xs font-bold text-white">{ed.title}</h4>
-                <p className="text-xs text-neutral-300 leading-relaxed font-mono bg-neutral-950 p-2 rounded border border-neutral-800/60">
+                <p className="inset text-xs text-neutral-300 leading-relaxed font-mono">
                   &quot;{ed.summaryOrExcerpt}&quot;
                 </p>
 
@@ -343,8 +346,11 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
 
               <button
                 onClick={() => onDeleteEditorialRef(ed.id)}
+                aria-label={`Eliminar la referencia editorial ${ed.identifier}`}
+                title="Eliminar referencia editorial"
                 className="text-neutral-500 hover:text-rose-400 p-1 cursor-pointer"
               >
+                ✕
                 </button>
             </div>
           ))}
@@ -357,25 +363,25 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
             <h3 className="text-sm font-bold text-white">Añadir Referencia Audiovisual Canónica</h3>
             <div className="space-y-3 text-xs">
-              <input
+              <input aria-label="Nombre de la referencia audiovisual"
                 type="text"
                 placeholder="Nombre (ej: maxDotAi - Perfil 3/4)"
                 value={vName}
                 onChange={(e) => setVName(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200"
+                className="input-compact"
               />
               <div className="grid grid-cols-2 gap-2">
-                <input
+                <input aria-label="Identificador de la referencia audiovisual"
                   type="text"
                   placeholder="ID (REF-CHAR-02)"
                   value={vIdentifier}
                   onChange={(e) => setVIdentifier(e.target.value)}
-                  className="bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200 font-mono"
+                  className="input-compact font-mono"
                 />
-                <select
+                <select aria-label="Categoría de la referencia audiovisual"
                   value={vCategory}
                   onChange={(e) => setVCategory(e.target.value as VisualReferenceCategory)}
-                  className="bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200"
+                  className="input-compact"
                 >
                   <option value="personaje">Personaje</option>
                   <option value="fondo">Fondo CRT</option>
@@ -385,12 +391,12 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
               </div>
 
               <div className="flex gap-2">
-                <input
+                <input aria-label="URL o recurso multimedia de la referencia"
                   type="text"
                   placeholder="URL o selecciona de Flow Media Gallery"
                   value={vImageUrl}
                   onChange={(e) => setVImageUrl(e.target.value)}
-                  className="flex-1 bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200 text-xs font-mono"
+                  className="input-compact flex-1 text-xs font-mono"
                 />
                 <button
                   type="button"
@@ -401,12 +407,12 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
                 </button>
               </div>
 
-              <textarea
+              <textarea aria-label="Directriz de consistencia visual"
                 placeholder="Directriz de consistencia visual..."
                 value={vDescription}
                 onChange={(e) => setVDescription(e.target.value)}
                 rows={2}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200"
+                className="input-compact"
               />
 
               <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
@@ -420,7 +426,7 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
               </label>
             </div>
 
-            <div className="pt-2 border-t border-neutral-800 flex justify-end gap-2">
+            <div className="modal-actions">
               <button
                 onClick={() => setShowAddVisualModal(false)}
                 className="px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded text-xs cursor-pointer"
@@ -444,25 +450,25 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
             <h3 className="text-sm font-bold text-white">Añadir Referencia Editorial (Documental)</h3>
             <div className="space-y-3 text-xs">
-              <input
+              <input aria-label="Título del documento o transcripción"
                 type="text"
                 placeholder="Título del documento o transcripción"
                 value={eTitle}
                 onChange={(e) => setETitle(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200"
+                className="input-compact"
               />
               <div className="grid grid-cols-2 gap-2">
-                <input
+                <input aria-label="Identificador de la referencia editorial"
                   type="text"
                   placeholder="ID (ED-SRC-04)"
                   value={eIdentifier}
                   onChange={(e) => setEIdentifier(e.target.value)}
-                  className="bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200 font-mono"
+                  className="input-compact font-mono"
                 />
-                <select
+                <select aria-label="Tipo de fuente editorial"
                   value={eSourceType}
                   onChange={(e) => setESourceType(e.target.value as EditorialSourceType)}
-                  className="bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200"
+                  className="input-compact"
                 >
                   <option value="enlace">Enlace Web</option>
                   <option value="documento">Documento Técnico / Paper</option>
@@ -472,24 +478,24 @@ export const ReferencesTab: React.FC<ReferencesTabProps> = ({
                 </select>
               </div>
 
-              <input
+              <input aria-label="URL o cita bibliográfica"
                 type="text"
                 placeholder="URL o Cita bibliográfica"
                 value={eUrl}
                 onChange={(e) => setEUrl(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200 font-mono"
+                className="input-compact font-mono"
               />
 
-              <textarea
+              <textarea aria-label="Extracto clave o síntesis textual comprobada"
                 placeholder="Extracto clave o síntesis textual comprobada..."
                 value={eExcerpt}
                 onChange={(e) => setEExcerpt(e.target.value)}
                 rows={3}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 text-neutral-200 font-mono"
+                className="input-compact font-mono"
               />
             </div>
 
-            <div className="pt-2 border-t border-neutral-800 flex justify-end gap-2">
+            <div className="modal-actions">
               <button
                 onClick={() => setShowAddEditorialModal(false)}
                 className="px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded text-xs cursor-pointer"

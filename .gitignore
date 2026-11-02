@@ -39,3 +39,11 @@ tools/*.zip
 archive/
 backups/
 .remotes/
+
+# Logs de la pila en marcha (los escribe `scripts/start.ps1` y Playwright).
+_*.log
+_*.err.log
+apps/api/_*.log
+apps/web/_*.log
+test-results/
+playwright-report/

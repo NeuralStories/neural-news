@@ -28,7 +28,7 @@ export const VoiceTab: React.FC<VoiceTabProps> = ({
       {/* Ficha canónica de voz: Perfil Algenib */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+          <div className="panel-header">
             <div className="flex items-center gap-2">
               <div>
                 <h3 className="text-sm font-bold text-white">Perfil Preferido: {voiceConfig.profile}</h3>

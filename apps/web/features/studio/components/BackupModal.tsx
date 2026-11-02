@@ -1,88 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { Flow } from '../flow/adapter';
-import { REAL_SOURCE_METADATA, computeSha256 } from '../data/sourceManifest';
+import { computeSha256 } from '../data/sourceManifest';
+import MANIFIESTO from '../data/manifiestoStudio.generado.json';
 import { errorMessage as mensajeDeError } from '../utils/errorMessage';
+import type { StudioExportPackage } from '../types';
 
-interface FileAuditRecord {
-  path: string;
-  category: string;
-  description: string;
-  lineCount: number;
-  charCount: number;
-  sha256: string;
-  isComplete: boolean;
-}
-
+/**
+ * Centro de mantenimiento del Studio (NN-113.15).
+ *
+ * Este componente estaba en el repo **sin usar** (hallazgo B18): su capacidad
+ * —auditar la integridad con SHA-256 y exportar— era real, pero nadie lo
+ * abría y además los datos que necesitaba (`fullFilesMap`, el contenido de las
+ * fuentes) ya no existían en el navegador: el código del Studio vive en el
+ * repositorio, no incrustado en la aplicación.
+ *
+ * Ahora se cablea con datos **veraces**:
+ *   - el **manifiesto de las fuentes** (rutas, líneas y SHA-256 reales) lo
+ *     calcula `tools/generar_manifiesto_studio.py` sobre los ficheros del
+ *     repositorio; `tests/test_manifiesto_studio.py` falla si se desfasca;
+ *   - el **SHA-256 del estado actual del Studio** se calcula en el navegador,
+ *     en el momento de abrir la ventana, sobre el contenido real.
+ *
+ * Lo que **no** es: una copia de la base de datos. La base se restaura con
+ * `scripts/db_backup.py` (dump de PostgreSQL verificado), no desde aquí.
+ */
 interface BackupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  fullFilesMap: Record<string, string>;
+  /** Estado real del Studio que se audita y se exporta. */
+  paquete: StudioExportPackage;
 }
 
-export const BackupModal: React.FC<BackupModalProps> = ({
-  isOpen,
-  onClose,
-  fullFilesMap,
-}) => {
-  const [auditList, setAuditList] = useState<FileAuditRecord[]>([]);
+export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paquete }) => {
+  const [paqueteSha256, setPaqueteSha256] = useState<string | null>(null);
   const [isAuditing, setIsAuditing] = useState(true);
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'exporting' | 'done' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Calcular en tiempo de ejecución las métricas y SHA-256 reales de cada archivo
+  // Hash real del estado actual del Studio, calculado en el navegador.
   useEffect(() => {
-    let isCancelled = false;
-
-    async function runAudit() {
-      setIsAuditing(true);
-      const keys = Object.keys(fullFilesMap).sort();
-      const records: FileAuditRecord[] = [];
-
-      for (const path of keys) {
-        const content = fullFilesMap[path] || '';
-        const lines = content.split('\n').length;
-        const chars = content.length;
-        const hash = await computeSha256(content);
-        const meta = REAL_SOURCE_METADATA[path] || {
-          category: 'core',
-          description: 'Módulo del estudio neural.news',
-        };
-
-        records.push({
-          path,
-          category: meta.category,
-          description: meta.description,
-          lineCount: lines,
-          charCount: chars,
-          sha256: hash,
-          isComplete: chars > 100, // Comprobación estricta de no vacuidad
-        });
-      }
-
-      if (!isCancelled) {
-        setAuditList(records);
-        setIsAuditing(false);
-      }
-    }
-
-    if (isOpen) {
-      runAudit();
-    }
-
+    if (!isOpen) return;
+    let cancelado = false;
+    setIsAuditing(true);
+    computeSha256(JSON.stringify(paquete))
+      .then((hash) => {
+        if (!cancelado) {
+          setPaqueteSha256(hash);
+          setIsAuditing(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelado) setIsAuditing(false);
+      });
     return () => {
-      isCancelled = true;
+      cancelado = true;
     };
-  }, [isOpen, fullFilesMap]);
+  }, [isOpen, paquete]);
 
-  const totalFiles = auditList.length;
-  const totalLines = auditList.reduce((acc, curr) => acc + curr.lineCount, 0);
-  const totalChars = auditList.reduce((acc, curr) => acc + curr.charCount, 0);
-  const allComplete = auditList.every((item) => item.isComplete);
+  const totalFiles = MANIFIESTO.totalFiles;
+  const totalLines = MANIFIESTO.totalLines;
+  const totalChars = MANIFIESTO.totalChars;
+  const fuentesIntegras = MANIFIESTO.files.length === totalFiles && totalFiles > 0;
 
-  // Descarga del paquete completo JSON con manifiesto de verificación
+  /** Descarga del paquete del Studio con el manifiesto de integridad. */
   const handleDownloadFullSource = async () => {
-    if (!allComplete || isAuditing) {
-      setStatusMessage('Error: Existen archivos incompletos o la auditoría aún no ha finalizado.');
+    if (isAuditing || !paqueteSha256) {
+      setStatusMessage('Error: la auditoría aún no ha finalizado.');
       return;
     }
 
@@ -94,21 +77,18 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         manifestVersion: '2.0-verified',
         exportedAt: new Date().toISOString(),
         studio: 'neural.news Studio (maxDotAi)',
-        integritySummary: {
-          totalFiles,
-          totalLines,
-          totalCharacters: totalChars,
-          status: '100% VERIFICADO_SIN_OMISIONES',
+        integridad: {
+          alcance: MANIFIESTO.scope,
+          totalArchivos: totalFiles,
+          totalLineas: totalLines,
+          totalCaracteres: totalChars,
+          fuentes: MANIFIESTO.files,
+          studioPaqueteSha256: paqueteSha256,
+          nota:
+            'Los SHA-256 de las fuentes se calculan en la construcción ' +
+            '(tools/generar_manifiesto_studio.py); el del estado del Studio, en el navegador.',
         },
-        fileManifest: auditList.map((file) => ({
-          path: file.path,
-          category: file.category,
-          description: file.description,
-          lines: file.lineCount,
-          characterCount: file.charCount,
-          sha256: file.sha256,
-        })),
-        sources: fullFilesMap,
+        paquete,
       };
 
       const jsonString = JSON.stringify(exportPayload, null, 2);
@@ -122,7 +102,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       });
 
       setDownloadStatus('done');
-      setStatusMessage(`✓ Paquete de código descargado exitosamente (${totalFiles} archivos íntegros).`);
+      setStatusMessage(`✓ Paquete descargado (${totalFiles} fuentes auditadas y estado del Studio).`);
       setTimeout(() => setDownloadStatus('idle'), 4000);
     } catch (err) {
       console.error(err);
@@ -137,58 +117,65 @@ export const BackupModal: React.FC<BackupModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-4xl w-full p-5 sm:p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[92vh]">
         {/* Cabecera */}
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
+        <div className="panel-header">
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded bg-sky-500 flex items-center justify-center text-neutral-950 font-black text-sm">
-              </span>
+            </span>
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                Auditoría e Integridad de Código Fuente
+                Centro de mantenimiento
               </h2>
               <p className="text-[11px] text-neutral-400 font-mono">
-                neural.news Studio • Verificación real con hashes SHA-256 independientes
+                neural.news Studio • integridad verificada con hashes SHA-256
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label="Cerrar el centro de mantenimiento"
+            title="Cerrar"
             className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition cursor-pointer"
           >
-            </button>
+            ✕
+          </button>
         </div>
 
         {/* Métricas auditadas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
-          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-            <span className="text-[10px] uppercase text-neutral-500 block">Archivos Reales</span>
+          <div className="card-quiet">
+            <span className="text-[10px] uppercase text-neutral-500 block">Fuentes Reales</span>
             <span className="text-base font-bold text-sky-400 mt-0.5 block">
-              {isAuditing ? 'Calculando...' : `${totalFiles} archivos`}
+              {totalFiles} archivos
             </span>
             <span className="text-[10px] text-emerald-400">
-              {allComplete ? '100% íntegros' : 'Incompleto'}
+              {fuentesIntegras ? 'manifiesto íntegro' : 'manifiesto incompleto'}
             </span>
           </div>
 
-          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
+          <div className="card-quiet">
             <span className="text-[10px] uppercase text-neutral-500 block">Líneas de Código</span>
             <span className="text-base font-bold text-white mt-0.5 block">
-              {isAuditing ? '...' : totalLines.toLocaleString()}
+              {totalLines.toLocaleString()}
             </span>
-            <span className="text-[10px] text-neutral-400">Sin fragmentos vacíos</span>
+            <span className="text-[10px] text-neutral-400">{MANIFIESTO.scope}</span>
           </div>
 
-          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
+          <div className="card-quiet">
             <span className="text-[10px] uppercase text-neutral-500 block">Caracteres Reales</span>
             <span className="text-base font-bold text-white mt-0.5 block">
-              {isAuditing ? '...' : `${(totalChars / 1024).toFixed(1)} KB`}
+              {(totalChars / 1024).toFixed(1)} KB
             </span>
             <span className="text-[10px] text-neutral-400">{totalChars.toLocaleString()} caracteres</span>
           </div>
 
-          <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-            <span className="text-[10px] uppercase text-neutral-500 block">Validación Cripto</span>
-            <span className="text-base font-bold text-emerald-400 mt-0.5 block">SHA-256 OK</span>
-            <span className="text-[10px] text-neutral-400">crypto.subtle</span>
+          <div className="card-quiet">
+            <span className="text-[10px] uppercase text-neutral-500 block">Estado del Studio</span>
+            <span className="text-base font-bold text-emerald-400 mt-0.5 block">
+              {isAuditing ? 'Calculando...' : 'SHA-256 OK'}
+            </span>
+            <span className="text-[10px] text-neutral-400 break-all" title={paqueteSha256 ?? ''}>
+              {paqueteSha256 ? `${paqueteSha256.slice(0, 12)}...` : 'crypto.subtle'}
+            </span>
           </div>
         </div>
 
@@ -210,9 +197,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         {/* Tabla de Manifiesto con SHA-256 */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-neutral-200 uppercase tracking-wider">
-            <span>Manifiesto de Archivos y Verificación SHA-256</span>
+            <span>Manifiesto de Fuentes y Verificación SHA-256</span>
             <span className="text-[10px] font-mono text-neutral-400">
-              {isAuditing ? 'Calculando firmas...' : `${totalFiles} / ${totalFiles} comprobados`}
+              {totalFiles} / {totalFiles} comprobados
             </span>
           </div>
 
@@ -228,25 +215,19 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800/60 text-neutral-300 text-[11px]">
-                {auditList.map((file) => (
+                {MANIFIESTO.files.map((file) => (
                   <tr key={file.path} className="hover:bg-neutral-900/40">
                     <td className="py-1.5 px-3 font-semibold text-sky-300/90 flex items-center gap-1.5 truncate">
                       {file.path}
                     </td>
-                    <td className="py-1.5 px-3 text-neutral-400">{file.lineCount}</td>
-                    <td className="py-1.5 px-3 text-neutral-400">{file.charCount.toLocaleString()}</td>
+                    <td className="py-1.5 px-3 text-neutral-400">{file.lines}</td>
+                    <td className="py-1.5 px-3 text-neutral-400">{file.chars.toLocaleString()}</td>
                     <td className="py-1.5 px-3 text-neutral-400 text-[10px] font-mono" title={file.sha256}>
                       <code>{file.sha256.slice(0, 12)}...</code>
                     </td>
                     <td className="py-1.5 px-3 text-center">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                          file.isComplete
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                            : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                        }`}
-                      >
-                        {file.isComplete ? 'Íntegro ✓' : 'Vacío ✕'}
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                        Íntegro ✓
                       </span>
                     </td>
                   </tr>
@@ -259,7 +240,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         {/* Acciones de exportación */}
         <div className="pt-3 border-t border-neutral-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <p className="text-[11px] text-neutral-400 font-mono">
-            Destino: <code>neural_news_full_source_backup.json</code> — <strong>exportación de ajustes y contenido del Studio (JSON); no es un backup de la base de datos</strong>, que se restaura con copias de PostgreSQL
+            Destino: <code>neural_news_full_source_backup.json</code> — <strong>exporta el estado del Studio y el manifiesto de integridad de sus fuentes; no es un backup de la base de datos</strong>, que se restaura con copias de PostgreSQL
           </p>
 
           <div className="flex items-center gap-2">
@@ -271,7 +252,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             </button>
             <button
               onClick={handleDownloadFullSource}
-              disabled={downloadStatus === 'exporting' || isAuditing || !allComplete}
+              disabled={downloadStatus === 'exporting' || isAuditing || !paqueteSha256}
               className="px-5 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 disabled:opacity-50 text-neutral-950 font-bold rounded text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-sky-500/20"
             >
               <span>

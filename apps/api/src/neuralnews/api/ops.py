@@ -245,9 +245,33 @@ def get_score_weights(db=Depends(get_db), actor=Depends(get_current_actor)) -> d
 
 @router.put("/settings/score-weights")
 def put_score_weights(payload: dict, db=Depends(get_db), actor=Depends(get_current_actor)) -> dict:
+    """Guarda los pesos de puntuación.
+
+    Un peso que no es un número (por ejemplo «0,75» con coma decimal) devolvía
+    un **500**: la excepción se escapaba sin traducir. Ahora se rechaza con un
+    422 que dice qué peso falla y por qué (hallazgo B29).
+    """
     from ..services.research import DEFAULT_SCORE_WEIGHTS
 
-    clean = {k: float(payload.get(k, DEFAULT_SCORE_WEIGHTS[k])) for k in DEFAULT_SCORE_WEIGHTS}
+    clean: dict[str, float] = {}
+    for clave, por_defecto in DEFAULT_SCORE_WEIGHTS.items():
+        bruto = payload.get(clave, por_defecto)
+        try:
+            valor = float(bruto)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"El peso «{clave}» no es un número: {bruto!r}. "
+                    "Usa punto decimal (0.75)."
+                ),
+            ) from None
+        if valor != valor or valor in (float("inf"), float("-inf")):
+            raise HTTPException(
+                status_code=422,
+                detail=f"El peso «{clave}» no es un número finito: {bruto!r}.",
+            )
+        clean[clave] = valor
     db.merge(Setting(key="score_weights", value=clean))
     db.flush()
     return clean

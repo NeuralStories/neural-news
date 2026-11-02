@@ -364,3 +364,48 @@ boundary. Con la pila limpia (web detenido antes de reconstruir): **8 passed**.
 **Regla:** antes de `npm run build`, detener el servidor del puerto 3000. Es exactamente el
 `EADDRINUSE` que se vio al intentar arrancar un segundo servidor.
 
+---
+
+## 2026-11-02 — NN-114: la instalación se ejecuta de verdad (y encuentra dos fallos)
+
+El criterio de NN-114.1 es «clon limpio → pila arriba → suite verde». Eso no se comprueba
+**escribiendo** el script: se comprueba **ejecutándolo**. Al ejecutarlo aparecieron dos fallos
+reales que ningún lectura previa habría detectado.
+
+**B30 (nuevo, real):** `scripts/start.ps1` arrancaba la API y el worker, pero **la web no**: en
+Windows, `Start-Process -FilePath "npm"` falla con «no es una aplicación Win32 válida» porque
+`npm` es `npm.cmd`. El script moría con error y la pila se quedaba a medias. Corregido resolviendo
+`npm.cmd` con `Get-Command`. Verificado: API 200, web 200, worker activo.
+
+**B31 (nuevo, real):** el CI usaba `working-directory: neural-news` en **todos** los pasos, pero el
+repositorio **es** la raíz del producto (`apps/`, `infra/`, `tests/` en la raíz): al hacer checkout
+en GitHub no existe ese directorio y el CI fallaría en el primer paso. Corregido: se usa el
+directorio de trabajo por defecto y `cache-dependency-path` apunta a `apps/...`.
+
+**B29 (nuevo, real):** `PUT /api/v1/settings/score-weights` devolvía **500** si un peso no era un
+número («0,75» con coma decimal): la excepción se escapaba sin traducir. Ahora se rechaza con un
+**422** que dice qué peso falla y por qué. Rojo→verde verificado con `git stash`.
+
+**B26 (menor):** `DossierPanel` hacía su propio `fetch`: era un cuarto cliente HTTP y se saltaba el
+cliente único. Corregido al usar `lib/http.ts`.
+
+**NN-114.3 — módulos sin cobertura.** `providers/research.py`, `providers/video_analysis.py` y
+`api/ops.py` tenían capacidad real sin ninguna prueba. Ahora hay 31 pruebas que comprueban las
+reglas que importan: la evidencia de demo usa el dominio reservado `.invalid`, una opinión no se
+«verifica», una afirmación sin evidencia **no** se marca como `SUPPORTED`, sin clave el adaptador
+**falla** en vez de simular, y la salida de análisis de vídeo se marca siempre como
+`VIDEO_ANALYSIS` con `is_verbatim=False`.
+
+**NN-114.4 — el contrato OpenAPI se versiona y se verifica.** `tools/exportar_openapi.py` genera
+`docs/openapi.json` desde la aplicación real y falla si el fichero versionado difiere. El test
+`tests/test_openapi_exportado.py` lo comprueba en la suite: ya detectó un desfase real (la
+descripción del endpoint que cambió al corregir B29).
+
+**NN-114.6 — la suite no depende del directorio.** Con `pytest.ini` en la raíz y `pythonpath = .`,
+la suite pasa desde la raíz **y** desde `apps/api` (`python -m pytest -q ../../tests` → exit 0).
+Los dos pasos están en el CI.
+
+**NN-114.7 — desviación.** No hay capacidad de grabar vídeo en esta sesión. Se deja
+`evidence/instalacion_desde_clon_limpio.md` con la transcripción literal de la instalación real y
+el hallazgo B30 que salió de ella.
+

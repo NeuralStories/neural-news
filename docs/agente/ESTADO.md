@@ -2,9 +2,9 @@
 
 ## Última actualización
 
-2026-11-02 16:30 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) **EN CURSO**
-(`.1`–`.5`, `.7`, `.10`, `.11`, `.14`, `.16`, `.17` **commiteadas** en `f8a7b40`; `.6`, `.8`, `.9`,
-`.12`, `.13`, `.15` **verificadas, sin commitear**); Fase 6 (NN-114) y Fase 8 (NN-115/116) pendientes.
+2026-11-02 16:45 (Europe/Madrid) — **Fases 0–4 y 7 cerradas**; Fase 5 (NN-113) **COMPLETADA y
+empujada** (`f8a7b40`, `8fff0d7`); Fase 6 (NN-114) **verificada, sin commitear**; Fase 8
+(NN-115/116) y NN-117.4/.6–.8 pendientes.
 
 ## Capacidades disponibles
 
@@ -34,35 +34,31 @@ por contenido), `.12` (sistema visual único), `.13` (archivos grandes divididos
 
 ## Último punto verificado
 
-**NN-113.6 / .8 / .9 / .12 / .13 / .15 — COMPLETADAS con evidencia E.**
+**NN-114.1–.7 — COMPLETADAS con evidencia E** (falta el commit).
 
-- `python -m pytest tests -q` → **exit 0** (suite completa, 1 skip).
-- `npx eslint .` → **0 problemas**. `npx tsc --noEmit` → **0 errores**. `npm run build` → compila.
-- `npx playwright test` → **8 passed, 0 fallos** (1,6 min).
-- **NN-113.6 — un solo mapa de estado.** `tools/generate_estados.py` genera
-  `apps/web/lib/estados.generado.ts` desde `apps/api/src/neuralnews/states.py` (fuente de verdad) y
-  `apps/web/lib/estados.ts` es el único mapa de insignias. Se eliminaron **3 copias** del mapa
-  (noticias, noticias/[id], fuentes) y un **4º mapa distinto** con dos estados inexistentes
-  (`CONFIRMED`, `DESACTUALIZADA` en `DossierPanel`). `tests/test_estados_compartidos.py` (5) falla
-  si el generado se desfasas o si alguien declara un mapa fuera del módulo compartido
-  (rojo→verde verificado con `git stash`).
-- **NN-113.13 — archivos grandes.** `features/studio/App.tsx` 907 → **478** líneas (7 hooks nuevos
-  en `features/studio/lib/`); `NewsEditorialTab.tsx` 759 → **240** (lista y 3 modales en
-  `components/news/`). **Ningún fichero de la web supera las 500 líneas.**
-- **NN-113.8 — a11y.** `tools/check_a11y.py` (auditoría ejecutable): **0 bloqueantes · 0 avisos**
-  (partía de 8 botones sin nombre accesible y 51 campos sin etiqueta). El analizador escanea JSX
-  carácter a carácter: con `[^>]*` las flechas `=>` de los manejadores cortaban la expresión
-  regular y **los botones vacíos no se detectaban** (B27).
-- **NN-113.9 — lint de clases.** `scrollbar-none` y `studio-root` se usaban y **no existían**
-  (B28): la barra de desplazamiento aparecía en Chromium y el envoltorio del Studio no tenía
-  altura. Ahora están definidas y `tools/check_clases.py` + `tests/test_clases_web.py` lo vigilan.
-- **NN-113.12 — sistema visual.** Todos los componentes viven **una sola vez** en
-  `app/globals.css`; 44 composiciones en línea sustituidas por clases del sistema y
-  `tools/check_clases.py` falla si vuelve a haber reimplementación: **0 reimplementaciones**.
-- **NN-113.15 — Centro de mantenimiento.** El botón «Mantenimiento» abre el `BackupModal` con
-  datos veraces: manifiesto de las fuentes generado por `tools/generar_manifiesto_studio.py`
-  (SHA-256 reales) y SHA-256 del estado del Studio calculado en el navegador. La interfaz dice
-  que **no** es un backup de la base de datos (eso es `scripts/db_backup.py`).
+- `scripts\bootstrap.ps1` ejecutado **de extremo a extremo** → **exit 0**: requisitos (Python 3.12,
+  Node 24.20.0) → backend instalado → `.env` creado → migraciones Alembic (5) → web → **suite
+  verde** → «Listo».
+- `scripts\start.ps1` → API + worker + web levantados; salud `neural.news v0.1.0 · entorno local`,
+  API 200 y web 200. `scripts\stop.ps1` → para **sólo** los procesos del proyecto.
+- **B30 (nuevo, real):** `start.ps1` no arrancaba la web en Windows
+  (`Start-Process -FilePath "npm"` → «no es una aplicación Win32 válida»). Corregido con
+  `Get-Command npm.cmd`.
+- **B31 (nuevo, real):** el CI usaba `working-directory: neural-news`, que no existe al hacer
+  checkout (el repositorio **es** la raíz del producto) → fallaba en el primer paso. Corregido.
+- **B29 (nuevo, real):** `PUT /settings/score-weights` devolvía **500** con un peso no numérico
+  («0,75») → ahora **422** con el peso que falla. Rojo→verde verificado con `git stash`.
+- **NN-114.3:** 31 pruebas nuevas para `providers/research.py`, `providers/video_analysis.py` y
+  `api/ops.py` (antes sin ninguna cobertura).
+- **NN-114.4:** `docs/openapi.json` generado desde la app real (105 KB) y verificado por
+  `tools/exportar_openapi.py --check` + `tests/test_openapi_exportado.py` (el test ya detectó un
+  desfase real).
+- **NN-114.6:** la suite pasa desde la raíz **y** desde `apps/api` (`pytest -q ../../tests` →
+  **exit 0**); ambos pasos están en el CI.
+- **NN-114.7:** desviación documentada: no hay capacidad de grabar vídeo; se deja
+  `evidence/instalacion_desde_clon_limpio.md` con la transcripción literal de la instalación real.
+
+**NN-113.6 / .8 / .9 / .12 / .13 / .15 — COMPLETADAS y COMMITEADAS** (`8fff0d7`, empujado).
 
 **NN-113.4 / .5 / .11 + B23 (NN-113.16) + B24 (NN-113.17) — COMPLETADAS y COMMITEADAS**
 (`f8a7b40`, empujado a `origin beta/v1`).

@@ -10,6 +10,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# El repositorio **es** la raíz del producto (`apps/`, `infra/`, `tests/` en la
+# raíz), así que el directorio de trabajo por defecto de cada paso ya es el
+# correcto. Antes todos los pasos.usaban `working-directory: neural-news`, que
+# no existe al hacer checkout: el CI fallaba en el primer paso.
 jobs:
   # --- Backend ---------------------------------------------------------------
   api:
@@ -43,21 +47,23 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: neural-news/apps/api/pyproject.toml
+          cache-dependency-path: apps/api/pyproject.toml
       - name: Instalar el backend
-        working-directory: neural-news/apps/api
+        working-directory: apps/api
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
       - name: Migraciones sobre PostgreSQL limpio
-        working-directory: neural-news/infra/migrations
+        working-directory: infra/migrations
         run: python -m alembic upgrade head
       - name: El esquema migrado coincide con los modelos
-        working-directory: neural-news
         run: python tools/compare_schema.py "$NEURAL_DATABASE_URL"
+      - name: La suite pasa desde el directorio del API (sin depender del cwd)
+        working-directory: apps/api
+        run: python -m pytest -q ../../tests
       - name: Suite de pruebas
-        working-directory: neural-news
         run: python -m pytest -q
+      - name: El contrato OpenAPI servido coincide con el exportado
+        run: python tools/exportar_openapi.py --check
       - name: Escaneo de secretos
-        working-directory: neural-news
         run: python tools/scan_secrets.py .
 
   # --- Frontend --------------------------------------------------------------
@@ -75,28 +81,23 @@ jobs:
       NEURAL_ADMIN_PASSWORD: clave-de-prueba
     defaults:
       run:
-        working-directory: neural-news
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: neural-news/apps/web/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
       - name: Instalar la web
-        working-directory: neural-news/apps/web
         run: npm ci --no-audit --no-fund
       - name: Tipos
-        working-directory: neural-news/apps/web
         run: npx tsc --noEmit
       - name: Lint
-        working-directory: neural-news/apps/web
         run: npx eslint .
       - name: Build
-        working-directory: neural-news/apps/web
         run: npm run build
       - name: El build sin destino debe fallar (gate G5)
-        working-directory: neural-news/apps/web
         env:
           NEURAL_ENV: beta
         run: |
@@ -105,9 +106,19 @@ jobs:
             exit 1
           fi
           echo "OK: el build falla sin destino, como debe."
+      - name: El mapa de estados generado está al día
+        working-directory: .
+        run: python tools/generate_estados.py --check
+      - name: El manifiesto de integridad del Studio está al día
+        working-directory: .
+        run: python tools/generar_manifiesto_studio.py --check
+      - name: Ninguna clase propia inexistente ni reimplementada en línea
+        working-directory: .
+        run: python tools/check_clases.py
+      - name: Auditoría de accesibilidad sin bloqueantes
+        working-directory: .
+        run: python tools/check_a11y.py
       - name: Preparar el navegador
-        working-directory: neural-news/apps/web
         run: npx playwright install --with-deps chromium
       - name: E2E (levanta API, worker y web)
-        working-directory: neural-news/apps/web
         run: npm run e2e

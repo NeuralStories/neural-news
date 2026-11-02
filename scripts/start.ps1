@@ -35,7 +35,13 @@ if (-not $SinWeb) {
   Info "Web    → http://localhost:$PuertoWeb  (registro: _web.log)"
   $web = Join-Path $raiz "apps\web"
   $env:NEURAL_ENV = "local"
-  Start-Process -FilePath "npm" -ArgumentList "run", "start", "--", "-p", "$PuertoWeb" `
+  # En Windows `npm` es un script de consola (`npm.cmd`), no un ejecutable
+  # Win32: `Start-Process -FilePath "npm"` falla con «no es una aplicación
+  # Win32 válida» y la web no llegaba a arrancarse (hallazgo B30).
+  $npm = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
+  if (-not $npm) { $npm = Get-Command "npm" -ErrorAction SilentlyContinue }
+  if (-not $npm) { throw "No se encuentra npm en el PATH. Instala Node 20 o superior." }
+  Start-Process -FilePath $npm.Source -ArgumentList "run", "start", "--", "-p", "$PuertoWeb" `
     -WorkingDirectory $web `
     -RedirectStandardOutput (Join-Path $raiz "_web.log") `
     -RedirectStandardError (Join-Path $raiz "_web.err.log")

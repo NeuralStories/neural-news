@@ -83,10 +83,10 @@ Evidencia íntegra (un log por comando) en `docs/entrega/evidencias/` y resumen 
 
 ## Archivos modificados desde el último checkpoint
 
-Ninguno desde `1c63a3a` (el commit de cierre `docs: cierre beta` recoge solo
-este checkpoint, el registro y el plan).
+Ninguno desde el commit de cierre (`docs: cierre beta`) de `release/1.0.0-beta.1`, que recoge
+solo este checkpoint, el registro, el plan y la auditoría de la entrega.
 
-- `archivos_modificados`: ninguno (checkpoint = commit `1c63a3a`)
+- `archivos_modificados`: ninguno (checkpoint = último commit de `release/1.0.0-beta.1`)
 
 ## Bloqueos y lo que se necesita para resolverlos
 

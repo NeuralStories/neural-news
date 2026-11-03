@@ -518,6 +518,29 @@ dejan veredicto, código de salida y log íntegro.
 
 ---
 
+## 2026-11-03 — Auditoría de la entrega (y lo que encontró)
+
+Se añade `scripts/auditar_entrega.mjs`: comprueba **una por una** las cuatro condiciones del
+encargo contra el estado real (no contra lo que dice el informe). Resultado: **17/17 PASA**.
+
+**B39 (nuevo, real):** el resumen de verificaciones se escribía en
+`docs/entrega/evidencias/RESUMEN_VERIFICACIONES.md`, pero **toda** la documentación lo enlazaba
+desde `docs/entrega/RESUMEN_VERIFICACIONES.md`: un enlace roto en el README, en el resumen
+completo y en el informe final. Lo detectó la auditoría (no un revisor: el fichero no existía
+donde se decía que estaba). Corregido: el script de verificación lo escribe ahora en su sitio, y
+el duplicado antiguo se ha retirado.
+
+**B40 (menor):** la primera versión de la auditoría fallaba en «el checkpoint declara un único
+estado beta» porque la expresión regular no admitía el acento grave del markdown
+(`` `estado_beta`: BETA_LISTA ``). Era un fallo de la auditoría, no del checkpoint: se corrigió
+la expresión y se volvió a ejecutar (17/17).
+
+**Lección (la segunda de esta entrega):** una comprobación que **no puede fallar** no sirve.
+La auditoría nació precisamente para eso: comprobado primero contra un estado real y con un
+referente roto introducido a propósito, no contra un «parece que está bien».
+
+---
+
 ## 2026-11-02 — B32 y B33: dos formas de romper la ejecución sin tocar el producto
 
 Estos dos hallazgos no son del producto: son de **orquestación**, y los dos costaron

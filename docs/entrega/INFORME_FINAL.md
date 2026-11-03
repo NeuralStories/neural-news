@@ -120,6 +120,7 @@ Comprobaciones adicionales de la entrega:
 | `pip-audit` | **no ejecutado** | No está instalado en la máquina (la sección 0 pide ejecutarlo solo si ya está). Log: `evidencias/pip_audit.log` |
 | `tools/check_build_produccion.py` | **PASA** | 0 hallazgos de depuración, credenciales ni datos personales en el build |
 | `apps/web/scripts/prueba_rapida_beta.mjs` | **PASA** | 7/7 contra la instancia en marcha. Log: `evidencias/F6_lanzamiento.md` |
+| `node scripts/auditar_entrega.mjs` | **PASA** | **17/17**: comprueba una por una las cuatro condiciones del encargo contra el estado real (raíz de Git, versión coherente en 5 sitios, rama + tag anotado + **sin push**, API y web respondiendo, documentación dentro del proyecto, las 14 comprobaciones en PASA con sus logs, las 8 fases COMPLETADAS, las 3 decisiones APLAZADAS, sin filas PENDIENTES y el checkpoint con los 11 campos en los dos formatos) |
 
 ## 7. Documentación creada o actualizada
 

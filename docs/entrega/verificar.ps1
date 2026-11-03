@@ -213,7 +213,7 @@ $doc = @(
   "**Resultado global: $(if ($fallos -eq 0) { 'PASA' } else { "FALLA ($fallos comprobaciones)" }).**",
   ""
 ) -join "`r`n"
-Set-Content -LiteralPath (Join-Path $carpetaEvidencias "RESUMEN_VERIFICACIONES.md") -Value $doc -Encoding utf8BOM
+Set-Content -LiteralPath (Join-Path $Raiz "docs\entrega\RESUMEN_VERIFICACIONES.md") -Value $doc -Encoding utf8BOM
 
 Write-Host ""
 Write-Host $doc -ForegroundColor White

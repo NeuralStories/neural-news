@@ -1,15 +1,15 @@
 ﻿# Resumen de verificaciones (F3)
 
-Generado por docs/entrega/verificar.ps1 el 2026-11-03 09:55:33.
+Generado por docs/entrega/verificar.ps1 el 2026-11-03 11:33:13.
 Cada log contiene la salida **íntegra** del comando.
 
 | Comprobación | Comando | Veredicto | Código de salida | Duración (s) | Log |
 |---|---|---|---|---|---|
-| pytest | `python -m pytest tests -q` | **PASA** | 0 | 120 | [log](docs/entrega/evidencias/pytest.log) |
-| tsc | `npx tsc --noEmit` | **PASA** | 0 | 7 | [log](docs/entrega/evidencias/tsc.log) |
-| eslint | `npx eslint .` | **PASA** | 0 | 8 | [log](docs/entrega/evidencias/eslint.log) |
-| build | `npm run build` | **PASA** | 0 | 33 | [log](docs/entrega/evidencias/build.log) |
-| playwright | `npx playwright test` | **PASA** | 0 | 99 | [log](docs/entrega/evidencias/playwright.log) |
+| pytest | `python -m pytest tests -q` | **PASA** | 0 | 124 | [log](docs/entrega/evidencias/pytest.log) |
+| tsc | `npx tsc --noEmit` | **PASA** | 0 | 3 | [log](docs/entrega/evidencias/tsc.log) |
+| eslint | `npx eslint .` | **PASA** | 0 | 6 | [log](docs/entrega/evidencias/eslint.log) |
+| build | `npm run build` | **PASA** | 0 | 32 | [log](docs/entrega/evidencias/build.log) |
+| playwright | `npx playwright test` | **PASA** | 0 | 103 | [log](docs/entrega/evidencias/playwright.log) |
 | check_clases | `python tools\check_clases.py` | **PASA** | 0 | 1 | [log](docs/entrega/evidencias/check_clases.log) |
 | check_a11y | `python tools\check_a11y.py` | **PASA** | 0 | 2 | [log](docs/entrega/evidencias/check_a11y.log) |
 | scan_secrets | `python tools\scan_secrets.py .` | **PASA** | 0 | 3 | [log](docs/entrega/evidencias/scan_secrets.log) |

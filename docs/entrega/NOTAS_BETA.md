@@ -42,7 +42,7 @@ NeuralStories Studio integrado, verificada con 14 comprobaciones automáticas.
 | 4 | **Sin entorno virtual por proyecto** | Instalación | El backend usa el Python del sistema; si mueves la carpeta, reinstala (`pip install -e ".[dev]"`) |
 | 5 | **Modo demo sin contenido real** | Todo el recorrido | Sin claves de proveedor no se llama a ningún servicio de pago: el contenido ficticio va marcado `DEMO` y usa el dominio reservado `.invalid` |
 | 6 | **El manifiesto de la gobernanza tiene 3 ficheros desfasados** | `docs/gobernanza/MANIFEST_SHA256.json` | Se selló el 2026-10-30; después se actualizaron legítimamente `BACKLOG.csv`, `BACKLOG.json` (Fase 0) y el registro de decisiones (riesgo R-26). No se re-sella: el manifiesto es evidencia histórica |
-| 7 | **El remoto es local** | Git | `../../../.remotes/neural-news.git` está en el mismo disco. Sin copia externa hasta que se autorice un remoto remoto |
+| 7 | **El remoto es local** | Git | `.remotes/neural-news.git` está en el mismo disco. Sin copia externa hasta que se autorice un remoto remoto |
 
 ## 3. Requisitos para probar la beta
 

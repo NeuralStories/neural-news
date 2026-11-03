@@ -18,6 +18,16 @@ RAIZ = Path(__file__).resolve().parents[1]
 GOBERNANZA = RAIZ / "docs" / "gobernanza"
 MANIFIESTO = GOBERNANZA / "MANIFEST_SHA256.json"
 
+# Artefactos **fuera del repositorio** por decisión de DEC-01: son binarios
+# sellados que el `.gitignore` excluye a propósito («0 binarios sueltos en el
+# árbol versionado», NN-119.1). El manifiesto los conserva porque describe el
+# contenido sellado, pero en un clon limpio no están: su ausencia **no** es
+# una alteración de la evidencia. Hallazgo de la auditoría A1: sin esta
+# salvedad, el test fallaba en cualquier clon limpio del repositorio.
+FUERA_DEL_REPOSITORIO = {
+    "03_EVIDENCIA_FLOW/flow-recovery.rar": "RAR sellado (NN-119.1); no se versiona",
+}
+
 
 def _entradas() -> list[dict]:
     datos = json.loads(MANIFIESTO.read_text(encoding="utf-8"))
@@ -53,6 +63,8 @@ def test_los_hashes_de_la_gobernanza_cuadran() -> None:
     for entrada in _entradas():
         ruta = GOBERNANZA / entrada["path"]
         if not ruta.exists():
+            if entrada["path"] in FUERA_DEL_REPOSITORIO:
+                continue
             desajustes.append(f"{entrada['path']}: no existe")
             continue
         if entrada["path"] in excepciones:

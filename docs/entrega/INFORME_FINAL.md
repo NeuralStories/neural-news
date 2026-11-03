@@ -69,7 +69,7 @@ El paquete de Python instalado en modo editable guardaba la ruta absoluta: se re
 | Rama de entrega | `release/1.0.0-beta.1` (creada desde `beta/v1` @ `4a6d5db`) |
 | Commit de entrega | «release: v1.0.0-beta.1» |
 | Tag | `v1.0.0-beta.1` (anotado: «Beta 1.0.0-beta.1») |
-| Remoto | `origin` → `../../../.remotes/neural-news.git` (local). **Sin push**, por decisión de la sección 0 |
+| Remoto | `origin` → `.remotes/neural-news.git` (local). **Sin push**, por decisión de la sección 0 |
 | `git status` tras el cierre | limpio (salvo el commit `docs: cierre beta`) |
 
 ## 5. Lanzamiento
@@ -162,13 +162,13 @@ SUP-02 aplazadas; sin despliegue ni publicación.
 
 **Decisiones propias, con motivo:**
 
-1. **La gobernanza entra como `docs/gobernanza/`, no como `../../../newsV2/`.** `../../../newsV2/` estaba
+1. **La gobernanza entra como `docs/gobernanza/`, no como `newsV2/`.** `newsV2/` estaba
    **fuera** del repositorio (era hermana de la carpeta del producto): no se puede versionar
    lo que no está dentro. Se movió el contenido real y se redirigieron las referencias
    documentadas.
-2. **Lo que no cumplía DEC-01 se queda fuera, y se anota**: `../../../newsV2/neural-news/` es una
+2. **Lo que no cumplía DEC-01 se queda fuera, y se anota**: `newsV2/neural-news/` es una
    **copia duplicada del repositorio con su propio `.git`** (un `.git` anidado no se puede
-   versionar: git lo trataría como submódulo) y `../../../newsV2/flow-recovery/node_modules` contiene
+   versionar: git lo trataría como submódulo) y `newsV2/flow-recovery/node_modules` contiene
    un binario de 105 MB. No se ha tocado nada de ahí.
 3. **El manifiesto SHA-256 de la gobernanza se conserva tal cual**, aunque 3 de sus ficheros
    ya no cuadren: se selló el 2026-10-30 y después se actualizaron legítimamente (el backlog

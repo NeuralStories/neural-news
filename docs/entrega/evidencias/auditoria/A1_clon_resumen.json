@@ -1,0 +1,30 @@
+[
+  {
+    "paso": "04_pytest",
+    "exit": 1
+  },
+  {
+    "paso": "05_typecheck",
+    "exit": 0
+  },
+  {
+    "paso": "06_lint",
+    "exit": 0
+  },
+  {
+    "paso": "07_build",
+    "exit": 1
+  },
+  {
+    "paso": "08_playwright",
+    "exit": 1
+  },
+  {
+    "paso": "09_arranque",
+    "exit": 1
+  },
+  {
+    "paso": "10_parada",
+    "exit": 0
+  }
+]

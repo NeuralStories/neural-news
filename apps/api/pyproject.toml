@@ -4,7 +4,13 @@ version = "1.0.0-beta.1"
 description = "neural.news — motor editorial de investigación y guiones sobre IA (MVP)"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115",
+    # FastAPI está **acotado por arriba** a propósito: `docs/openapi.json` es un
+    # artefacto versionado y el test `test_openapi_exportado` lo compara con el
+    # contrato que sirve la aplicación. Sin el límite, una instalación nueva
+    # puede resolver otra versión mayor y el contrato guardado deja de cuadrar
+    # (hallazgo de la auditoría A1: FastAPI 0.115.8 en el equipo de entrega y
+    # 0.162.0 en el clon limpio generaban esquemas distintos).
+    "fastapi>=0.115,<0.116",
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
@@ -24,6 +30,11 @@ dependencies = [
     # pueden recoger** y pytest aborta la suite entera en una instalación limpia
     # (hallazgo de la auditoría A1: el repositorio no era autosuficiente).
     "Pillow>=10.0",
+    # Cifrado de la bóveda de secretos (`services/vault.py`, NN-117.3): sin
+    # ella, la aplicación arranca pero **ocho tests de la bóveda fallan** en una
+    # instalación limpia (hallazgo de la auditoría A1: el propio código la daba
+    # por declarada en un comentario que era falso).
+    "cryptography>=42.0",
 ]
 
 [project.optional-dependencies]

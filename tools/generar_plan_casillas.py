@@ -110,7 +110,10 @@ def main() -> int:
         print("OK: PLAN.md está al día.")
         return 0
 
-    DESTINO.write_text(contenido, encoding="utf-8")
+    # newline="\n": en Windows, `write_text()` escribe CRLF y el artefacto
+    # dejaría de coincidir con los bytes que se versionan (LF) (hallazgo de la
+    # auditoría A1).
+    DESTINO.write_text(contenido, encoding="utf-8", newline="\n")
     print(f"Escrito: {DESTINO.relative_to(RAIZ)}")
     return 0
 

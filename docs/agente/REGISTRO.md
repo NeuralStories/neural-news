@@ -26,7 +26,7 @@ hermano se congela y sus capacidades se portan una a una con test de equivalenci
 ## 2026-11-01 — Fase 0: sellado, backups verificados y bundle
 
 **Cambios:** los 4 artefactos sueltos (13 MB de ZIP/RAR + 2 directorios) salen del árbol a
-`storage/`; se genera `../../../backups/MANIFIESTO_SELLADO_2026-11-01.txt`; se verifican el backup
+`storage/`; se genera `backups/MANIFIESTO_SELLADO_2026-11-01.txt`; se verifican el backup
 previo a NN-107 y el dump de PostgreSQL; se crean bundles de git de ambos repos.
 
 **Motivo:** el riesgo R-21 (pérdida total por fallo de disco) era crítico: 36 commits vivían solo en
@@ -43,8 +43,8 @@ seguridad local; la versión con rutas relativas al espacio de trabajo sí pasó
 
 ## 2026-11-01 — Fase 1: consolidación del repositorio
 
-**Cambios:** el hermano se archiva en `../../../archive/neuralnews-20261101/` con manifiesto SHA-256 de sus 121
-ficheros versionados; se crea el remoto local `../../../.remotes/*.git` y se empuja; `.gitignore` ampliado;
+**Cambios:** el hermano se archiva en `archive/neuralnews-20261101/` con manifiesto SHA-256 de sus 121
+ficheros versionados; se crea el remoto local `.remotes/*.git` y se empuja; `.gitignore` ampliado;
 rama `beta/v1`; README único.
 
 **Decisión:** el hermano **se mueve, no se borra**, y conserva su `.venv` para que siga siendo
@@ -194,11 +194,11 @@ escrito** — que es lo que evita que el port se convierta en deuda invisible.
 
 ### Lo que resultó ser el plan equivocado (y se corrigió)
 
-El plan decía portar «zonas seguras / cámara» de `../../../archive/neuralnews-20261101/apps/api/app/domain/camera.py`. Al mirarlo:
+El plan decía portar «zonas seguras / cámara» de `archive/neuralnews-20261101/apps/api/app/domain/camera.py`. Al mirarlo:
 
-- `../../../archive/neuralnews-20261101/apps/api/app/domain/camera.py` del hermano **no** trata de zonas seguras: trata de **presets de cámara y límites de
+- `archive/neuralnews-20261101/apps/api/app/domain/camera.py` del hermano **no** trata de zonas seguras: trata de **presets de cámara y límites de
   glitch** (NN-052).
-- Las zonas seguras (`SAFE_ZONE`) están en `../../../archive/neuralnews-20261101/apps/api/app/domain/graphics.py` del hermano, y **no se usan en
+- Las zonas seguras (`SAFE_ZONE`) están en `archive/neuralnews-20261101/apps/api/app/domain/graphics.py` del hermano, y **no se usan en
   ningún sitio**: es código muerto.
 
 Portar `SAFE_ZONE` tal cual habría sido **traer código muerto**. La carencia real estaba en el
@@ -214,9 +214,9 @@ de caracteres. No se ha copiado nada del hermano.
 
 | Capacidad | De dónde | Qué se ha hecho |
 |---|---|---|
-| **Argon2id** (NN-117.5 → cierra NN-111.9) | `../../../archive/neuralnews-20261101/apps/api/app/security/auth.py` | `hash_password` usa Argon2id; **la verificación PBKDF2 se mantiene**, así que las contraseñas ya guardadas siguen funcionando (el formato decide el algoritmo) |
+| **Argon2id** (NN-117.5 → cierra NN-111.9) | `archive/neuralnews-20261101/apps/api/app/security/auth.py` | `hash_password` usa Argon2id; **la verificación PBKDF2 se mantiene**, así que las contraseñas ya guardadas siguen funcionando (el formato decide el algoritmo) |
 | **Backup verificado de BD** (NN-117.1) | `scripts/db_backup.py` | Copia SQLite con la API de backup e `integrity_check`; `pg_dump --format=custom` para PostgreSQL; `verify` no toca la base viva. **Mejora sobre el original: la restauración de PostgreSQL sí se automatiza** contra una base aislada y se comparan los recuentos (en el hermano era manual) |
-| **Bóveda de secretos** (NN-117.3) | `../../../archive/neuralnews-20261101/apps/api/app/security/vault.py` | Fernet con `NEURAL_MASTER_KEY`. En la base de datos **sólo hay texto cifrado**; el valor en claro vive en memoria del proceso. Los 5 adaptadores resuelven la clave por «bóveda primero, entorno después» (11 puntos de acceso, todos verificados) |
+| **Bóveda de secretos** (NN-117.3) | `archive/neuralnews-20261101/apps/api/app/security/vault.py` | Fernet con `NEURAL_MASTER_KEY`. En la base de datos **sólo hay texto cifrado**; el valor en claro vive en memoria del proceso. Los 5 adaptadores resuelven la clave por «bóveda primero, entorno después» (11 puntos de acceso, todos verificados) |
 
 **Lección aplicada de la Fase 2:** un port no es «copiar el fichero»: es **decidir qué capability
 entra, comprobar que el código de origen hace lo que dice y que se usa**, y traer sólo lo vivo.
@@ -470,13 +470,13 @@ dejan veredicto, código de salida y log íntegro.
 
 **Decisiones propias (con motivo):**
 
-1. **La gobernanza entra como `docs/gobernance/`, no como `../../../newsV2/`.** `../../../newsV2/` estaba **fuera**
+1. **La gobernanza entra como `docs/gobernanza/`, no como `newsV2/`.** `newsV2/` estaba **fuera**
    del repositorio (era hermana de la carpeta del producto): no se puede versionar lo que no está
    dentro. Se movió el contenido real (328 ficheros, 15,2 MB) y se redirigieron las referencias
    documentadas (README, `ESTADO_REAL.md`, `IMPLEMENTACION_REALIZADA.md`, plan y registro).
-2. **Lo que no cumplía DEC-01 se queda fuera y se anota**: `../../../newsV2/neural-news/` es una **copia
+2. **Lo que no cumplía DEC-01 se queda fuera y se anota**: `newsV2/neural-news/` es una **copia
    duplicada del repositorio con su propio `.git`** (un `.git` anidado no se puede versionar: git
-   lo trataría como submódulo) y `../../../newsV2/flow-recovery/node_modules` contiene un binario de
+   lo trataría como submódulo) y `newsV2/flow-recovery/node_modules` contiene un binario de
    105 MB. No se ha tocado nada de ahí.
 3. **El manifiesto SHA-256 de la gobernanza se conserva tal cual**, aunque 3 de sus ficheros ya no
    cuadren: se selló el 2026-10-30 y después se actualizaron legítimamente (el backlog en la

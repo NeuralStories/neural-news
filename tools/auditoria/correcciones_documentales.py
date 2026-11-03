@@ -38,37 +38,37 @@ CAMBIOS: list[tuple[str, str, str, int]] = [
     (
         "ESTADO_REAL.md",
         "`NeuralStories/.remotes/neural-news.git`",
-        "`../.remotes/neural-news.git`",
+        "`.remotes/neural-news.git`",
         1,
     ),
     (
         "ESTADO_REAL.md",
         "`NeuralStories/archive/neuralnews-20261101/`",
-        "`../archive/neuralnews-20261101/`",
+        "`archive/neuralnews-20261101/`",
         1,
     ),
     (
         "ESTADO_REAL.md",
         "`NeuralStories/backups/MANIFIESTO_SELLADO_2026-11-01.txt`",
-        "`../backups/MANIFIESTO_SELLADO_2026-11-01.txt`",
+        "`backups/MANIFIESTO_SELLADO_2026-11-01.txt`",
         1,
     ),
     (
         "ESTADO_REAL.md",
         "`NeuralStories/backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt`",
-        "`../backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt`",
+        "`backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt`",
         1,
     ),
     (
         "ESTADO_REAL.md",
         "`NeuralStories/backups/bundles/`",
-        "`../backups/bundles/`",
+        "`backups/bundles/`",
         1,
     ),
     (
         "ESTADO_REAL.md",
         "`NeuralStories/backups/db/neuralnews-2026-11-01.sql`",
-        "`../backups/db/neuralnews-2026-11-01.sql`",
+        "`backups/db/neuralnews-2026-11-01.sql`",
         1,
     ),
     (
@@ -105,21 +105,56 @@ CAMBIOS: list[tuple[str, str, str, int]] = [
         "`features/studio/components/HelpModal.tsx`) |",
         1,
     ),
+    # --- bootstrap.ps1: construir la web (si no, un clon limpio no arranca) ---
+    (
+        "scripts/bootstrap.ps1",
+        "  } finally { Pop-Location }\n}\n\n# --- 6. Pruebas",
+        "  } finally { Pop-Location }\n"
+        "\n"
+        "  # La web se sirve en modo producción (`next start`), y eso **exige** un\n"
+        "  # build. Sin este paso, un clon limpio se queda sin web: `npm run start`\n"
+        "  # falla con «Could not find a production build in the '.next' directory»\n"
+        "  # (hallazgo de la auditoría A1: siguiendo la guía de pruebas, la web\n"
+        "  # nunca llegaba a levantarse).\n"
+        "  #\n"
+        "  # El build necesita saber el entorno: NEURAL_ENV=local es la instalación\n"
+        "  # de escritorio (proxy same-origin contra la API local). Fuera de local hay\n"
+        "  # que definir NEURAL_API_URL, y el build falla a propósito si no está\n"
+        "  # (prueba negativa 3.5 de GUIA_PRUEBAS_BETA.md).\n"
+        '  Paso "Construyendo la web (NEURAL_ENV=local)"\n'
+        '  $env:NEURAL_ENV = "local"\n'
+        '  Push-Location "apps\\web"\n'
+        "  try {\n"
+        "    & npm run build\n"
+        '    if ($LASTEXITCODE -ne 0) { throw "Falló la construcción de la web." }\n'
+        "  } finally { Pop-Location }\n"
+        "}\n"
+        "\n"
+        "# --- 6. Pruebas",
+        1,
+    ),
+    # --- start.ps1: avisar si la web no está construida -----------------------
+    (
+        "scripts/start.ps1",
+        '  $web = Join-Path $raiz "apps\\web"\n',
+        '  $web = Join-Path $raiz "apps\\web"\n'
+        "  # La web se sirve en modo producción: sin build, `next start` no arranca.\n"
+        '  if (-not (Test-Path (Join-Path $web ".next\\BUILD_ID"))) {\n'
+        '    throw "La web no está construida. Ejecuta antes: scripts\\bootstrap.ps1"\n'
+        "  }\n",
+        1,
+    ),
 ]
 
-# Rutas del **workspace** (carpetas hermanas del repositorio) y la carpeta de
-# runtime del propio repositorio.
+# Rutas del **workspace** (carpetas hermanas del repositorio).
 #
-# El prefijo correcto depende de la **profundidad** del documento: desde la
-# raíz del repositorio, el workspace está a un nivel (`../`); desde
-# `docs/agente/`, a tres (`../../../`). Por eso no se sustituye de forma
-# literal, sino que se normaliza el número de niveles.
-CARPETAS_WORKSPACE = ("newsV2", "archive", ".remotes", "backups")
-RE_TOKEN_BACKTICK = re.compile(r"`([^`\n]+)`")
-RE_RUTA_WORKSPACE = re.compile(
-    r"^(?P<prefijo>(?:\.\./)*)(?P<carpeta>" + "|".join(re.escape(c) for c in CARPETAS_WORKSPACE) + r")(?P<resto>/.*)?$"
-)
-RE_RUTA_STORAGE = re.compile(r"^(?P<prefijo>(?:\.\./)*)neural-news/storage(?P<resto>/.*)?$")
+# El proyecto tiene su propia convención (la misma que usa
+# `tools/auditar_evidencias.py`): las rutas que viven fuera del repositorio se
+# citan por su primer componente (`backups/`, `archive/`, `.remotes/`,
+# `newsV2/`), sin prefijos ``. Un intento anterior de la auditoría de
+# anteponer `` rompía esa convención y hacía fallar
+# `tests/test_evidencias_plan.py`: por eso aquí **no** se toca nada.
+RUTAS_WORKSPACE: dict[str, str] = {}
 
 # Documentos en los que se revisan las rutas (los mismos que comprueba
 # `comprobar_enlaces.py`).
@@ -144,38 +179,14 @@ DOCUMENTOS_A_REVISAR = [
 def _corregir_rutas_de_workspace(dry_run: bool = False) -> list[str]:
     """Normaliza las rutas del workspace citadas en los documentos.
 
-    Cada ruta recibe exactamente el número de niveles `../` que necesita para
-    llegar al workspace desde el documento donde se cita. Es idempotente: se
-    puede volver a ejecutar sin acumular prefijos.
+    El proyecto cita las rutas externas por su primer componente (`backups/`,
+    `archive/`, `.remotes/`, `newsV2/`), **sin** prefijos ``: es la
+    convención de `tools/auditar_evidencias.py` y la que usa el propio test
+    `tests/test_evidencias_plan.py`. Un intento anterior de la auditoría de
+    anteponer `` rompía esa convención y hacía fallar ese test, así que
+    aquí **no se altera nada**: la función se conserva como punto de extensión.
     """
-    informe: list[str] = []
-    for relativo in DOCUMENTOS_A_REVISAR:
-        ruta = RAIZ / relativo
-        if not ruta.exists():
-            continue
-        profundidad = len(Path(relativo).parts) - 1  # 0 = raíz del repositorio
-        niveles_workspace = "../" * (profundidad + 1)
-        niveles_repo = "../" * profundidad
-        texto = ruta.read_text(encoding="utf-8")
-
-        def _normaliza(match: re.Match[str]) -> str:
-            token = match.group(1)
-            workspace = RE_RUTA_WORKSPACE.match(token)
-            if workspace:
-                resto = workspace.group("resto") or ""
-                return f"`{niveles_workspace}{workspace.group('carpeta')}{resto}`"
-            storage = RE_RUTA_STORAGE.match(token)
-            if storage:
-                resto = storage.group("resto") or ""
-                return f"`{niveles_repo}storage{resto}`"
-            return match.group(0)
-
-        nuevo = RE_TOKEN_BACKTICK.sub(_normaliza, texto)
-        if nuevo != texto:
-            if not dry_run:
-                ruta.write_text(nuevo, encoding="utf-8", newline="\n")
-            informe.append(relativo)
-    return informe
+    return []
 
 
 def main() -> int:

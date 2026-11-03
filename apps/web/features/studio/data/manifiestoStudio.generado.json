@@ -4,7 +4,7 @@
   "scope": "apps/web/features/studio",
   "totalFiles": 33,
   "totalLines": 6557,
-  "totalChars": 269894,
+  "totalChars": 268371,
   "files": [
     {
       "path": "App.tsx",
@@ -33,8 +33,8 @@
     {
       "path": "components/DossierPanel.tsx",
       "lines": 98,
-      "chars": 3773,
-      "sha256": "127326706e37b3a28151c34033ec60c0dfde3d8aee3585882cd0bfea8957bb2e"
+      "chars": 3675,
+      "sha256": "65a60aaa6bccffbeebb0b3fd0edef3d1b2191d5daeb3d95deaf0efe66e2bf0d5"
     },
     {
       "path": "components/MovementTab.tsx",
@@ -111,26 +111,26 @@
     {
       "path": "constants.ts",
       "lines": 381,
-      "chars": 18617,
-      "sha256": "9db04fcf8582e00727a6bbc2436efed98f06974e4ca075d049697d2dbe257d3b"
+      "chars": 18237,
+      "sha256": "040c4a538d1991faa96b7118a0ec0d1dbb6d7cb45c13145ecdbc7f4f261801d9"
     },
     {
       "path": "data/sourceManifest.ts",
       "lines": 110,
-      "chars": 4545,
-      "sha256": "645a6aa78cdda25b685947aea149a6a39051ced8852fa7341a74e1bd8a75a91a"
+      "chars": 4436,
+      "sha256": "e8d6ad10e953221d4a30ba93229cf2c2c35c15b549b8ae5ce243f85c15d20ad5"
     },
     {
       "path": "flow/adapter.ts",
       "lines": 117,
-      "chars": 3849,
-      "sha256": "72733d5f6cc156f4fb54b41d353e58ffb9161ff5fae5177e308f6f0e03d74f7b"
+      "chars": 3732,
+      "sha256": "1e5bb792341f496cf7036021172cf954c730e2da1937ba43fedaebde46b275bb"
     },
     {
       "path": "lib/projectApi.ts",
       "lines": 136,
-      "chars": 5165,
-      "sha256": "f0ca2e3e6630f40835c8b4d12aec094e1a7151f1cb57b5422b5f28ad30b66d4b"
+      "chars": 5029,
+      "sha256": "19f35496ee7cd754093b13c2ab61fbee23962ac2dda72e76f6ce4f880a32d7ac"
     },
     {
       "path": "lib/useFlowStudio.ts",
@@ -177,14 +177,14 @@
     {
       "path": "lib/useStudioProject.ts",
       "lines": 101,
-      "chars": 3703,
-      "sha256": "0331a100b16ce8361a4a8465f111fbbe671005e1b1d8acfa1f2df83ae6b1b6e9"
+      "chars": 3602,
+      "sha256": "1dcca851b05debfb9218561ff50001b8b1d96d143af96803c33716224e1d0052"
     },
     {
       "path": "types.ts",
       "lines": 200,
-      "chars": 5990,
-      "sha256": "01bc6575d5d05c0f795b037182a254f2b98989b23350e36bc78940467199d209"
+      "chars": 5791,
+      "sha256": "d70d45eb184b120314dc319d9fe47bdda5b0a50533025ce1fc5f9927731e3d1b"
     },
     {
       "path": "utils/errorMessage.ts",
@@ -195,14 +195,14 @@
     {
       "path": "utils/newsDeduplication.ts",
       "lines": 158,
-      "chars": 5432,
-      "sha256": "49114e8f2050ff5e14ff7fabcb0fbab41531d9a555442916b7de537b0b1344f7"
+      "chars": 5275,
+      "sha256": "17699aa321b1200777c3d433b80987ec0b4b8caaf5cd7a219f9ae727b9e6217a"
     },
     {
       "path": "utils/scriptAnalyzer.ts",
       "lines": 227,
-      "chars": 8823,
-      "sha256": "3d40d7885ecff4c1aee3e768b0e61ce5c22686b075b8c7bb33ad4cb232e06f6b"
+      "chars": 8597,
+      "sha256": "6e16553a76cc4d5dcc3fe9e16dacdd7bf65ee37f56a2db8217da6108201f56e5"
     }
   ]
 }

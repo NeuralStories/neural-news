@@ -5,7 +5,7 @@
 > **NO APROBADO — PENDIENTE DE REVISIÓN DEL PROPIETARIO.** Instantánea inmutable entregada para revisión; nada se fusiona a `main` ni se da por definitivo hasta aprobación explícita. **Todo el desarrollo y la operación son sin Docker**, con PostgreSQL local de binarios nativos.
 
 Este documento resume qué se implementó, cómo arrancarlo y qué evidencia lo respalda. El detalle
-fase a fase está en `TASK_NN-107_REINTEGRACION_FLOW.md` (docs/governanza) y el estado honesto módulo a
+fase a fase está en `TASK_NN-107_REINTEGRACION_FLOW.md` (docs/gobernanza) y el estado honesto módulo a
 módulo en `ESTADO_REAL.md`.
 
 ---
@@ -233,11 +233,11 @@ Commits `4b9ec04` (buscar o crear la transcripción), `d9f89f6` (ASR de cualquie
 ## FASE 6 — Preparación de la beta (01/11/2026) — NN-108 / NN-119
 
 - **Consolidación del repositorio.** El hermano `neuralnews` queda **archivado y sellado** en
-  `../archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto), con manifiesto
+  `archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto), con manifiesto
   SHA-256 de sus 121 ficheros versionados. Se detiene **solo** su pila (API `:8800`, web `:3100`);
   la pila principal sigue en marcha.
-- **Remoto local + backups verificados.** `../.remotes/neural-news.git` (3 ramas + tag) y
-  `../.remotes/neuralnews.git`; dos bundles git verificados; dump de PostgreSQL **restaurado en base
+- **Remoto local + backups verificados.** `.remotes/neural-news.git` (3 ramas + tag) y
+  `.remotes/neuralnews.git`; dos bundles git verificados; dump de PostgreSQL **restaurado en base
   limpia con recuento idéntico en 20 tablas**; backup previo a NN-107 con SHA-256 coincidente.
 - **Artefactos sueltos fuera del árbol** (13 MB de ZIP/RAR + 2 directorios) → `storage/`, con
   manifiesto de sellado. Las **17/17 fuentes de Flow** contrastan con `reports/manifest.json`.

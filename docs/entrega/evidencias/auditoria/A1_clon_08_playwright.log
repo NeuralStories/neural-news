@@ -1,0 +1,32 @@
+=== 08_playwright ===
+
+[13:15:06] --- 08_playwright ---
+npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> neural-news-web@1.0.0-beta.1 e2e
+> playwright test
+
+[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
+[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
+[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
+[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
+[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
+[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
+[WebServer] INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+[WebServer] npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] 
+[WebServer] > neural-news-web@1.0.0-beta.1 start
+[WebServer] > next start -p 3000
+[WebServer] 
+[WebServer]    ▲ Next.js 15.5.28
+[WebServer]    - Local:        http://localhost:3000
+[WebServer]    - Network:      http://10.2.0.2:3000
+[WebServer] 
+[WebServer]  ✓ Starting...
+[WebServer] {"ts": "2026-11-03T12:15:12.382521+00:00", "level": "INFO", "logger": "__main__", "event": "worker.start", "message": "neural.news worker arrancado", "demo": true, "paid_services": false}
+[WebServer] [Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id]
+Error: Process from config.webServer was not able to start. Exit code: 1
+
+
+[13:15:12] 08_playwright -> exit 1

@@ -1,0 +1,23 @@
+=== 07_build ===
+
+[13:15:04] --- 07_build ---
+npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> neural-news-web@1.0.0-beta.1 build
+> next build
+
+
+> Build error occurred
+Error: NEURAL_API_URL es obligatoria fuera del entorno local: el proxy same-origin /api/* no puede apuntar a 127.0.0.1 en una instalación real. Define NEURAL_API_URL (o NEURAL_ENV=local si es una instalación de escritorio).
+    at resolveApiUrl (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:159:15)
+    at <unknown> (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:177:23)
+    at step (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:120:23)
+    at Object.next (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:61:20)
+    at asyncGeneratorStep (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:14:28)
+    at _next (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:32:17)
+    at <unknown> (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:37:13)
+    at new Promise (<anonymous>)
+    at <unknown> (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:29:16)
+    at Object.rewrites (C:\Users\haxth3\AppData\Local\Temp\beta-audit2\apps\web\next.config.compiled.js:188:11)
+
+[13:15:06] 07_build -> exit 1

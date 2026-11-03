@@ -83,6 +83,60 @@ if (-not $SkipWeb) {
     & npm install --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { throw "Falló la instalación de la web." }
   } finally { Pop-Location }
+
+  # La web se sirve en modo producción (`next start`), y eso **exige** un
+  # build. Sin este paso, un clon limpio se queda sin web: `npm run start`
+  # falla con «Could not find a production build in the '.next' directory»
+  # (hallazgo de la auditoría A1: siguiendo la guía de pruebas, la web
+  # nunca llegaba a levantarse).
+  #
+  # El build necesita saber el entorno: NEURAL_ENV=local es la instalación
+  # de escritorio (proxy same-origin contra la API local). Fuera de local hay
+  # que definir NEURAL_API_URL, y el build falla a propósito si no está
+  # (prueba negativa 3.5 de GUIA_PRUEBAS_BETA.md).
+  Paso "Construyendo la web (NEURAL_ENV=local)"
+  $env:NEURAL_ENV = "local"
+  Push-Location "apps\web"
+  try {
+    & npm run build
+    if ($LASTEXITCODE -ne 0) { throw "Falló la construcción de la web." }
+  } finally { Pop-Location }
+
+  # La web se sirve en modo producción (`next start`), y eso **exige** un
+  # build. Sin este paso, un clon limpio se queda sin web: `npm run start`
+  # falla con «Could not find a production build in the '.next' directory»
+  # (hallazgo de la auditoría A1: siguiendo la guía de pruebas, la web
+  # nunca llegaba a levantarse).
+  #
+  # El build necesita saber el entorno: NEURAL_ENV=local es la instalación
+  # de escritorio (proxy same-origin contra la API local). Fuera de local hay
+  # que definir NEURAL_API_URL, y el build falla a propósito si no está
+  # (prueba negativa 3.5 de GUIA_PRUEBAS_BETA.md).
+  Paso "Construyendo la web (NEURAL_ENV=local)"
+  $env:NEURAL_ENV = "local"
+  Push-Location "apps\web"
+  try {
+    & npm run build
+    if ($LASTEXITCODE -ne 0) { throw "Falló la construcción de la web." }
+  } finally { Pop-Location }
+
+  # La web se sirve en modo producción (`next start`), y eso **exige** un
+  # build. Sin este paso, un clon limpio se queda sin web: `npm run start`
+  # falla con «Could not find a production build in the '.next' directory»
+  # (hallazgo de la auditoría A1: siguiendo la guía de pruebas, la web
+  # nunca llegaba a levantarse).
+  #
+  # El build necesita saber el entorno: NEURAL_ENV=local es la instalación
+  # de escritorio (proxy same-origin contra la API local). Fuera de local hay
+  # que definir NEURAL_API_URL, y el build falla a propósito si no está
+  # (prueba negativa 3.5 de GUIA_PRUEBAS_BETA.md).
+  Paso "Construyendo la web (NEURAL_ENV=local)"
+  $env:NEURAL_ENV = "local"
+  Push-Location "apps\web"
+  try {
+    & npm run build
+    if ($LASTEXITCODE -ne 0) { throw "Falló la construcción de la web." }
+  } finally { Pop-Location }
 }
 
 # --- 6. Pruebas ------------------------------------------------------------

@@ -52,6 +52,21 @@ RUTAS_ESTADO_MAQUINA = {
     "docs/agente/TERMINADO",
 }
 
+# Rutas **fuera del repositorio** por convención del proyecto: la misma lista
+# que usa `tools/auditar_evidencias.py` (PREFIJOS_FUERA). Son artefactos
+# sellados, carpetas del workspace o la carpeta de runtime: existen, pero no
+# en el repositorio.
+PREFIJOS_FUERA = (
+    "storage/",
+    "backups/",
+    "archive/",
+    ".remotes/",
+    "newsV2/",
+)
+RUTAS_FUERA_EXACTAS = {
+    "tools/yt-dlp.exe",
+}
+
 # Marcadores de **referencia histórica**: cuando la propia línea dice que el
 # fichero ya no está (se eliminó, se retiró, se movió), la ruta no es una
 # afirmación de que exista ahora. Se cuentan aparte para que la omisión sea
@@ -166,6 +181,11 @@ def revisar() -> tuple[list[str], int]:
                     continue
                 # `storage/…` es el directorio de runtime (ignorado por git).
                 if limpio.replace("\\", "/").startswith("storage/"):
+                    continue
+                # Rutas fuera del repositorio por convención del proyecto.
+                if limpio.replace("\\", "/").startswith(PREFIJOS_FUERA):
+                    continue
+                if limpio.replace("\\", "/") in RUTAS_FUERA_EXACTAS:
                     continue
                 # `node_modules/…` describe el entorno instalado, no el repositorio.
                 if limpio.replace("\\", "/").startswith("node_modules/"):

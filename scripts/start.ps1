@@ -38,6 +38,18 @@ $pids = @{ api = $api.Id; worker = $worker.Id }
 if (-not $SinWeb) {
   Info "Web    → http://localhost:$PuertoWeb  (registro: _web.log)"
   $web = Join-Path $raiz "apps\web"
+  # La web se sirve en modo producción: sin build, `next start` no arranca.
+  if (-not (Test-Path (Join-Path $web ".next\BUILD_ID"))) {
+    throw "La web no está construida. Ejecuta antes: scripts\bootstrap.ps1"
+  }
+  # La web se sirve en modo producción: sin build, `next start` no arranca.
+  if (-not (Test-Path (Join-Path $web ".next\BUILD_ID"))) {
+    throw "La web no está construida. Ejecuta antes: scripts\bootstrap.ps1"
+  }
+  # La web se sirve en modo producción: sin build, `next start` no arranca.
+  if (-not (Test-Path (Join-Path $web ".next\BUILD_ID"))) {
+    throw "La web no está construida. Ejecuta antes: scripts\bootstrap.ps1"
+  }
   $env:NEURAL_ENV = "local"
   # En Windows `npm` es un script de consola (`npm.cmd`), no un ejecutable
   # Win32: `Start-Process -FilePath "npm"` falla con «no es una aplicación

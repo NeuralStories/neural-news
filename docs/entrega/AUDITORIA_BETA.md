@@ -298,11 +298,13 @@ los documentos.
   `.remotes/neural-news.git` intacto.
 - Tag `v1.0.0-beta.1` → `1c63a3a`, **anotado**, **sin mover**.
 - `git status` limpio · `git diff --check` sin errores · 0 secretos.
-- Commits de corrección (locales, en la rama):
+- Commits de corrección (locales, en la rama; **ninguno toca el tag**):
   `a480387` (Pillow + test de transiciones) · `3eabf21` (bytes verbatim de la
   gobernanza) · `f656d5b` (enlaces, rutas y `.env.example`) · `f0eb767`
-  (ciclo en frío) · `104489e` (autosuficiencia: clon limpio) · y el commit de
-  cierre con este informe y el checkpoint.
+  (ciclo en frío) · `104489e` (autosuficiencia: clon limpio) · `281b2a0`
+  (informe, checkpoint y herramientas) · `1edfcb4` (cierre: A5 17/17 y A2–A4
+  15/15) · `c1c2080` (checkpoint apuntando al estado verificado) · `727b2ab`
+  (comparación de lanzadores y revisión de enlaces del propio informe).
 - Al cerrar: **beta parada**, puertos 3000/8000 libres, 0 procesos huérfanos.
 
 ---

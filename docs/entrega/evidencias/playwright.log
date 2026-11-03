@@ -3,9 +3,9 @@
 # Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final\apps\web
 # Veredicto : PASA
 # Código de salida: 0
-# Duración  : 103 s
+# Duración  : 102 s
 # Nota      : 
-# Fecha     : 2026-11-03 11:32:48
+# Fecha     : 2026-11-03 18:15:18
 #
 [WebServer] 
 [WebServer] > neural-news-web@1.0.0-beta.1 start
@@ -16,35 +16,55 @@
 [WebServer]    - Network:      http://10.2.0.2:3000
 [WebServer] 
 [WebServer]  ✓ Starting...
-[WebServer]  ✓ Ready in 1061ms
+[WebServer]  ✓ Ready in 1156ms
 
 Running 8 tests using 1 worker
 
-  ok 1 [edge] › e2e\beta-journey.spec.ts:25:5 › beta: fuente → transcripción en cola → noticia → guion → estudio → montaje en cola (16.3s)
-  ok 2 [edge] › e2e\critical-flow.spec.ts:18:5 › recorrido crítico completo: fuente → noticias → guion → aprobación → lote → paquete (11.7s)
-  ok 3 [edge] › e2e\critical-flow.spec.ts:108:5 › la tabla de noticias muestra fecha real, verificación y duplicados posibles (8.4s)
-  ok 4 [edge] › e2e\critical-flow.spec.ts:119:5 › fuentes: reintento seguro y acción de analizar vídeo (11.7s)
-  ok 5 [edge] › e2e\critical-flow.spec.ts:135:5 › el diseño es usable en móvil (390 px) (8.5s)
+  ok 1 [edge] › e2e\beta-journey.spec.ts:25:5 › beta: fuente → transcripción en cola → noticia → guion → estudio → montaje en cola (15.6s)
+  ok 2 [edge] › e2e\critical-flow.spec.ts:18:5 › recorrido crítico completo: fuente → noticias → guion → aprobación → lote → paquete (11.2s)
+  ok 3 [edge] › e2e\critical-flow.spec.ts:108:5 › la tabla de noticias muestra fecha real, verificación y duplicados posibles (8.3s)
+  ok 4 [edge] › e2e\critical-flow.spec.ts:119:5 › fuentes: reintento seguro y acción de analizar vídeo (10.1s)
+  ok 5 [edge] › e2e\critical-flow.spec.ts:135:5 › el diseño es usable en móvil (390 px) (8.2s)
   ok 6 [edge] › e2e\critical-flow.spec.ts:154:5 › sin sesión, la web redirige al acceso (7.8s)
-  ok 7 [edge] › e2e\studio-reintegration.spec.ts:24:5 › studio: ocho etapas, guardado real y persistencia tras recargar (17.0s)
-  ok 8 [edge] › e2e\vertical-production.spec.ts:26:5 › producción vertical: director → prompt → paquete Flow → importar MP4 → aprobar (12.2s)
+  ok 7 [edge] › e2e\studio-reintegration.spec.ts:24:5 › studio: ocho etapas, guardado real y persistencia tras recargar (16.6s)
+  ok 8 [edge] › e2e\vertical-production.spec.ts:26:5 › producción vertical: director → prompt → paquete Flow → importar MP4 → aprobar (13.5s)
 
   8 passed (1.7m)
 npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
-[WebServer] {"ts": "2026-11-03T10:31:09.536464+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
-[WebServer] {"ts": "2026-11-03T10:31:09.536464+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
-[WebServer] {"ts": "2026-11-03T10:31:09.536464+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
-[WebServer] {"ts": "2026-11-03T10:31:09.537612+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
-[WebServer] {"ts": "2026-11-03T10:31:09.537612+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
-[WebServer] {"ts": "2026-11-03T10:31:09.537612+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
+[WebServer] {"ts": "2026-11-03T17:13:40.051837+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
+[WebServer] {"ts": "2026-11-03T17:13:40.051837+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
+[WebServer] {"ts": "2026-11-03T17:13:40.051837+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
+[WebServer] {"ts": "2026-11-03T17:13:40.051837+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
+[WebServer] {"ts": "2026-11-03T17:13:40.051837+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
+[WebServer] {"ts": "2026-11-03T17:13:40.051837+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
 [WebServer] INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 [WebServer] INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
 [WebServer] npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
-[WebServer] {"ts": "2026-11-03T10:31:12.186785+00:00", "level": "INFO", "logger": "__main__", "event": "worker.start", "message": "neural.news worker arrancado", "demo": true, "paid_services": false}
-[WebServer] {"ts": "2026-11-03T10:31:24.273820+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #250 (process_source) empieza", "job_id": 250, "job_type": "process_source", "attempt": 1}
-[WebServer] {"ts": "2026-11-03T10:31:24.339792+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #250 terminó como DONE", "job_id": 250, "status": "DONE", "duration_s": 0.063, "error": null, "error_kind": null}
-[WebServer] {"ts": "2026-11-03T10:31:38.468971+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #255 (process_source) empieza", "job_id": 255, "job_type": "process_source", "attempt": 1}
-[WebServer] {"ts": "2026-11-03T10:31:38.520152+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #255 terminó como DONE", "job_id": 255, "status": "DONE", "duration_s": 0.031, "error": null, "error_kind": null}
-[WebServer] {"ts": "2026-11-03T10:32:00.439302+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #258 (process_source) empieza", "job_id": 258, "job_type": "process_source", "attempt": 1}
-[WebServer] {"ts": "2026-11-03T10:32:00.580692+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #258 terminó como DONE", "job_id": 258, "status": "DONE", "duration_s": 0.032, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:13:42.480397+00:00", "level": "INFO", "logger": "__main__", "event": "worker.start", "message": "neural.news worker arrancado", "demo": true, "paid_services": false}
+[WebServer] {"ts": "2026-11-03T17:13:42.495034+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #332 (process_source) empieza", "job_id": 332, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:13:42.526190+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #332 terminó como DONE", "job_id": 332, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:13:54.593245+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #333 (process_source) empieza", "job_id": 333, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:13:54.621384+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #333 terminó como DONE", "job_id": 333, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:13:54.625760+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #334 (transcribe_source) empieza", "job_id": 334, "job_type": "transcribe_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:13:54.625760+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #334 terminó como DONE", "job_id": 334, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:13:56.643109+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #335 (research_story) empieza", "job_id": 335, "job_type": "research_story", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:13:56.658842+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #335 terminó como DONE", "job_id": 335, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:13:56.663092+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #336 (draft_script) empieza", "job_id": 336, "job_type": "draft_script", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:13:56.666843+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #336 terminó como DONE", "job_id": 336, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:13:59.685547+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #337 (build_montage) empieza", "job_id": 337, "job_type": "build_montage", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:13:59.709231+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #337 terminó como FAILED", "job_id": 337, "status": "FAILED", "duration_s": 0.016, "error": "MaterialFaltante: No hay ningún segmento renderizable", "error_kind": "material"}
+[WebServer] {"ts": "2026-11-03T17:14:08.761121+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #338 (process_source) empieza", "job_id": 338, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:14:08.786505+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #338 terminó como DONE", "job_id": 338, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:14:09.807197+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #339 (research_story) empieza", "job_id": 339, "job_type": "research_story", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:14:09.816886+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #339 terminó como DONE", "job_id": 339, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:14:09.833678+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #340 (draft_script) empieza", "job_id": 340, "job_type": "draft_script", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:14:09.838909+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #340 terminó como DONE", "job_id": 340, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:14:29.990879+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #341 (process_source) empieza", "job_id": 341, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:14:30.180942+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #341 terminó como DONE", "job_id": 341, "status": "DONE", "duration_s": 0.063, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:14:55.300424+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #342 (process_source) empieza", "job_id": 342, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:14:55.311445+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #342 terminó como DONE", "job_id": 342, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:15:10.463833+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #343 (process_source) empieza", "job_id": 343, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:15:10.654552+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #343 terminó como DONE", "job_id": 343, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T17:15:14.680689+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #344 (probe_media) empieza", "job_id": 344, "job_type": "probe_media", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T17:15:14.687257+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #344 terminó como DONE", "job_id": 344, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
 

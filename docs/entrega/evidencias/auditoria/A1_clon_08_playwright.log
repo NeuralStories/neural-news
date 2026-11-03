@@ -1,17 +1,17 @@
 === 08_playwright ===
 
-[13:15:06] --- 08_playwright ---
+[13:43:15] --- 08_playwright ---
 npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
 
 > neural-news-web@1.0.0-beta.1 e2e
 > playwright test
 
-[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
-[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
-[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
-[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
-[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
-[WebServer] {"ts": "2026-11-03T12:15:10.033258+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
+[WebServer] {"ts": "2026-11-03T12:43:19.533566+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
+[WebServer] {"ts": "2026-11-03T12:43:19.533566+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
+[WebServer] {"ts": "2026-11-03T12:43:19.533566+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
+[WebServer] {"ts": "2026-11-03T12:43:19.533566+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
+[WebServer] {"ts": "2026-11-03T12:43:19.533566+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
+[WebServer] {"ts": "2026-11-03T12:43:19.533566+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
 [WebServer] INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 [WebServer] INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
 [WebServer] npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
@@ -24,9 +24,44 @@ npm warn Unknown user config "@ai-sdk/openai". This will stop working in the nex
 [WebServer]    - Network:      http://10.2.0.2:3000
 [WebServer] 
 [WebServer]  ✓ Starting...
-[WebServer] {"ts": "2026-11-03T12:15:12.382521+00:00", "level": "INFO", "logger": "__main__", "event": "worker.start", "message": "neural.news worker arrancado", "demo": true, "paid_services": false}
-[WebServer] [Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id]
-Error: Process from config.webServer was not able to start. Exit code: 1
+[WebServer] {"ts": "2026-11-03T12:43:21.808771+00:00", "level": "INFO", "logger": "__main__", "event": "worker.start", "message": "neural.news worker arrancado", "demo": true, "paid_services": false}
+[WebServer]  ✓ Ready in 1015ms
 
+Running 8 tests using 1 worker
 
-[13:15:12] 08_playwright -> exit 1
+[WebServer] {"ts": "2026-11-03T12:43:33.890452+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #263 (process_source) empieza", "job_id": 263, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:33.934052+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #263 terminó como DONE", "job_id": 263, "status": "DONE", "duration_s": 0.031, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:43:33.934052+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #264 (transcribe_source) empieza", "job_id": 264, "job_type": "transcribe_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:33.943443+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #264 terminó como DONE", "job_id": 264, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:43:35.960759+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #265 (research_story) empieza", "job_id": 265, "job_type": "research_story", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:35.981505+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #265 terminó como DONE", "job_id": 265, "status": "DONE", "duration_s": 0.031, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:43:35.981505+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #266 (draft_script) empieza", "job_id": 266, "job_type": "draft_script", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:35.997607+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #266 terminó como DONE", "job_id": 266, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:43:39.009161+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #267 (build_montage) empieza", "job_id": 267, "job_type": "build_montage", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:39.040054+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #267 terminó como FAILED", "job_id": 267, "status": "FAILED", "duration_s": 0.031, "error": "MaterialFaltante: No hay ningún segmento renderizable", "error_kind": "material"}
+  ok 1 [edge] › e2e\beta-journey.spec.ts:25:5 › beta: fuente → transcripción en cola → noticia → guion → estudio → montaje en cola (15.7s)
+[WebServer] {"ts": "2026-11-03T12:43:48.150994+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #268 (process_source) empieza", "job_id": 268, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:48.289132+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #268 terminó como DONE", "job_id": 268, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:43:50.355904+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #269 (research_story) empieza", "job_id": 269, "job_type": "research_story", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:50.388000+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #269 terminó como DONE", "job_id": 269, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:43:50.388000+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #270 (draft_script) empieza", "job_id": 270, "job_type": "draft_script", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:43:50.403934+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #270 terminó como DONE", "job_id": 270, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+  ok 2 [edge] › e2e\critical-flow.spec.ts:18:5 › recorrido crítico completo: fuente → noticias → guion → aprobación → lote → paquete (12.6s)
+  ok 3 [edge] › e2e\critical-flow.spec.ts:108:5 › la tabla de noticias muestra fecha real, verificación y duplicados posibles (8.3s)
+[WebServer] {"ts": "2026-11-03T12:44:09.559506+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #271 (process_source) empieza", "job_id": 271, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:44:09.639430+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #271 terminó como DONE", "job_id": 271, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+  ok 4 [edge] › e2e\critical-flow.spec.ts:119:5 › fuentes: reintento seguro y acción de analizar vídeo (9.6s)
+  ok 5 [edge] › e2e\critical-flow.spec.ts:135:5 › el diseño es usable en móvil (390 px) (8.4s)
+  ok 6 [edge] › e2e\critical-flow.spec.ts:154:5 › sin sesión, la web redirige al acceso (8.0s)
+[WebServer] {"ts": "2026-11-03T12:44:35.867087+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #272 (process_source) empieza", "job_id": 272, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:44:35.934631+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #272 terminó como DONE", "job_id": 272, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+  ok 7 [edge] › e2e\studio-reintegration.spec.ts:24:5 › studio: ocho etapas, guardado real y persistencia tras recargar (16.8s)
+[WebServer] {"ts": "2026-11-03T12:44:51.097864+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #273 (process_source) empieza", "job_id": 273, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:44:51.190835+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #273 terminó como DONE", "job_id": 273, "status": "DONE", "duration_s": 0.031, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T12:44:56.270625+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #274 (probe_media) empieza", "job_id": 274, "job_type": "probe_media", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T12:44:56.295966+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #274 terminó como DONE", "job_id": 274, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+  ok 8 [edge] › e2e\vertical-production.spec.ts:26:5 › producción vertical: director → prompt → paquete Flow → importar MP4 → aprobar (14.6s)
+
+  8 passed (1.7m)
+
+[13:45:00] 08_playwright -> exit 0

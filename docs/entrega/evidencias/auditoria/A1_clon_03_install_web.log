@@ -28,3 +28,18 @@ To address all issues (including breaking changes), run:
 
 Run `npm audit` for details.
 
+npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 326 packages, and audited 327 packages in 1m
+
+139 packages are looking for funding
+  run `npm fund` for details
+
+16 vulnerabilities (15 moderate, 1 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+

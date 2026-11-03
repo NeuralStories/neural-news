@@ -1,5 +1,8 @@
 === clonar ===
-[13:11:57] Se reutiliza el clon existente en C:/Users/haxth3/AppData/Local/Temp/beta-audit2
-[13:11:57] .env creado a partir de .env.example
-[13:12:10] Backend instalado en la venv del clon
-[13:12:45] Web instalada (npm ci)
+Cloning into 'C:/Users/haxth3/AppData/Local/Temp/beta-audit3'...
+done.
+
+[13:38:48] Clon creado en C:/Users/haxth3/AppData/Local/Temp/beta-audit3
+[13:38:48] .env creado a partir de .env.example
+[13:39:24] Backend instalado en la venv del clon
+[13:40:25] Web instalada (npm ci)

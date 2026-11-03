@@ -48,7 +48,7 @@ Debe mostrar la URL de la web, la de la API y «Salud: neural.news v1.0.0-beta.1
 | 2.6 | Abre el **Estudio** y revisa los 8 pasos | Cada paso carga su estado guardado (no se pierde al recargar) |
 | 2.7 | En «Guion», edita el texto y guarda; **aprueba** la versión | «Aprobar esta versión» funciona sobre la versión **más reciente** |
 | 2.8 | Vuelve a editar el guion **después** de aprobar | La aprobación queda **anulada** y la interfaz lo dice |
-| 2.9 | **Lotes → nuevo lote**, selecciona noticias y exporta | Se genera el paquete (ZIP con manifiesto JSON, guiones MD y storyboard) y se puede descargar |
+| 2.9 | **Lotes → nuevo lote**, selecciona **exactamente 5 o 10** noticias y exporta | Se genera el paquete (un ZIP con el manifiesto JSON, los guiones en Markdown y el storyboard dentro del manifiesto) y se puede descargar. Si no eliges exactamente 5 o 10, la API responde «Selecciona exactamente 10 noticias (has elegido N)». La exportación es **asíncrona**: el ZIP está listo cuando el trabajo termina |
 
 ## 3. Lo que la beta **no** debe hacer (pruebas negativas)
 
@@ -56,7 +56,7 @@ Debe mostrar la URL de la web, la de la API y «Salud: neural.news v1.0.0-beta.1
 |---|---|---|
 | 3.1 | Intenta aprobar un guion sin haberlo leído | No hay atajo: la aprobación exige una acción explícita sobre la versión concreta |
 | 3.2 | Busca una afirmación «confirmada» sin evidencia | No existe: sin evidencia, el estado es `UNVERIFIED` |
-| 3.3 | Mira `/ops` con el worker parado | En menos de un minuto aparece la alerta **«cola parada»** |
+| 3.3 | Mira `/ops` con el worker parado | Aparece la alerta **«cola_parada»**, pero **no al parar el worker**: avisa cuando hay **trabajos en cola que nadie recoge desde hace más de 5 minutos** (`MINUTOS_SIN_RECOGER`). Con el worker parado y trabajo pendiente, la alerta llega a los ~5–6 minutos |
 | 3.4 | Configura `NEURAL_PAID_SERVICES_ENABLED=false` con claves presentes | Ningún trabajo llama a un proveedor de pago: el presupuesto manda |
 | 3.5 | Intenta arrancar la web **sin** `NEURAL_ENV=local` | El build **falla** con un mensaje que dice qué definir (no compila a medias) |
 

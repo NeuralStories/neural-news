@@ -1,7 +1,7 @@
 [
   {
     "paso": "04_pytest",
-    "exit": 1
+    "exit": 0
   },
   {
     "paso": "05_typecheck",
@@ -13,15 +13,15 @@
   },
   {
     "paso": "07_build",
-    "exit": 1
+    "exit": 0
   },
   {
     "paso": "08_playwright",
-    "exit": 1
+    "exit": 0
   },
   {
     "paso": "09_arranque",
-    "exit": 1
+    "exit": 0
   },
   {
     "paso": "10_parada",

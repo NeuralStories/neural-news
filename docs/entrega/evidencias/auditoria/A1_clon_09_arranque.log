@@ -1,22 +1,21 @@
 === arranque en 8001/3001 ===
-[beta] api → PID 11076 (registro: storage/logs/api.log)
-[beta] worker → PID 36816 (registro: storage/logs/worker.log)
-[beta] web → PID 19028 (registro: storage/logs/web.log)
+[beta] api → PID 33264 (registro: storage/logs/api.log)
+[beta] worker → PID 27748 (registro: storage/logs/worker.log)
+[beta] web → PID 24064 (registro: storage/logs/web.log)
 [beta] Esperando a que respondan…
 [beta] API: respondiendo → http://127.0.0.1:8001 (puerto 8001)
-[beta] Web: SIN RESPONDER → http://localhost:3001 (puerto 3001)
-[beta] PIDs: C:\Users\haxth3\AppData\Local\Temp\beta-audit2\storage\logs\beta.pids.json
+[beta] Web: respondiendo → http://localhost:3001 (puerto 3001)
+[beta] PIDs: C:\Users\haxth3\AppData\Local\Temp\beta-audit3\storage\logs\beta.pids.json
 [beta] Para parar: node scripts/beta_stop.mjs
-[beta] Algún servicio no responde: revisa storage/logs/.
 
 salud={"ok":true,"app":"neural.news","version":"1.0.0-beta.1","demo_mode":true,"env":"local","checks":{"database":{"ok":true,"detalle":"responde"},"ffmpeg":{"ok":true,"detalle":"ffmpeg version 8.1.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers","necesario_para":"montaje con FFmpeg"},"yt_dlp":{"ok":false,"detalle":"no está disponible (opcional: sólo transcripción automática)","necesario_para":"transcripción automática de YouTube"},"providers":{"ok":true,"detalle":"0 de 5 con clave","items":"    "},"presupuesto":{"ok":true,"detalle":"modo demo: los servicios de pago están bloqueados"}}}
-web_status_ok=False
-[13:16:22] Arranque: api=True version=1.0.0-beta.1 web200=False (exit 1)
-[beta] Detenido api (PID 11076).
-[beta] Detenido worker (PID 36816).
-[beta] web (PID 19028) ya no estaba en marcha.
+web_status_ok=True
+[13:45:06] Arranque: api=True version=1.0.0-beta.1 web200=True (exit 0)
+[beta] Detenido api (PID 33264).
+[beta] worker (PID 27748) ya no estaba en marcha.
+[beta] Detenido web (PID 24064).
 [beta] Pila parada (2 proceso(s)).
 [beta] Sin procesos huérfanos.
 
 procesos_restantes=0 puertos_libres=True
-[13:16:28] Parada: procesos restantes=0 puertos libres=True
+[13:45:12] Parada: procesos restantes=0 puertos libres=True

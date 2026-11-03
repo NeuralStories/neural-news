@@ -5,7 +5,7 @@
 # Código de salida: 0
 # Duración  : 32 s
 # Nota      : 
-# Fecha     : 2026-11-03 11:31:05
+# Fecha     : 2026-11-03 18:13:35
 #
 
 > neural-news-web@1.0.0-beta.1 build
@@ -14,7 +14,7 @@
    ▲ Next.js 15.5.28
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 3.8s
+ ✓ Compiled successfully in 2.8s
    Linting and checking validity of types ...
    Collecting page data ...
    Generating static pages (0/11) ...

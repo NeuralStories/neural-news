@@ -642,3 +642,90 @@ una pila levantada por el propio Playwright y no contra un servidor heredado.
 `tools/auditar_evidencias.py` queda como paso de CI (`La evidencia que cita el plan maestro
 existe de verdad`) y con test propio (`tests/test_evidencias_plan.py`).
 
+---
+
+## 2026-11-03 — Auditoría independiente de la beta: 14 defectos reales (B41–B56)
+
+El encargo era **refutar** las afirmaciones de la entrega de `1.0.0-beta.1`, no
+añadir funcionalidad. Informe: `docs/entrega/AUDITORIA_BETA.md`; evidencias:
+`docs/entrega/evidencias/auditoria/`.
+
+**B41 (ALTA) — `Pillow` usada y no declarada.** `services/graphics.py` la usa con
+import perezozo: la aplicación arranca, pero **dos tests no se pueden recoger** y
+`pytest` aborta la suite entera (exit 2). En el equipo de entrega la suite pasaba
+porque la biblioteca estaba instalada de más en el Python del sistema.
+
+**B42 (ALTA) — `cryptography` usada y no declarada.** `apps/api/src/neuralnews/vault.py` la usa
+para la bóveda de secretos; **ocho tests de la bóveda fallan** en instalación
+limpia. El código incluso llevaba el comentario «dependencia declarada», que
+era falso.
+
+**B43 (ALTA) — `fastapi` sin acotar.** El equipo tenía 0.115.8 y el clon limpio
+0.162.0: el contrato OpenAPI versionado solo cuadra con una de las dos, así que
+`docs/openapi.json` era irreproducible. Se acota a `>=0.115,<0.116`.
+
+**B44 (ALTA) — los generadores escribían CRLF en Windows.** `write_text()` sin
+`newline` escribe CRLF: el manifiesto del Studio, `estados.generado.ts`,
+`PLAN.md` y `openapi.json` describían bytes que **no son** los que se versionan
+(LF). El test «artefacto al día» fallaba en cualquier clon limpio.
+
+**B45 (MEDIA) — 76 ficheros con CRLF obsoleto.** `core.autocrlf=true` hace que git
+los dé por limpios (normaliza al comparar) mientras el disco tiene otros bytes.
+Se alinean byte a byte con lo versionado.
+
+**B46 (ALTA) — la gobernanza entregada no cuadra con su propio manifiesto.**
+Solo **151 de 223** entradas del
+`docs/gobernanza/03_EVIDENCIA_FLOW/revision_unificacion/extract/REVISION_UNIFICACION/MANIFIESTO_ARCHIVOS_SHA256.txt`
+coincidían: al confirmar, git convirtió CRLF→LF y la evidencia dejó de ser la
+que describe su manifiesto. Se restituyen los bytes originales y se fijan con
+`.gitattributes` (`-text whitespace=cr-at-eol`).
+
+**B47 (MEDIA) — el manifiesto lista un RAR que el repositorio no puede contener**
+(el `.gitignore` excluye `*.rar` a propósito: «0 binarios sueltos»). El test de
+integridad lo daba por alterado en cualquier clon limpio. Excepción documentada.
+
+**B48 (ALTA) — `bootstrap.ps1` no construía la web.** La guía (bootstrap + start)
+dejaba la web sin build, y `next start` no arranca sin él: siguiendo la guía, la
+web nunca se levantaba. `bootstrap.ps1` construye con `NEURAL_ENV=local` y
+`start.ps1` avisa si falta el build.
+
+**B49 (MEDIA) — `beta_start.mjs` con puertos fijos.** Las URLs de espera eran
+configurables (`NEURAL_BETA_API_URL`) pero los puertos no: era posible esperar en
+un puerto que nadie escuchaba y no se podía arrancar la pila en otro puerto
+(imposible para un clon limpio junto a la beta).
+
+**B50 (ALTA) — la parada dejaba huérfanos.** `beta_stop.mjs` solo paraba los PIDs
+registrados y `start.ps1` no registraba ninguno: una pila arrancada con
+`start.ps1` sobrevivía a `beta_stop.mjs`. Ahora los dos lanzadores comparten el
+fichero de PIDs y `beta_stop.mjs` barre además los procesos del proyecto.
+
+**B51 (MEDIA) — 9 destinos rotos en la documentación**, incluido el nombre del
+directorio de gobernanza (`docs/gobernence` en el README) y las rutas del
+workspace, que no resolvían desde la raíz del repositorio.
+
+**B52 (BAJA) — `.env.example` no recogía 8 variables** que el código lee
+(`NEURAL_BETA_*`, `NEURAL_E2E_*`, `NEURAL_FFMPEG_DIR`, `NEURAL_YTDLP_PATH`).
+
+**B53 (BAJA) — `.gitignore` con reglas muertas**: apuntaban a `docs/governance/`
+(nombre inexistente), así que un `.env` o un `.sqlite` dentro de
+`docs/gobernanza/` **no** se ignoraba.
+
+**B54 (MEDIA) — `test_transiciones_movimiento.py` usaba `ff_dir` sin comprobar**:
+`UnboundLocalError` en clon limpio. Se salta con motivo si no hay FFmpeg.
+
+**B55 (BAJA) — la guía no decía que un lote exige exactamente 5 o 10 noticias.**
+Con los 3 datos de demo, el paso 2.9 no se puede hacer: se documenta.
+
+**B56 (BAJA) — la guía prometía la alerta «cola parada» «en menos de un minuto» al
+parar el worker.** La alerta real (`cola_parada`) avisa de **trabajos en cola sin
+recoger desde hace más de 5 minutos**: no es un detector de worker parado. Se
+corrige el texto de la guía.
+
+**Lección (la tercera de esta serie):** *la suite verde en el equipo de entrega
+no dice nada sobre si el repositorio es instalable*. Las tres primeras entregas
+dieron por bueno un repositorio que, en un clon limpio, **no se podía instalar**
+(`Pillow`, `cryptography`) y **no arrancaba** (sin build de la web). La prueba
+que faltaba no era otra prueba: era **clonar, instalar y arrancar desde cero**,
+y comparar **los bytes versionados** con los que había en el disco. Los
+comprobadores nuevos (`tools/auditoria/`) hacen exactamente eso.
+

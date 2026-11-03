@@ -1,10 +1,10 @@
 === 05_typecheck ===
 
-[13:14:49] --- 05_typecheck ---
+[13:42:21] --- 05_typecheck ---
 npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
 
 > neural-news-web@1.0.0-beta.1 typecheck
 > tsc --noEmit
 
 
-[13:14:56] 05_typecheck -> exit 0
+[13:42:27] 05_typecheck -> exit 0

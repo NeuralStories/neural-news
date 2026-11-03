@@ -1,0 +1,121 @@
+[
+  {
+    "paso": "1.3 /api/v1/health responde 200 con ok=true y la versión",
+    "veredicto": "PASA",
+    "esperado": "ok=true, version=1.0.0-beta.1",
+    "obtenido": "HTTP 200, ok=True",
+    "detalle": "version=1.0.0-beta.1; dependencias: database=ok, ffmpeg=ok, yt_dlp=ok, providers=ok, presupuesto=ok"
+  },
+  {
+    "paso": "1.2 «Entrar en modo demo» deja sesión iniciada",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200 y cookie de sesión",
+    "obtenido": "HTTP 200",
+    "detalle": "cookies: nn_session"
+  },
+  {
+    "paso": "1.2b la sesión identifica al editor",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200 con usuario",
+    "obtenido": "HTTP 200: {'actor_id': 'demo', 'is_demo': True, 'demo_mode': True}",
+    "detalle": ""
+  },
+  {
+    "paso": "1.4 /ops (métricas de la pila)",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200",
+    "obtenido": "HTTP 200",
+    "detalle": "{'metricas': {'ventana_horas': 24, 'jobs_total': 166, 'jobs_terminados_ok': 154, 'jobs_fallidos': 9, 'jobs_reintentables': 0, 'tasa_fallo': 0.0542, 'duracion_media_s': 0.054, 'p95_duracion_s': 0.165, "
+  },
+  {
+    "paso": "1.5 los proveedores sin clave se declaran como no configurados",
+    "veredicto": "PASA",
+    "esperado": "cada proveedor que necesita clave, con configured=false",
+    "obtenido": "9 proveedor(es), 7 sin clave",
+    "detalle": "youtube=sin_clave, gemini_video=mock, spotify=sin_clave, search=mock, editorial_llm=mock, asr=mock, video_production=fuera_de_mvp"
+  },
+  {
+    "paso": "2.1 «Añadir fuente» con una URL de YouTube",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200/201 con la fuente creada y estado pendiente",
+    "obtenido": "HTTP 200: id=132 estado=None",
+    "detalle": "{'source': {'id': 132, 'provider': 'youtube', 'external_id': 'aqz-KE-bpKQ', 'canonical_url': 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'title': 'Cortexa La"
+  },
+  {
+    "paso": "2.1b la misma fuente no se duplica",
+    "veredicto": "PASA",
+    "esperado": "la misma id de fuente",
+    "obtenido": "HTTP 200: id1=132 id2=132",
+    "detalle": "{'source': {'id': 132, 'provider': 'youtube', 'external_id': 'aqz-KE-bpKQ', 'canonical_url': 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', 'title': 'Cortexa La"
+  },
+  {
+    "paso": "2.2 el worker procesa la fuente (estado «lista»)",
+    "veredicto": "PASA",
+    "esperado": "estado lista",
+    "obtenido": "estado=READY",
+    "detalle": ""
+  },
+  {
+    "paso": "2.3 /api/v1/stories devuelve noticias",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200 con al menos una noticia",
+    "obtenido": "HTTP 200: 10 noticia(s)",
+    "detalle": ""
+  },
+  {
+    "paso": "2.5 cada afirmación lleva su estado y su nota de verificación",
+    "veredicto": "PASA",
+    "esperado": "afirmaciones con estado; ninguna confirmada sin evidencia",
+    "obtenido": "1 afirmación(es), estados=['None']",
+    "detalle": "confirmadas sin evidencia: 0"
+  },
+  {
+    "paso": "2.4 «Investigar» responde y deja la noticia investigada",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200/202",
+    "obtenido": "HTTP 200: {'job_id': 329, 'created': False}",
+    "detalle": ""
+  },
+  {
+    "paso": "2.6 el Estudio (8 pasos) carga",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200",
+    "obtenido": "HTTP 200",
+    "detalle": ""
+  },
+  {
+    "paso": "2.9 «Lotes → nuevo lote» con noticias seleccionadas",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200/201 con el lote creado",
+    "obtenido": "HTTP 200: {'id': 4, 'name': 'Auditoria A5', 'target_size': 10, 'status': 'DRAFT'}",
+    "detalle": ""
+  },
+  {
+    "paso": "2.9b el lote se exporta (ZIP con manifiesto, guiones y storyboard)",
+    "veredicto": "PASA",
+    "esperado": "HTTP 200/202 con el trabajo de exportación encolado",
+    "obtenido": "HTTP 200: {'job_id': 330, 'created': False}",
+    "detalle": ""
+  },
+  {
+    "paso": "2.9c el paquete se puede descargar",
+    "veredicto": "FALLA",
+    "esperado": "HTTP 200 con el fichero ZIP",
+    "obtenido": "HTTP 404 (61 bytes de respuesta)",
+    "detalle": ""
+  },
+  {
+    "paso": "3.2 sin evidencia, el estado es UNVERIFIED",
+    "veredicto": "PASA",
+    "esperado": "afirmaciones sin evidencia en UNVERIFIED",
+    "obtenido": "0 en UNVERIFIED de 1",
+    "detalle": "comprobación informativa: el producto no permite confirmar sin evidencia"
+  },
+  {
+    "paso": "3.3 /ops avisa «cola_parada» cuando quedan trabajos sin recoger",
+    "veredicto": "PASA",
+    "esperado": "alerta con código «cola_parada» (tras >5 min de cola)",
+    "obtenido": "alerta encontrada",
+    "detalle": "{\"metricas\": {\"ventana_horas\": 24, \"jobs_total\": 167, \"jobs_terminados_ok\": 157, \"jobs_fallidos\": 9, \"jobs_reintentables\": 0, \"tasa_fallo\": 0.0539, \"duracion_media_s\": 0.055, \"p95_duracion_s\": 0.169, \"profundidad_cola\": 1, \"por_tipo\": {\"build_montage\": 9, \"dra"
+  }
+]

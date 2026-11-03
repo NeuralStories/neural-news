@@ -170,10 +170,17 @@ comprobar(
 );
 // El estado beta se declara una sola vez (con el alias en snake_case, que en
 // markdown va entre acentos graves: «`estado_beta`: BETA_LISTA»).
+//
+// Los valores admitidos son los tres veredictos del contrato de auditoría:
+// BETA_CONFIRMADA, BETA_CON_DEFECTOS_CORREGIDOS y BETA_NO_REPRODUCIBLE.
+// Antes solo se aceptaba BETA_LISTA, y con ello la comprobación fallaba con
+// un checkpoint honesto tras una auditoría con defectos corregidos.
+const ESTADOS_BETA = ['BETA_CONFIRMADA', 'BETA_CON_DEFECTOS_CORREGIDOS', 'BETA_NO_REPRODUCIBLE'];
 const declaraciones = estado.match(/estado_beta`?\s*:\s*`?\s*(BETA_[A-Z_]+)/g) || [];
+const valorDeclarado = (declaraciones[0] || '').match(/(BETA_[A-Z_]+)/);
 comprobar(
   'el checkpoint declara un único estado beta',
-  declaraciones.length === 1 && /estado_beta`?\s*:\s*`?\s*BETA_LISTA/.test(estado),
+  declaraciones.length === 1 && ESTADOS_BETA.includes(valorDeclarado?.[1]),
   declaraciones.join(', ') || 'sin declaración',
 );
 

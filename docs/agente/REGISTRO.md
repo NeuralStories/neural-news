@@ -462,6 +462,62 @@ invisible: al menos queda decidido y revisable.
 
 ---
 
+## 2026-11-03 — Entrega de la beta local `1.0.0-beta.1`
+
+**Qué se hizo.** El repositorio pasó a llamarse `proyecto final` (raíz real de Git), declaró su
+versión beta, se documentó la entrega y se verificó con **14 comprobaciones automáticas** que
+dejan veredicto, código de salida y log íntegro.
+
+**Decisiones propias (con motivo):**
+
+1. **La gobernanza entra como `docs/gobernance/`, no como `newsV2/`.** `newsV2/` estaba **fuera**
+   del repositorio (era hermana de la carpeta del producto): no se puede versionar lo que no está
+   dentro. Se movió el contenido real (328 ficheros, 15,2 MB) y se redirigieron las referencias
+   documentadas (README, `ESTADO_REAL.md`, `IMPLEMENTACION_REALIZADA.md`, plan y registro).
+2. **Lo que no cumplía DEC-01 se queda fuera y se anota**: `newsV2/neural-news/` es una **copia
+   duplicada del repositorio con su propio `.git`** (un `.git` anidado no se puede versionar: git
+   lo trataría como submódulo) y `newsV2/flow-recovery/node_modules` contiene un binario de
+   105 MB. No se ha tocado nada de ahí.
+3. **El manifiesto SHA-256 de la gobernanza se conserva tal cual**, aunque 3 de sus ficheros ya no
+   cuadren: se selló el 2026-10-30 y después se actualizaron legítimamente (el backlog en la
+   Fase 0 y el registro de decisiones con R-26). Re-sellarlo escondería el cambio; el test
+   documenta la excepción de forma explícita.
+4. **La verificación se ejecuta con la configuración local del proyecto** (el `.env`): sin
+   `NEURAL_ENV=local` el build falla **por diseño** (gate G5) y la comprobación no distinguiría
+   «producto roto» de «entorno sin configurar».
+
+**Hallazgos reales encontrados y corregidos en la entrega:**
+
+- **B29**: `PUT /settings/score-weights` devolvía **500** con un peso no numérico; ahora **422**
+  con el peso que falla.
+- **B30**: `scripts/start.ps1` no arrancaba la web en Windows (`npm.cmd` no es un ejecutable
+  Win32).
+- **B31**: el CI usaba `working-directory: neural-news`, que no existe al hacer checkout.
+- **B32**: importar la aplicación **aplica migraciones**: `exportar_openapi.py` con la pila en
+  marcha dejaba la API sin responder. Ahora usa una base aislada.
+- **B33**: `scripts/stop.ps1` no paraba el servidor del E2E (el patrón con barras normales no
+  encajaba con la ruta de Next en Windows).
+- **B34**: `tools/scan_secrets.py` **reventaba** al imprimir un hallazgo en una consola cp1252, y
+  escaneaba el árbol de trabajo en vez de lo versionado (falsos positivos con el `.env` local).
+- **B35**: la auditoría de evidencia del plan no comprobaba nada (comparaba la extensión con
+  punto y la rama de símbolos se encontraba a sí misma en la documentación). Detectado al
+  inyectar un fichero falso: rojo y luego verde.
+- **B36**: cuatro `print()` del worker rompían el log JSON por evento; ahora son eventos
+  `log_event`.
+- **B37**: Next infería la raíz del workspace buscando un `package-lock.json` hacia arriba y cogía
+  uno suelto del directorio personal: `outputFileTracingRoot` la fija en la raíz del repositorio.
+- **B38**: la beta no tenía icono: el navegador pedía `/favicon.ico` y recibía un 404 en cada
+  carga. Añadido `app/icon.svg`.
+
+**Además:** la prueba real de **PostgreSQL** dejó de estar en *skip* (hay un PostgreSQL local:
+`scripts/preparar_base_pg_test.py` crea una base aislada) → la suite queda en **386 tests y
+0 skip**.
+
+**Estado final:** `BETA_LISTA`. Rama `release/1.0.0-beta.1`, commit `1c63a3a`, tag anotado
+`v1.0.0-beta.1`, **sin push**.
+
+---
+
 ## 2026-11-02 — B32 y B33: dos formas de romper la ejecución sin tocar el producto
 
 Estos dos hallazgos no son del producto: son de **orquestación**, y los dos costaron

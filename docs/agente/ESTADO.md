@@ -1,166 +1,173 @@
 # ESTADO — checkpoint de neural.news
 
-> Checkpoint del plan maestro. Cada campo obligatorio aparece con su nombre
-> **exacto**; los dos contratos de `/goal` que se han usado en el proyecto
-> nombran los campos de forma distinta, así que se dan **los dos_alias**
-> (`ultima_actualizacion` = «Última actualización», etc.). Sin secretos ni
-> credenciales.
+> Checkpoint de la entrega de la beta `1.0.0-beta.1`. Cada campo obligatorio
+> aparece con su nombre **exacto**; los dos contratos de `/goal` usados en el
+> proyecto nombran los campos de forma distinta, así que se dan **los dos
+> alias** (`ultima_actualizacion` = «Última actualización», etc.). Sin secretos
+> ni credenciales.
 
 ## Última actualización
 
-**2026-11-02 23:56 (Europe/Madrid)** — Plan maestro **cerrado**: las 89 filas de tarea están
-**COMPLETADAS** (0 PENDIENTES, 0 BLOQUEADAS). HEAD `0034bc9` en `beta/v1`, empujado a
-`origin beta/v1`, árbol de trabajo limpio.
+**2026-11-03 10:05 (Europe/Madrid)** — **Beta local entregada.** Las ocho fases
+(F1–F8) están COMPLETADAS con evidencia. Rama `release/1.0.0-beta.1`, commit
+`1c63a3a` («release: v1.0.0-beta.1»), tag anotado `v1.0.0-beta.1`. **Sin push**
+(el remoto remoto queda aplazado por decisión del propietario).
 
-- `ultima_actualizacion`: 2026-11-02 23:56 (Europe/Madrid)
-- `plan_actual`: `neural-news/docs/agente/PLAN_MAESTRO.md` (89 filas de tarea, todas
-  COMPLETADAS) · espejo con casillas en `docs/agente/PLAN.md` (89/89 `[x]`) · cola operativa en
-  `docs/agente/TAREAS.md` · decisiones y hallazgos en `docs/agente/REGISTRO.md`
+- `ultima_actualizacion`: 2026-11-03 10:05 (Europe/Madrid)
+- `plan_actual`: `neural-news/docs/agente/PLAN_MAESTRO.md` → ahora
+  `proyecto final/docs/agente/PLAN_MAESTRO.md` (89 filas de tarea + el bloque
+  «ENTREGA BETA» con F1–F8 y las decisiones) · espejo con casillas en
+  `docs/agente/PLAN.md` (89/89 `[x]`) · cola operativa en `docs/agente/TAREAS.md`
+  · decisiones en `docs/agente/REGISTRO.md`
 
 ## Capacidades disponibles
 
-- **archivos persistentes:** ✓ (repositorio, `docs/agente/` y `evidence/` en disco)
-- **internet:** ✓ (disponible; no ha hecho falta en este tramo)
-- **cuota consultable:** **NO** — no existe herramienta de consulta de cuota ni de saldo
-- **programador (tareas programadas):** ✓ (`cron_create` verificado; `cron_read list` → **0
-  tareas**, nada pendiente de cancelar) · **pero** el `supervisor.sh` es Bash con `crontab` y en
-  esta máquina **WSL no arranca** (virtualización desactivada): **no hay ningún `crontab`
-  configurado**
+- **archivos persistentes:** ✓ (repositorio y `docs/` en disco)
+- **internet:** ✓ (`GET https://registry.npmjs.org/-/ping` → 200)
+- **cuota consultable:** **NO** — no existe herramienta de consulta de cuota ni de
+  saldo
+- **programador de tareas:** ✓ existe (`cron_create`/`cron_read`, **0 tareas**
+  activas) · **pero** el `supervisor.sh` es Bash y **WSL no arranca** en esta
+  máquina (virtualización desactivada): **no hay ningún `crontab` configurado**
+- **PostgreSQL local:** ✓ (16.9 en `pglocal/`, puerto 5433) — permite ejecutar la
+  prueba real de PostgreSQL (0 skips)
 
-- `capacidades_disponibles`: archivos ✓ · internet ✓ · cuota **no consultable** ·
-  programador externo ✓ (sin tareas activas) · Bash/WSL **parcial** (WSL no arranca)
+- `capacidades`: archivos ✓ · internet ✓ · cuota **no consultable** · programador
+  externo ✓ (sin tareas) · Bash/WSL **parcial** (WSL no arranca) · PostgreSQL
+  local ✓
 
 ## Tarea actual y estado
 
-**Ninguna: PLAN COMPLETADO.** Las 89 filas de `PLAN_MAESTRO.md` están COMPLETADAS con evidencia y
-las 89 casillas de `PLAN.md` están marcadas `[x]`.
+**Ninguna: BETA ENTREGADA.** El plan maestro tiene sus 89 filas COMPLETADAS y las
+8 fases de la entrega COMPLETADAS.
 
-- `task_actual`: ninguna — plan completado (0 PENDIENTES, 0 BLOQUEADAS), commit `0034bc9`
+- `tarea_actual`: ninguna — beta entregada (0 PENDIENTES, 0 BLOQUEADAS),
+  commit `1c63a3a`, tag `v1.0.0-beta.1`
 
 ## Último punto verificado
 
-**Verificación final completa, ejecutada sobre el árbol limpio en `0034bc9`:**
+**Verificación final completa, ejecutada sobre el árbol limpio (14/14 PASA):**
 
-- `python -m pytest tests -q` → **exit 0** (**343 tests**, 1 skip)
-- `npx tsc --noEmit` → **0 errores** · `npx eslint .` → **0 problemas** · `npm run build` → compila
-- `npx playwright test` → **8 passed** (la pila la levanta el propio Playwright:
-  `reuseExistingServer: false`)
-- `python tools/check_clases.py` → **0 reimplementaciones en línea**, 0 clases inexistentes
-- `python tools/check_a11y.py` → **0 bloqueantes · 0 avisos**
-- `python tools/scan_secrets.py .` → **0 hallazgos de secretos**
-- `python tools/generate_estados.py --check`, `tools/generar_manifiesto_studio.py --check` y
-  `tools/generar_plan_casillas.py --check` → **al día**
-- `python tools/exportar_openapi.py --check` → el contrato exportado coincide con el servido
-- `python tools/auditar_evidencias.py` → **84 referencias de evidencia comprobadas y existentes**,
-  9 fuera del repositorio (artefactos sellados), 3 que no son rutas, **0 desfasadas**: ninguna fila
-  completada cita un fichero que ya no exista
-- `scripts\bootstrap.ps1` ejecutado de extremo a extremo → **exit 0** (requisitos → backend → `.env`
-  → migraciones → web → suite verde) y `scripts\start.ps1` levanta API+worker+web (web 200)
+- `python -m pytest tests -q` → **exit 0** — **386 tests, 0 skip** (la prueba
+  real de PostgreSQL se ejecuta: `scripts/preparar_base_pg_test.py` crea una
+  base aislada)
+- `npx tsc --noEmit` → **0 errores** · `npx eslint .` → **0 problemas**
+- `npm run build` → **compila** (modo producción, con `NEURAL_ENV=local`)
+- `npx playwright test` → **8 passed** (la pila la levanta el propio Playwright)
+- `tools/check_clases.py` → 0 reimplementaciones en línea, 0 clases inexistentes
+- `tools/check_a11y.py` → **0 bloqueantes · 0 avisos**
+- `tools/scan_secrets.py .` → **0 hallazgos** (árbol **e** historial de git)
+- `generate_estados` / `generar_manifiesto_studio` / `generar_plan_casillas`
+  `--check` → **al día**
+- `tools/exportar_openapi.py --check` → el contrato exportado coincide con el servido
+- `tools/auditar_evidencias.py` → **0 referencias desfasadas** en el plan
+- `git diff --check` → sin errores de espacios
+- `tools/check_build_produccion.py` → **0 hallazgos** de depuración, credenciales
+  ni datos personales en el build
+- **Lanzamiento (F6)**: web **http://localhost:3000** → 200; API
+  **http://127.0.0.1:8000/api/v1/health** → 200 con
+  `{"ok": true, "version": "1.0.0-beta.1"}` (base, FFmpeg y yt-dlp OK);
+  prueba rápida de Playwright contra esa instancia → **7/7 PASA**
 
-- `ultimo_punto_verificado`: lo anterior, todo ejecutado en esta sesión sobre `0034bc9`
+Evidencia íntegra (un log por comando) en `docs/entrega/evidencias/` y resumen en
+`docs/entrega/RESUMEN_VERIFICACIONES.md`.
+
+- `ultimo_punto_verificado`: lo anterior, todo ejecutado en esta entrega sobre el
+  commit `1c63a3a`
 
 ## Trabajo a medias sin verificar
 
-**Nada.** El árbol de trabajo está limpio (0 ficheros modificados) y todo lo verificado está
-commiteado y empujado.
+**Nada.** El árbol estaba limpio tras el commit de la beta.
 
-- `trabajo_parcial_sin_verificar`: ninguno
+- `trabajo_sin_verificar`: ninguno
 
 ## Archivos modificados desde el último checkpoint
 
-Ninguno desde `0034bc9`. En los lotes anteriores: `docs/agente/{PLAN_MAESTRO,PLAN,REGISTRO,
-ESTADO,TAREAS}.md`, `docs/adr/ADR-022-descartes-del-port.md`, `docs/openapi.json`,
-`evidence/instalacion_desde_clon_limpio.md`, `PROMPT.md`, `supervisor.sh`.
+Ninguno desde `1c63a3a` (el commit de cierre `docs: cierre beta` recoge solo
+este checkpoint, el registro y el plan).
 
-- `archivos_tocados_desde_checkpoint`: ninguno (checkpoint = commit `0034bc9`)
+- `archivos_modificados`: ninguno (checkpoint = commit `1c63a3a`)
 
 ## Bloqueos y lo que se necesita para resolverlos
 
-**Ninguno técnico.** No hay ninguna task BLOQUEADA: lo que queda son decisiones del propietario
-(«Autorizaciones pendientes») y dos puntos de entorno del supervisor.
+**Ninguno.** No hay ninguna fase BLOQUEADA.
 
 - `bloqueos`: ninguno
 
 ## Autorizaciones pendientes
 
-1. **R-26 — la gobernanza (`newsV2/`) sigue fuera de todo repositorio** (sin historial, sin
-   remoto, sin copia). Decidir: (a) moverla a `neural-news/docs/governance/` y redirigir las
-   referencias documentadas, o (b) versionarla como repositorio propio. Cambia el alcance de rutas
-   ya documentadas → **no se ejecuta sin autorización**.
-2. **Crear un remoto remoto de git** (GitHub/GitLab): el remoto actual es local
-   (`.remotes/neural-news.git`). Acción externa → **no se ejecuta sin autorización**.
-3. **`SUP-01`** — rellenar `AGENTE_CMD` en `supervisor.sh:5` con el comando real de esta máquina
-   (ahora es un marcador de posición).
-4. **`SUP-02`** — el `supervisor.sh` es Bash y usa `crontab`: en Windows hace falta WSL o Git Bash
-   con cron. **No se ha configurado ningún `crontab`** porque no hay un programador real
-   verificado en este sistema.
+1. **`DEC-02` — remoto remoto de git (GitHub/GitLab)**: el remoto actual es local
+   (`.remotes/neural-news.git`). Crear uno externo y publicar la rama de la beta
+   son **acciones externas**: requieren autorización expresa.
+2. **`SUP-01` — `AGENTE_CMD` del supervisor**: `supervisor.sh:5` sigue siendo un
+   marcador de posición (`tu_comando_de_agente_aqui --prompt PROMPT.md`).
+3. **`SUP-02` — `crontab`/WSL**: hace falta un entorno con WSL o Git Bash y cron;
+   en esta máquina WSL no arranca (virtualización desactivada).
 
-- `autorizaciones_pendientes`: las cuatro anteriores
+- `autorizaciones_pendientes`: las tres anteriores (ninguna bloquea la beta)
 
 ## Cuota y fecha de reinicio
 
-**desconocido.** No existe herramienta de consulta de cuota o de saldo en esta plataforma, así que
-**no se inventa ningún dato**. Lo único comprobable es que la ejecución continúa (requests y
-tiempo acumulados) sin que se haya notificado ningún límite; eso no es un saldo.
+**desconocido.** No existe herramienta de consulta de cuota o de saldo en esta
+plataforma, así que **no se inventa ningún dato**. Lo único comprobable es que la
+ejecución continuó (requests y tiempo acumulados) sin que se notificara ningún
+límite; eso no es un saldo.
 
 - `cuota`: desconocido
 
+## Estado beta
+
+**`BETA_LISTA`** — F1–F8 COMPLETADAS con evidencia. Lo **aplazado** (DEC-02,
+SUP-01, SUP-02) no impide este estado y está en el informe final.
+
+- `estado_beta`: BETA_LISTA
+
 ## Reanudación automática
 
-**NO_DISPONIBLE** — no procede: el proyecto está **COMPLETADO** y el contrato exige cancelar los
-relanzamientos pendientes en ese caso. El mecanismo externo **sí existe** (`cron_create`, comprobado
-con `cron_read list` → **0 tareas programadas**, así que no hay nada que cancelar) y **no** se
-configura: relanzar un plan cerrado no aporta nada. Si se autoriza alguna de las decisiones
-anteriores, ahí sí procede un relanzamiento real con la instrucción «lee `docs/agente/ESTADO.md` y
-continúa desde `PRÓXIMA ACCIÓN EXACTA`».
+**NO_DISPONIBLE** — no procede: la entrega está **cerrada** y el contrato exige
+cancelar los relanzamientos pendientes. El mecanismo externo **sí** existe
+(`cron_create`; `cron_read list` → **0 tareas**, nada que cancelar) y **no** se
+configura: relanzar un plan cerrado no aporta nada. Si el propietario decide
+retomar (por ejemplo, autorizando `DEC-02`), se configura **una** reanudación con
+la instrucción «lee `docs/agente/ESTADO.md` y continúa desde
+`proxima_accion_exacta`».
 
 - `reanudacion_automatica`: NO_DISPONIBLE
 
-**Supervisor externo (añadido por petición del propietario).** `PROMPT.md` (el prompt del agente) y
-`supervisor.sh` (el guion de Bash que lo relanza, lee sus etiquetas y gestiona la espera por cuota)
-están en la raíz del repositorio. El supervisor usa `docs/agente/PLAN.md` —el espejo con casillas
-del plan maestro— y su marcador `docs/agente/TERMINADO`. `docs/agente/TERMINADO` está **ignorado
-por git** (es estado de máquina): por eso el supervisor no relanza. **Para retomar el trabajo
-pendiente, bórralo.**
-
 ## PRÓXIMA ACCIÓN EXACTA
 
-**Esperar la decisión del propietario** sobre `docs/agente/TAREAS.md` → filas `DEC-01` (mover
-`newsV2/` al control de versiones) y `DEC-02` (crear un remoto remoto), y `SUP-01`/`SUP-02`
-(activar el supervisor). Si se autoriza alguna, ejecutarla **empezando por `DEC-01`**: mover
-`C:\Users\haxth3\Documents\NeuralStories\newsV2` a
-`C:\Users\haxth3\Documents\NeuralStories\neural-news\docs\governance`, redirigir las rutas
-documentadas que la apuntan (`ESTADO_REAL.md:5`, `docs/agente/PLAN_MAESTRO.md`,
-`docs/agente/REGISTRO.md`, `newsV2/06_TASKS/TASK_NN-108_VERSION_BETA.md`) y commitearlo en
-`beta/v1`.
+**Esperar la decisión del propietario** sobre `docs/agente/TAREAS.md` → filas
+`DEC-02` (remoto remoto), `SUP-01` (`AGENTE_CMD`) y `SUP-02` (crontab/WSL). Si se
+autoriza `DEC-02`, ejecutarla **empezando por** crear el remoto y añadirlo como
+`origin`, **sin publicar** la rama `release/1.0.0-beta.1` hasta que se pida
+expresamente (la sección 0 del `/goal` prohíbe el push).
 
-- `proxima_accion_exacta`: la anterior (una sola acción concreta y ejecutable)
+- `proxima_accion_exacta`: la anterior (una sola acción concreta)
 
 ---
 
 ## Contexto mínimo para reanudar sin historial
 
-- **Repositorio activo:** `C:\Users\haxth3\Documents\NeuralStories\neural-news`, rama `beta/v1`.
-  Remoto: `.remotes/neural-news.git` (local). HEAD `0034bc9`.
-- **Hermano congelado:** `archive/neuralnews-20261101/` (fuera de git por `.gitignore`): es
+- **Repositorio activo:** `C:\Users\haxth3\Documents\NeuralStories\proyecto final`,
+  rama `release/1.0.0-beta.1`, commit `1c63a3a`, tag `v1.0.0-beta.1`. Remoto:
+  `.remotes/neural-news.git` (local). Rama de desarrollo: `beta/v1` @ `4a6d5db`.
+- **Hermano congelado:** `archive/neuralnews-20261101/` (fuera de git): es
   **fuente de capacidades**, no un segundo producto (ADR-016).
 - **Cómo se verifica todo (comandos que funcionan tal cual):**
 
 ```powershell
-cd "C:\Users\haxth3\Documents\NeuralStories\neural-news"
-python -m pytest tests -q                     # exit 0 (343 tests)
-python tools\check_clases.py                  # 0 reimplementaciones
-python tools\check_a11y.py                    # 0 bloqueantes
-python tools\scan_secrets.py .                # 0 hallazgos
-python tools\auditar_evidencias.py            # 0 desfasadas
-cd apps\web
-npx tsc --noEmit                              # 0 errores
-npx eslint .                                  # 0 problemas
-npx playwright test                            # 8 passed (levanta su propia pila)
+cd "C:\Users\haxth3\Documents\NeuralStories\proyecto final"
+pwsh -NoProfile -File docs\entrega\verificar.ps1   # 14 comprobaciones con veredicto y log
+python -m pytest tests -q                          # 386 tests, 0 skip
+node scripts\beta_start.mjs                        # arrancar la beta (multiplataforma)
+node scripts\beta_stop.mjs                         # pararla
 ```
 
-- **Dos reglas aprendidas que evitan perder otra tanda de E2E** (ver `REGISTRO.md`, B32/B33):
-  1. **Antes de `npm run build` o de un E2E: `scripts\stop.ps1`.** Un `next start` vivo sirve un
-     build viejo → chunks 400 → la página no hidrata → el E2E se agota esperando un botón.
-  2. **Ninguna herramienta que importe la aplicación puede tocar la base viva** (importar la
-     aplicación aplica migraciones): `tools/exportar_openapi.py` usa ya una base aislada.
+- **Tres reglas aprendidas que evitan perder otra tanda de E2E** (ver `REGISTRO.md`,
+  B32/B33/B34):
+  1. **Antes de `npm run build` o de un E2E: `scripts\stop.ps1`.** Un `next start` vivo
+     sirve un build viejo → chunks 400 → la página no hidrata.
+  2. **Ninguna herramienta que importe la aplicación puede tocar la base viva**
+     (importarla aplica migraciones): `tools/exportar_openapi.py` usa una base aislada.
+  3. **La carpeta con espacio no es el problema**: si una herramienta falla por la ruta,
+     se arregla la herramienta (`pathlib`, comillas), no el nombre de la carpeta.

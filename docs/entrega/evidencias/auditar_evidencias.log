@@ -1,0 +1,13 @@
+﻿# Comprobación: auditar_evidencias
+# Comando   : python tools\auditar_evidencias.py
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 14 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:55:32
+#
+
+84 referencias comprobadas y existentes · 9 fuera del repositorio (artefactos sellados) · 3 que no son rutas · 0 desfasadas
+OK: ninguna fila cita un fichero que ya no exista.
+

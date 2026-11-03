@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "provider_config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider_id",
+    "type",
+    "name",
+    "endpoint",
+    "model_id",
+    "task",
+    "enabled",
+    "secret_state",
+    "paid_allowed",
+    "cost_ceiling",
+    "currency",
+    "config_revision"
+  ],
+  "properties": {
+    "provider_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "LOCAL_OPENAI_COMPATIBLE",
+        "REMOTE_OPENAI_COMPATIBLE",
+        "OFFICIAL_GEMINI",
+        "OFFICIAL_OPENAI",
+        "FLOW_MANUAL_ONLY"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "endpoint": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "model_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "task": {
+      "type": "string",
+      "enum": [
+        "extract",
+        "group",
+        "claims",
+        "summarise",
+        "write",
+        "direct",
+        "prompt",
+        "tts",
+        "video"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "secret_state": {
+      "type": "string",
+      "enum": [
+        "NOT_SET",
+        "SET",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "paid_allowed": {
+      "type": "boolean"
+    },
+    "cost_ceiling": {
+      "type": "number",
+      "minimum": 0
+    },
+    "currency": {
+      "type": "string",
+      "enum": [
+        "EUR",
+        "USD"
+      ]
+    },
+    "config_revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

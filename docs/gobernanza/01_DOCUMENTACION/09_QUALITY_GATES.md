@@ -1,0 +1,23 @@
+# Verificación integral y puertas de aceptación
+
+## Pruebas de calidad (código y producto)
+Los estados de QA son `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, `DEMO_ONLY`. Una prueba marcada `PASS` exige comando ejecutado, versión, timestamp, archivos capturados y resultado reproducible. Una demostración con fixture local no prueba un proveedor externo.
+
+### Gates
+- **G0**: repo nuevo, no modificación de anterior, hash del RAR y 17 fuentes verificados, entorno registrado, Git y locks.
+- **G1**: DB y migraciones create/rollback, API auth, media privado, secretos ocultos, configuración y costos por defecto 0.
+- **G2**: una noticia DEMO se guarda con snapshot, claims y evidencia; reabrir; importada no queda verificada; conflicto de versiones 409.
+- **G3**: guion con versión, beats y plan visual mixto; continuidad exacta del texto; no obligar 8s; gráfico con datos tipados, y dependencias.
+- **G4**: identidad `maxDotAi` pendiente se mantiene sin inventar referencia; video de usuario sin lip-sync engañoso; paquete Flow manual no dice llamada API ejecutada.
+- **G5**: UI única accesible y reabre tras reinicio; job persistente idempotente y bloqueo de gasto sin autorización.
+- **G6**: tests unit/integration/E2E/security, backup/restore en DB desechable, compilación/build, escaneo de secretos y evidencias.
+- **G7**: entrega `WHAT_WORKS`, `WHAT_IS_DEMO`, `WHAT_IS_BLOCKED`, `WHAT_WAS_NOT_RUN`, lista de tareas, comandos y siguiente paso.
+
+### Casos específicos obligatorios (se añaden al backlog CSV)
+`Q-001` fuente HTML con texto que ordena revelar claves -> texto tratado como datos; `Q-002` link de fuente a 127.0.0.1/169.254.169.254/redirect -> bloqueado; `Q-003` importación DEMO -> claims UNVERIFIED; `Q-004` mismo RSS dos veces -> no duplica; `Q-005` dos comunicados copia -> independencia correcta; `Q-006` contradicción 120 vs 130 -> DISPUTED y aprobación bloqueada; `Q-007` guion revisado no mantiene aprobación; `Q-008` dos editores conflicto 409; `Q-009` guion 53s y tomas 8s+... -> texto íntegro; `Q-010` ratio 9:16/16:9 y safe zones; `Q-011` gráfico unidad y cifra idéntica a claim; `Q-012` dato cambiado -> invalidación de gráficos/rótulos/locución; `Q-013` maxDotAi sin medio -> BLOCKED sin retrato sustituto; `Q-014` nombre histórico no aparece en prompt operativo nuevo; `Q-015` URL demo stock no aprueba biblioteca; `Q-016` mediaId Flow sin archivo disponible -> instrucción manual, no adjunto ficticio; `Q-017` vídeo del usuario con audio no pertinente -> no sincronizar labios nuevos; `Q-018` material sin derechos -> bloqueado render final; `Q-019` admin vs editor test clave; `Q-020` GET/list/log no devuelve secreto; `Q-021` master key ausente -> bloqueo seguro; `Q-022` presupuesto 0 => 0 llamadas pagadas; `Q-023` reintento remoto incierto no doble gasto; `Q-024` 2 workers reclaman jobs sin duplicar; `Q-025` expiración lease recupera tarea idempotente; `Q-026` backup+restore DB en limpio; `Q-027` persistencia después refresh y reinicio; `Q-028` export Flow contiene prompt EN/ES y hashes reales o PENDING; `Q-029` un clip faltante impide VIDEO_FINAL; `Q-030` ffprobe verifica duración/formato de archivo final; `Q-031` vídeo DEMO se ve como DEMO; `Q-032` sitio no tiene iframe a otra app; `Q-033` móvil 390px, teclado, contraste y foco; `Q-034` fuente con fecha de publicación diferente de fecha de captura preserva ambas; `Q-035` no almacena contraseña/clave en .git/log ni exports; `Q-036` route/endpoint config revision llega al worker; `Q-037` sin precios no autoejecuta pago; `Q-038` lote 5/10 mantiene orden; `Q-039` cambio de ratio no invalida hechos; `Q-040` publicación externa requiere confirmación humana.
+
+## Banco editorial propuesto
+Dataset de **mínimo 30 casos curados** antes de automatizar contenido real: 5 verificados con 2 fuentes independientes, 5 rumores/filtraciones, 5 benchmarks con metodología incompleta, 5 noticias duplicadas/actualizadas, 5 conflictos de cifras/fechas y 5 prompt injections/extractos maliciosos. Versionar `case_id`, entrada textual licenciada, etiquetas `expected_claim_status`, fuentes y criterios; no subir contenido sensible a proveedor no autorizado. Medir precisión de citas y tasa de afirmaciones sin respaldo. Umbrales numéricos se fijan con revisión del dataset, no inventar resultados.
+
+## Pruebas visuales
+Muestreo humano de 12 planos por modo, comprobar identidad, rostro, plató, voz, rótulos, 9:16 recorte, efectos sin pérdida vocal, glitch no abusivo, continuidad de luz. No etiquetar «coherencia alta» sin una muestra real. Ficha de aprobación con comentarios para aprender preferencias sin modificar reglas globales automáticamente.

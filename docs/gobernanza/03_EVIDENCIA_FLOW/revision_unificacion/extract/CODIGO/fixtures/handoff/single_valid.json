@@ -1,0 +1,59 @@
+{
+  "schema_version": "production_handoff.v1",
+  "handoff_id": "ejemplo-single-anonimizado-001",
+  "created_at": "2026-10-28T11:00:00+00:00",
+  "mode": "single",
+  "output_format": "9:16",
+  "style_profile": {
+    "profile_id": "neuralnews-canon-v1",
+    "character_id": "neuraldotai",
+    "studio_id": "crt_original_vertical",
+    "voice_id": "algenib"
+  },
+  "stories": [
+    {
+      "story_id": "101",
+      "revision": 1,
+      "title": "Ejemplo anonimizado: avances en modelos de lenguaje abiertos",
+      "summary": "Tres avances recientes en modelos de lenguaje abiertos: destilación más barata, inferencia eficiente y pruebas estandarizadas de consumo energético.",
+      "language": "es-ES",
+      "approved_script": "Buenas tardes, hoy analizamos tres avances recientes en modelos de lenguaje abiertos.\n\nPrimero: las técnicas de destilación han reducido el coste de inferencia de los modelos pequeños, y varios laboratorios han publicado resultados comparables con una fracción de los parámetros.\n\nY para cerrar: la comunidad ha empezado a estandarizar pruebas de eficiencia energética, un paso clave para comparar sistemas de forma transparente. Esto ha sido NeuralStories News.",
+      "script_version_id": 12,
+      "content_hash": "f02b354c9ba0d0730c72dac042103eb90522ec05b5122d9fbcda0fb0f038624d",
+      "sources": [
+        {
+          "title": "Ejemplo anonimizado: artículo de análisis sectorial",
+          "url": "https://www.ejemplo-anonimizado.es/articulo/modelos-abiertos-2026",
+          "accessed_at": "2026-10-27T09:15:00+00:00",
+          "provider": "web_rss",
+          "external_id": null,
+          "relevance": "primary",
+          "published_at": "2026-10-26T18:00:00+00:00"
+        },
+        {
+          "title": "Ejemplo anonimizado: charla técnica sobre eficiencia de inferencia",
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ0",
+          "accessed_at": "2026-10-27T10:02:00+00:00",
+          "provider": "youtube",
+          "external_id": "dQw4w9WgXcQ0",
+          "relevance": "supporting",
+          "published_at": "2026-10-20T12:00:00+00:00"
+        },
+        {
+          "title": "Ejemplo anonimizado: notas aportadas por el equipo editorial",
+          "url": null,
+          "accessed_at": "2026-10-27T11:40:00+00:00",
+          "provider": "manual",
+          "external_id": null,
+          "relevance": "mention",
+          "published_at": null
+        }
+      ],
+      "editorial_approval": {
+        "status": "approved",
+        "approved_by": "editor-demo",
+        "approved_at": "2026-10-28T10:30:00+00:00"
+      }
+    }
+  ]
+}

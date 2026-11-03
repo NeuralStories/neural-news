@@ -5,7 +5,7 @@
 > **NO APROBADO — PENDIENTE DE REVISIÓN DEL PROPIETARIO.** Instantánea inmutable entregada para revisión; nada se fusiona a `main` ni se da por definitivo hasta aprobación explícita. **Todo el desarrollo y la operación son sin Docker**, con PostgreSQL local de binarios nativos.
 
 Este documento resume qué se implementó, cómo arrancarlo y qué evidencia lo respalda. El detalle
-fase a fase está en `TASK_NN-107_REINTEGRACION_FLOW.md` (newsV2) y el estado honesto módulo a
+fase a fase está en `TASK_NN-107_REINTEGRACION_FLOW.md` (docs/governanza) y el estado honesto módulo a
 módulo en `ESTADO_REAL.md`.
 
 ---

@@ -1,0 +1,12 @@
+﻿# Comprobación: check_a11y
+# Comando   : python tools\check_a11y.py
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 2 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:55:13
+#
+
+0 bloqueantes · 0 avisos (botones sin nombre accesible, imágenes sin alt, campos sin etiqueta)
+

@@ -1,0 +1,56 @@
+﻿# Comprobación: playwright
+# Comando   : npx playwright test
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final\apps\web
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 99 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:55:09
+#
+[WebServer] 
+[WebServer] > neural-news-web@1.0.0-beta.1 start
+[WebServer] > next start -p 3000
+[WebServer] 
+[WebServer]    ▲ Next.js 15.5.28
+[WebServer]    - Local:        http://localhost:3000
+[WebServer]    - Network:      http://10.2.0.2:3000
+[WebServer] 
+[WebServer]  ✓ Starting...
+[WebServer]  ✓ Ready in 1033ms
+
+Running 8 tests using 1 worker
+
+  ok 1 [edge] › e2e\beta-journey.spec.ts:25:5 › beta: fuente → transcripción en cola → noticia → guion → estudio → montaje en cola (14.2s)
+  ok 2 [edge] › e2e\critical-flow.spec.ts:18:5 › recorrido crítico completo: fuente → noticias → guion → aprobación → lote → paquete (11.9s)
+  ok 3 [edge] › e2e\critical-flow.spec.ts:108:5 › la tabla de noticias muestra fecha real, verificación y duplicados posibles (8.2s)
+  ok 4 [edge] › e2e\critical-flow.spec.ts:119:5 › fuentes: reintento seguro y acción de analizar vídeo (8.7s)
+  ok 5 [edge] › e2e\critical-flow.spec.ts:135:5 › el diseño es usable en móvil (390 px) (8.2s)
+  ok 6 [edge] › e2e\critical-flow.spec.ts:154:5 › sin sesión, la web redirige al acceso (7.8s)
+  ok 7 [edge] › e2e\studio-reintegration.spec.ts:24:5 › studio: ocho etapas, guardado real y persistencia tras recargar (17.1s)
+  ok 8 [edge] › e2e\vertical-production.spec.ts:26:5 › producción vertical: director → prompt → paquete Flow → importar MP4 → aprobar (13.0s)
+
+  8 passed (1.6m)
+npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] {"ts": "2026-11-03T08:53:34.744168+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
+[WebServer] {"ts": "2026-11-03T08:53:34.745166+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
+[WebServer] {"ts": "2026-11-03T08:53:34.745166+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
+[WebServer] {"ts": "2026-11-03T08:53:34.745166+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
+[WebServer] {"ts": "2026-11-03T08:53:34.745166+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
+[WebServer] {"ts": "2026-11-03T08:53:34.745166+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
+[WebServer] INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+[WebServer] INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+[WebServer] npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] {"ts": "2026-11-03T08:53:37.271907+00:00", "level": "INFO", "logger": "__main__", "event": "worker.start", "message": "neural.news worker arrancado", "demo": true, "paid_services": false}
+[WebServer] {"ts": "2026-11-03T08:53:48.339505+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #238 (process_source) empieza", "job_id": 238, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T08:53:48.381762+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #238 terminó como DONE", "job_id": 238, "status": "DONE", "duration_s": 0.047, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T08:54:02.702344+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #243 (process_source) empieza", "job_id": 243, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T08:54:02.799872+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #243 terminó como DONE", "job_id": 243, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T08:54:03.805522+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #244 (research_story) empieza", "job_id": 244, "job_type": "research_story", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T08:54:03.822611+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #244 terminó como DONE", "job_id": 244, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T08:54:03.825820+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #245 (draft_script) empieza", "job_id": 245, "job_type": "draft_script", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T08:54:03.838265+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #245 terminó como DONE", "job_id": 245, "status": "DONE", "duration_s": 0.0, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T08:54:47.134686+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #247 (process_source) empieza", "job_id": 247, "job_type": "process_source", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T08:54:47.214512+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #247 terminó como DONE", "job_id": 247, "status": "DONE", "duration_s": 0.015, "error": null, "error_kind": null}
+[WebServer] {"ts": "2026-11-03T08:55:06.355870+00:00", "level": "INFO", "logger": "__main__", "event": "job.start", "message": "job #249 (probe_media) empieza", "job_id": 249, "job_type": "probe_media", "attempt": 1}
+[WebServer] {"ts": "2026-11-03T08:55:06.366743+00:00", "level": "INFO", "logger": "__main__", "event": "job.done", "message": "job #249 terminó como DONE", "job_id": 249, "status": "DONE", "duration_s": 0.016, "error": null, "error_kind": null}
+

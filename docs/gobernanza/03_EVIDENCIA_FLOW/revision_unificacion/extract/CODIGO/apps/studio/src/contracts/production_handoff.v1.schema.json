@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:neural-news:production-handoff:v1",
+  "title": "production_handoff.v1",
+  "description": "Snapshot de una o varias noticias con guion aprobado en origen, emitido por el motor editorial y consumido por NeuralStories Studio. Revisión del borrador inicial tras la auditoría de compatibilidad con los modelos editoriales reales (ver packages/contracts/AUDITORIA_CONTRATO.md): url de fuente opcional cuando la fuente no tiene enlace (manual sin URL), title de fuente anulable, accessed_at tomado de la fecha de registro de la fuente en el sistema editorial, y añadidos script_version_id y content_hash para verificación de integridad en el consumidor. Ningún dato obligatorio se inventa: si falta, la noticia se bloquea antes de emitir.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "handoff_id",
+    "created_at",
+    "mode",
+    "output_format",
+    "style_profile",
+    "stories"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "production_handoff.v1"
+    },
+    "handoff_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "single",
+        "batch"
+      ]
+    },
+    "output_format": {
+      "type": "string",
+      "enum": [
+        "9:16",
+        "16:9"
+      ]
+    },
+    "style_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "character_id",
+        "studio_id",
+        "voice_id"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "character_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "studio_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "voice_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/story"
+      }
+    }
+  },
+  "$defs": {
+    "story": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "story_id",
+        "revision",
+        "title",
+        "summary",
+        "language",
+        "approved_script",
+        "script_version_id",
+        "content_hash",
+        "sources",
+        "editorial_approval"
+      ],
+      "properties": {
+        "story_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "const": "es-ES"
+        },
+        "approved_script": {
+          "type": "string",
+          "minLength": 1
+        },
+        "script_version_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "accessed_at"
+            ],
+            "anyOf": [
+              {
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "external_id"
+                ],
+                "properties": {
+                  "external_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "title": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uri",
+                "pattern": "^https?://"
+              },
+              "accessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "provider": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "youtube",
+                  "spotify",
+                  "web_rss",
+                  "manual",
+                  null
+                ]
+              },
+              "external_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              },
+              "relevance": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "primary",
+                  "supporting",
+                  "mention",
+                  null
+                ]
+              },
+              "published_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "storyboard": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Escenas preliminares orientativas del guion vigente. Opacas para el contrato en v1; Studio decide cómo usarlas."
+        },
+        "editorial_approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "approved_by",
+            "approved_at"
+          ],
+          "properties": {
+            "status": {
+              "const": "approved"
+            },
+            "approved_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "approved_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "single"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stories": {
+            "minItems": 1,
+            "maxItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "batch"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "stories": {
+            "oneOf": [
+              {
+                "minItems": 5,
+                "maxItems": 5
+              },
+              {
+                "minItems": 10,
+                "maxItems": 10
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

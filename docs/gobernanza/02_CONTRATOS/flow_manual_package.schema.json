@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "flow_manual_package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "package_id",
+    "plan_id",
+    "shot_id",
+    "character_name",
+    "character_handle_status",
+    "prompt_en",
+    "prompt_es",
+    "aspect_ratio",
+    "requested_seconds",
+    "duration_capability_verified",
+    "references",
+    "checklist",
+    "execution_mode",
+    "generation_result"
+  ],
+  "properties": {
+    "package_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "shot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "character_name": {
+      "const": "maxDotAi"
+    },
+    "character_handle_status": {
+      "type": "string",
+      "enum": [
+        "PENDING_VERIFICATION",
+        "VERIFIED"
+      ]
+    },
+    "prompt_en": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_es": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aspect_ratio": {
+      "type": "string",
+      "enum": [
+        "9:16",
+        "16:9"
+      ]
+    },
+    "requested_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "duration_capability_verified": {
+      "type": "boolean"
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference_id",
+          "status",
+          "sha256"
+        ],
+        "properties": {
+          "reference_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "PENDING",
+              "UNAVAILABLE"
+            ]
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "execution_mode": {
+      "const": "MANUAL"
+    },
+    "generation_result": {
+      "const": "NOT_EXECUTED"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+﻿# Comprobación: eslint
+# Comando   : npx eslint .
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final\apps\web
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 8 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:52:57
+#
+npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+

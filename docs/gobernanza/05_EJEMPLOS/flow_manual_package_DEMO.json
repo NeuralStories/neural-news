@@ -1,0 +1,28 @@
+{
+  "package_id": "flow-demo-1",
+  "plan_id": "plan-demo-1",
+  "shot_id": "shot-1",
+  "character_name": "maxDotAi",
+  "character_handle_status": "PENDING_VERIFICATION",
+  "prompt_en": "Prepare a presenter shot ONLY after the account owner has selected the verified maxDotAi character in Flow. Tight chest-up framing, continuous clear narration, no replacement performer. Original studio reference must be attached if approved; none is attached in this demo. No generation has been executed.",
+  "prompt_es": "Preparar un plano del presentador SOLO cuando el propietario seleccione el personaje maxDotAi verificado en Flow. Encuadre cerrado al pecho, narración continua, sin sustituir al presentador. Adjuntar referencia real aprobada del plató; en esta prueba no se adjunta ninguna. No se ha generado vídeo.",
+  "aspect_ratio": "9:16",
+  "requested_seconds": 8,
+  "duration_capability_verified": false,
+  "references": [
+    {
+      "reference_id": "canonical-character-pending",
+      "status": "PENDING",
+      "sha256": null
+    }
+  ],
+  "checklist": [
+    "Confirmar handle en Flow y seleccionar personaje real",
+    "Adjuntar fondo aprobado y verificar disponibilidad",
+    "Revisar duración soportada por modelo antes de generar",
+    "Comprobar rostro, voz y continuidad",
+    "Importar MP4 real y comprobar derechos"
+  ],
+  "execution_mode": "MANUAL",
+  "generation_result": "NOT_EXECUTED"
+}

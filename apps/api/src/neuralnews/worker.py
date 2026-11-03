@@ -102,7 +102,6 @@ def tick() -> int:
             job = db.get(Job, job_id)
             if job is None:
                 return 0
-            print(f"[worker] job #{job.id} tipo={job.type} intento={job.attempt}", flush=True)
             log_event(
                 logger,
                 "job.start",
@@ -117,13 +116,8 @@ def tick() -> int:
             duracion = round(time.monotonic() - inicio, 3)
     # Fuera de la transacción: escribir el estado no puede revertir un trabajo
     # que ya ha terminado.
-    try:
-        print(
-            f"[worker] job #{job_id} → {estado}" + (f" — {error}" if error else ""),
-            flush=True,
-        )
-    except Exception:  # noqa: BLE001 — el log nunca puede tumbar el bucle
-        pass
+    # (Antes aquí había un `print()`: rompía el log JSON por evento. El
+    # `log_event` de abajo dice lo mismo y con más campos.)
     log_event(
         logger,
         "job.done",
@@ -146,14 +140,18 @@ def run(poll_seconds: float = 1.0, once: bool = False) -> None:
     settings = get_settings()
     recovered = sweep_stale_jobs(settings.job_lease_seconds)
     if recovered:
-        print(
-            f"[worker] recuperados {len(recovered)} trabajos interrumpidos: {recovered}",
-            flush=True,
+        log_event(
+            logger,
+            "jobs.recovered",
+            f"recuperados {len(recovered)} trabajos interrumpidos",
+            recovered=recovered,
         )
-    print(
-        f"[worker] neural.news worker arrancado (demo={settings.demo_mode}, "
-        f"pagos={'ON' if settings.paid_services_enabled else 'OFF'})",
-        flush=True,
+    log_event(
+        logger,
+        "worker.start",
+        "neural.news worker arrancado",
+        demo=settings.demo_mode,
+        paid_services=settings.paid_services_enabled,
     )
     # Barrido periódico: un trabajo que se quedó con el lease caducado (worker
     # caído, proceso terminado) se recupera sin tener que reiniciar el worker.
@@ -167,10 +165,6 @@ def run(poll_seconds: float = 1.0, once: bool = False) -> None:
                 ultimo_barrido = ahora
                 vencidos = sweep_stale_jobs(settings.job_lease_seconds)
                 if vencidos:
-                    print(
-                        f"[worker] barrido: recuperados {len(vencidos)} trabajos vencidos: {vencidos}",
-                        flush=True,
-                    )
                     log_event(
                         logger,
                         "jobs.recovered",
@@ -178,11 +172,16 @@ def run(poll_seconds: float = 1.0, once: bool = False) -> None:
                         recovered=vencidos,
                     )
         except KeyboardInterrupt:
-            print("[worker] parando por interrupción del usuario", flush=True)
+            log_event(logger, "worker.stop", "worker detenido por interrupción del usuario")
             return
         except Exception as exc:  # noqa: BLE001 — el bucle nunca muere por un trabajo
             try:
-                print(f"[worker] error fuera del trabajo: {exc}", file=sys.stderr, flush=True)
+                log_event(
+                    logger,
+                    "worker.error",
+                    "error fuera del trabajo",
+                    error=str(exc),
+                )
             except Exception:  # noqa: BLE001 — ni el log puede tumbar el bucle
                 pass
             worked = 0

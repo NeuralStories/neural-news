@@ -12,10 +12,10 @@ publicación en plataformas, generación programática de imagen/vídeo, directo
 line/timeline/percentage, episodios compuestos, multiusuario, material real de MaxDotAi.
 
 **Documentos rectores:**
-- Plan rector: `newsV2/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md`
-- Tarea: `newsV2/06_TASKS/TASK_NN-108_VERSION_BETA.md`
+- Plan rector: `docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md`
+- Tarea: `docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md`
 - Estado real del producto: `neural-news/ESTADO_REAL.md`
-- Decisiones y riesgos: `newsV2/01_DOCUMENTACION/12_REGISTRO_DECISIONES_Y_RIESGOS.md`
+- Decisiones y riesgos: `docs/governance/01_DOCUMENTACION/12_REGISTRO_DECISIONES_Y_RIESGOS.md`
 
 **Escala de verificación (obligatoria en cada evidencia):**
 
@@ -183,6 +183,29 @@ Estado: `PENDIENTE` / `EN CURSO` / `BLOQUEADA` / `COMPLETADA`.
 
 ---
 
+## ENTREGA BETA — versión local `1.0.0-beta.1`
+
+Bloque **nuevo**, separado de las 89 tareas del plan (que están COMPLETADAS). Estos estados son
+**los de la entrega**: `COMPLETADA`, `BLOQUEADA` o `APLAZADA` (lo que se deja fuera a
+consciousemente, y que **no** impide cerrar la beta).
+
+| ID | Tarea | Depende de | Criterio de aceptación | Estado | Evidencia |
+|---|---|---|---|---|---|
+| **F1** | Diagnóstico sin modificar nada | — | Línea base registrada: ruta, rama, commit, estado, tipo de repo, versiones, venv, destino, capacidades | **COMPLETADA** | `docs/entrega/evidencias/F1_linea_base.md` — toplevel `.../neural-news`, rama `beta/v1`, commit `4a6d5db`, `git status` vacío, `.git` directorio, Node v24.20.0 / npm 11.19.0 / Python 3.12.6, sin `.venv`, destino `proyecto final` **inexistente**, internet 200, cuota **no consultable** |
+| **F2** | Reubicación a `proyecto final` | F1 | `git rev-parse --show-toplevel` = ruta final; commit e historial iguales; sin `proyecto final/proyecto final` | **COMPLETADA** | `Move-Item` de la carpeta completa (con `.git` y los ficheros sin commitear): `git rev-parse --show-toplevel` → `C:/Users/haxth3/Documents/NeuralStories/proyecto final`; commit `4a6d5db` intacto; historia idéntica; sin anidamiento. El paquete Python instalado en modo editable **guardaba la ruta absoluta**: reinstalado (`pip install -e ".[dev]"`) → `neuralnews` resuelve a la ruta nueva |
+| **F3** | Verificación técnica completa (con la ruta definitiva) | F2 | Todas las comprobaciones dan **PASA** con código de salida; logs en `docs/entrega/evidencias/` | **COMPLETADA** | `docs/entrega/verificar.ps1` (14 comprobaciones, cada una con veredicto, código de salida y log íntegro): **14/14 PASA** con la ruta **definitiva y con espacio**. `RESUMEN_VERIFICACIONES.md` + `pytest.log`, `tsc.log`, `eslint.log`, `build.log`, `playwright.log`… Dos correcciones del propio script: `$PSScriptRoot` vacío en el binding del parámetro (raíz resuelta en el cuerpo) y `ExitCode` nulo tras `WaitForExit(ms)` (se añade la sobrecarga sin timeout). El `build` falla **por diseño** sin `NEURAL_ENV=local` (gate G5): el script carga el `.env` local del proyecto |
+| **F4** | Preparación de la beta | F3 | Versión coherente en todo el repo; `CHANGELOG.md`; `.env.example` completo; DEC-01 aplicado; auditorías hechas; 0 secretos | **COMPLETADA** | Versión **1.0.0-beta.1** en `package.json`, `pyproject.toml`, `__version__` y `apps/web/lib/version.ts` (visible en el pie), con `docs/openapi.json` regenerado y `tests/test_version_coherente.py` (5). `CHANGELOG.md` (Keep a Changelog). `.env.example` **completo** (las 30 variables de `Settings`, antes faltaban 14) con `tests/test_env_example_completo.py` (33). **DEC-01**: la gobernanza entra como `docs/governance/` (328 ficheros, 15,2 MB, mayor 6,4 MB) con **0 hallazgos de secretos** y sin artefactos generados; `tests/test_gobernanza_integra.py` verifica su manifiesto SHA-256. Auditorías: `npm audit --omit=dev` → parche **next 15.1.6 → 15.5.28** (3 vulnerabilidades → 2, la crítica resuelta; las 2 restantes exigen Next 16, ruptura mayor → no se aplican). `pip-audit` **no está instalado** → registrado, no ejecutado. `tools/check_build_produccion.py` (nuevo): **0 hallazgos** de depuración, credenciales o datos personales en el build (y 4 `print()` del worker eliminados: rompían el log JSON por evento) |
+| **F5** | Documentación de la entrega | F4 | README + RESUMEN_COMPLETO + NOTAS_BETA + GUIA_PRUEBAS_BETA + INFORME_FINAL | **COMPLETADA** | `README.md` reescrito como guía única de la beta (qué es, qué se ha verificado, tecnologías, requisitos, instalación, variables, lanzamiento, pruebas, estructura, límites y enlaces). `docs/entrega/RESUMEN_COMPLETO.md` (propósito, alcance, arquitectura, flujos, integraciones, archivos clave, configuración, verificación, seguridad, limitaciones y hoja de ruta), `NOTAS_BETA.md` (novedades, 7 problemas conocidos, requisitos y expectativas) y `GUIA_PRUEBAS_BETA.md` (pruebas paso a paso + plantilla de incidencia). `INFORME_FINAL.md` en F8 |
+| **F6** | Lanzamiento local en modo producción | F3, F4 | La URL responde 200 y una prueba rápida de Playwright contra esa instancia pasa; comandos de arranque y parada documentados | **COMPLETADA** | `scripts/beta_start.mjs` / `scripts/beta_stop.mjs` (Node, **multiplataforma**: nada de Bash, WSL ni cron) + `scripts/start.ps1` / `stop.ps1` (Windows). Instancia en marcha: web **http://localhost:3000** (200), API **http://127.0.0.1:8000/api/v1/health** (200, `version: 1.0.0-beta.1`, BD/FFmpeg/yt-dlp OK). Prueba rápida `apps/web/scripts/prueba_rapida_beta.mjs`: **7/7 PASA** (acceso con modo demo, producto abierto, pie con la versión, sin errores de JS, sin recursos rotos y la API con la misma versión). Evidencia: `docs/entrega/evidencias/F6_lanzamiento.md` |
+| **F7** | Rama, commit y tag local de la beta | F3, F6 | Rama `release/1.0.0-beta.1`, commit `release: v1.0.0-beta.1`, tag anotado `v1.0.0-beta.1`; **sin push** | PENDIENTE | — |
+| **F8** | Cierre | F5, F7 | INFORME_FINAL, ESTADO.md y REGISTRO.md al día; estado beta final emitido | PENDIENTE | — |
+| **DEC-01** | `docs/gobernanza/` dentro de Git | F4 | Solo si cumple las 4 condiciones; lo que no, a `.gitignore` y anotado | **COMPLETADA** | La gobernanza real (328 ficheros, 15,2 MB) entra como `docs/gobernanza/`: **0 hallazgos** de `scan_secrets`, **ningún fichero > 50 MB** (mayor 6,4 MB) y **sin artefactos generados**. Lo que no cumplía queda **fuera y anotado**: `newsV2/neural-news/` (copia duplicada del repo con su propio `.git`, que no se puede versionar) y `newsV2/flow-recovery/node_modules` (con un `.node` de 105 MB). Referencias redirigidas a `docs/gobernanza/` en README, `ESTADO_REAL.md`, `IMPLEMENTACION_REALIZADA.md`, este plan y el registro |
+| **DEC-02** | Remoto GitHub/GitLab | — | Fuera de esta entrega | **APLAZADA** | Sección 0 del `/goal` |
+| **SUP-01** | `AGENTE_CMD` del supervisor | — | Fuera del alcance de la beta | **APLAZADA** | Sección 0 del `/goal` |
+| **SUP-02** | `crontab`/WSL | — | Fuera del alcance de la beta | **APLAZADA** | Sección 0 del `/goal` |
+
+---
+
 ## Ideas fuera de alcance (detectadas, no ejecutadas)
 
 Se anotan aquí para no perderlas y **no** se ejecutan sin decisión del propietario:
@@ -192,7 +215,7 @@ Se anotan aquí para no perderlas y **no** se ejecutan sin decisión del propiet
 2. **Caché distribuida de transcripciones**: hoy es por proceso; con más de una instancia habría que
    moverla a tabla.
 3. **Pruebas de carga**: el plan pide «p95 por endpoint», no un test de carga sostenida.
-4. **Migrar `newsV2/` al control de versiones** (riesgo R-26): requiere decisión porque cambia rutas
+4. **Migrar `docs/governance/` al control de versiones** (riesgo R-26): requiere decisión porque cambia rutas
    ya documentadas.
 5. **Crear un remoto remoto (GitHub/GitLab)**: es una acción externa; el remoto actual es local
    (`.remotes/neural-news.git`).
@@ -204,3 +227,19 @@ Se anotan aquí para no perderlas y **no** se ejecutan sin decisión del propiet
 8. **Lo que el encargo de la beta declara fuera de alcance**: TTS/voz real, render final con
    locución, publicación en plataformas, generación programática de imagen o vídeo, director LLM,
    gráficos, episodios compuestos, multiusuario y material real de MaxDotAi.
+
+### Ideas post-beta (detectadas durante la entrega, no ejecutadas)
+
+1. **Contexto de Python por proyecto**: la beta usa el Python del sistema con el paquete instalado
+   en modo editable, que guarda **rutas absolutas**: al mover la carpeta hay que reinstalar
+   (`pip install -e ".[dev]"`). Un `.venv` por proyecto evitaría ese problema y el de «un entorno
+   distinto en cada máquina».
+2. **`proyecto final` con espacio en la ruta**: obliga a que todas las rutas se construyan con
+   `pathlib` y comillas. Funciona, pero es una fuente clásico de fallos en scripts: cualquier
+   herramienta que se añada después debe probarse con esa ruta.
+3. **Réplica automática del remoto local**: el remoto es un *bare* en disco; una réplica en otro
+   disco (o un remoto real) evita perder todo con un fallo de disco.
+4. **Firma de los tags**: los tags anotados no están firmados; con GPG, la beta sería verificable
+   por terceros sin consultar al autor.
+5. **Prueba de humo del paquete exportado**: el E2E comprueba el recorrido en la web, pero no
+   reimporta el `.zip` de producción en una instalación limpia.

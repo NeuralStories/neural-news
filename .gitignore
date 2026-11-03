@@ -53,3 +53,14 @@ playwright-report/
 # supervisor relancee el agente; bórralo para retomar el trabajo pendiente.
 docs/agente/TERMINADO
 docs/agente/espera.txt
+
+# docs/governanza (DEC-01): la gobernanza SÍ se versiona, pero nunca sus
+# artefactos generados. Si alguien deja un node_modules, una base local o un
+# .env dentro, no deben acabar en el repositorio.
+docs/governanza/**/node_modules/
+docs/governanza/**/*.db
+docs/governanza/**/*.sqlite
+docs/governanza/**/.env
+docs/governanza/**/.next/
+docs/governanza/**/__pycache__/
+docs/governanza/**/.pytest_cache/

@@ -1,0 +1,49 @@
+﻿# Comprobación: build
+# Comando   : npm run build
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final\apps\web
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 33 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:53:30
+#
+
+> neural-news-web@1.0.0-beta.1 build
+> next build
+
+   ▲ Next.js 15.5.28
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 2.9s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/11) ...
+   Generating static pages (2/11) 
+   Generating static pages (5/11) 
+   Generating static pages (8/11) 
+ ✓ Generating static pages (11/11)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    2.09 kB         105 kB
+├ ○ /_not-found                            142 B         103 kB
+├ ○ /configuracion                       3.08 kB         106 kB
+├ ○ /estudio                             43.3 kB         146 kB
+├ ○ /fuentes                              5.6 kB         108 kB
+├ ○ /icon.svg                                0 B            0 B
+├ ○ /lotes                               4.45 kB         111 kB
+├ ○ /noticias                            4.01 kB         110 kB
+├ ƒ /noticias/[id]                       5.81 kB         112 kB
+└ ○ /ops                                 3.08 kB         106 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-b1e2483a7e02feee.js       46.6 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.99 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+

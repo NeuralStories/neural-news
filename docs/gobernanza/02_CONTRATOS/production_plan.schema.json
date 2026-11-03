@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "production_plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "story_id",
+    "script_revision_id",
+    "script_revision_hash",
+    "format",
+    "version",
+    "identity",
+    "narration",
+    "beats",
+    "shots",
+    "approval_state",
+    "revision_hash"
+  ],
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "story_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "script_revision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "script_revision_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "9:16",
+        "16:9"
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "name",
+        "status",
+        "asset_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "const": "maxDotAi"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPROVED"
+          ]
+        },
+        "asset_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "verified_flow_handle": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "narration": {
+      "type": "object",
+      "required": [
+        "text",
+        "target_wpm",
+        "estimated_ms",
+        "pauses_ms"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_wpm": {
+          "type": "number",
+          "minimum": 60,
+          "maximum": 260
+        },
+        "estimated_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pauses_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "beats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beat_id",
+          "text",
+          "start_ms",
+          "end_ms",
+          "claim_ids"
+        ],
+        "properties": {
+          "beat_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_ms": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "claim_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "shot_id",
+          "start_ms",
+          "end_ms",
+          "source_kind",
+          "status",
+          "purpose",
+          "claim_ids",
+          "asset_id"
+        ],
+        "properties": {
+          "shot_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_ms": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "source_kind": {
+            "type": "string",
+            "enum": [
+              "USER_VIDEO",
+              "FLOW_CHARACTER_MANUAL",
+              "REAL_BROLL",
+              "GENERATED_BROLL",
+              "EXACT_GRAPHIC",
+              "SCREEN_RECORDING",
+              "TITLE_CARD",
+              "PENDING"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "PENDING_ASSET",
+              "MANUAL",
+              "BLOCKED",
+              "DEMO"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "claim_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "asset_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "approval_state": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "REVIEW_REQUIRED",
+        "APPROVED",
+        "BLOCKED"
+      ]
+    },
+    "revision_hash": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,298 @@
+{
+  "artifact": "NEURAL.NEWS_NEW_INITIAL_PLAN",
+  "supersedes": "ALL_PRIOR_PLANS",
+  "created_at": "2026-10-30",
+  "file_count_excluding_manifest": 58,
+  "files": [
+    {
+      "path": "00_EMPIEZA_AQUI.md",
+      "bytes": 3735,
+      "sha256": "563f46d7da1826aa9e1a1c79bf125100306f2f1f73658c7bc4ea22507bb004fd"
+    },
+    {
+      "path": "01_DOCUMENTACION/01_PLAN_MAESTRO.md",
+      "bytes": 9615,
+      "sha256": "5ac0f39c52a07e99c52107409f34beed955e9ab5777c3dfbea77afc46c3d84b0"
+    },
+    {
+      "path": "01_DOCUMENTACION/02_AUDITORIA_FLOW.md",
+      "bytes": 5345,
+      "sha256": "54acc819fce5fbeb8f9039827bb5257d383ee1974df80d5b8b17da1c16887dd2"
+    },
+    {
+      "path": "01_DOCUMENTACION/03_ARQUITECTURA_Y_TECNOLOGIA.md",
+      "bytes": 5742,
+      "sha256": "f45372b4f15a35826e9ccc9824d92257570758d97fbb358529c24d6563535ec4"
+    },
+    {
+      "path": "01_DOCUMENTACION/04_PIPELINE_EDITORIAL.md",
+      "bytes": 5787,
+      "sha256": "ee38feaae26dff21a6e144d99e6e1fc9660ed574edf93c2f88fe521ab66d3e2c"
+    },
+    {
+      "path": "01_DOCUMENTACION/05_PRODUCCION_Y_MAXDOTAI.md",
+      "bytes": 8038,
+      "sha256": "f06a346d65931ee466c600a3937412b4f72a895fb548023851c36a4ce4135bc0"
+    },
+    {
+      "path": "01_DOCUMENTACION/06_DATOS_APIS_CONFIG.md",
+      "bytes": 8407,
+      "sha256": "f2757b412ee3073921cff35808e2857f9479528a5fb8d018269a86bc80d13c60"
+    },
+    {
+      "path": "01_DOCUMENTACION/07_UX_Y_PANTALLAS.md",
+      "bytes": 4510,
+      "sha256": "70091c0693cd1e5e58d2d28e922df14d6c82832852c7e9890eea1ef953750447"
+    },
+    {
+      "path": "01_DOCUMENTACION/08_SEGURIDAD_Y_OPERACIONES.md",
+      "bytes": 4233,
+      "sha256": "7665a3c4a980bd95cffd372853e2cbf8f1ea86761cdb6817d545159743d6a021"
+    },
+    {
+      "path": "01_DOCUMENTACION/09_QUALITY_GATES.md",
+      "bytes": 4678,
+      "sha256": "4600ac9b85b88662b6536c1bd01fef066abc34742cfee233022e8132187b90d0"
+    },
+    {
+      "path": "01_DOCUMENTACION/10_EJECUCION_10_HORAS.md",
+      "bytes": 3796,
+      "sha256": "9ba495d029a2e3fea75741ad26b208cdefd196736d985ccf6b923debde9db957"
+    },
+    {
+      "path": "01_DOCUMENTACION/11_EVALUACION_MODELOS_Y_COSTES.md",
+      "bytes": 4570,
+      "sha256": "48ff5380ded2cd527488633eb978a67ecc0df5a1c90adae2248e0cef0863407d"
+    },
+    {
+      "path": "01_DOCUMENTACION/12_REGISTRO_DECISIONES_Y_RIESGOS.md",
+      "bytes": 4232,
+      "sha256": "67bfb1cdaaf948dc7b5ad0a47fd3811d1048174f46af5e9985ad1ba9f97505ea"
+    },
+    {
+      "path": "01_DOCUMENTACION/13_FUENTES_EXTERNAS.md",
+      "bytes": 2798,
+      "sha256": "c0da32b9505568f386a28a95217aea40b221dc8b36d1fbdc804333762ed60f11"
+    },
+    {
+      "path": "01_DOCUMENTACION/14_ROLES_LLM_Y_PLANTILLAS_PROMPT.md",
+      "bytes": 7686,
+      "sha256": "c18a8378e6ff462820b1c2bca0f4a8d3a4b8e43ba3ba0d164fd8591a307e9ae3"
+    },
+    {
+      "path": "01_DOCUMENTACION/15_DIMENSIONAMIENTO_Y_CAPACIDAD.md",
+      "bytes": 3109,
+      "sha256": "45269a0183d663e02d72ffa014726953f9e05ae75433d8779a6d65c9fdc72da3"
+    },
+    {
+      "path": "02_CONTRATOS/flow_manual_package.schema.json",
+      "bytes": 2331,
+      "sha256": "ba5f3d763c268b85a7f936a0c796df73600d3c7c4bd4112a7bcace059ee6d777"
+    },
+    {
+      "path": "02_CONTRATOS/graphic_spec.schema.json",
+      "bytes": 1632,
+      "sha256": "39f8a4fd7e55d5f43ae7d3af6ec6deccdaeb80ab9117738958e7fef6e48ee1dd"
+    },
+    {
+      "path": "02_CONTRATOS/news_story.schema.json",
+      "bytes": 3748,
+      "sha256": "797bf5e21449494fca67bd30f2c89ac1091ffef14e22e5f251febc2b13984c25"
+    },
+    {
+      "path": "02_CONTRATOS/production_plan.schema.json",
+      "bytes": 5035,
+      "sha256": "190f2c8edbd0570f367609cf94080652d4c226a99c4d817f75132a14cbaf11fd"
+    },
+    {
+      "path": "02_CONTRATOS/provider_config.schema.json",
+      "bytes": 1804,
+      "sha256": "b5b95d8da94c232cb9a3ae781481811df4b8e64aae593a95c99ac698d4963205"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/README_RECUPERADO.md",
+      "bytes": 3463,
+      "sha256": "2798ede5b668eff4a5d8c812a49c23e471689312444cfa279406196e95dabfa1"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/flow-recovery.rar",
+      "bytes": 6674805,
+      "sha256": "29f15305cd1fb17b2bb00f99699808810aa74f529e12e86e04f590fbeb5cc6b7"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/reports/editor-diagnostic.json",
+      "bytes": 9641,
+      "sha256": "9e229fa1bc0e69bde8dfb850e77b7aab5a569c36ac2a7035824ded23ed7983c6"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/reports/errors.json",
+      "bytes": 70,
+      "sha256": "2ae9c96f9b3e676551e6d4d1b9f32ea626bb070506fa6dad676e9e191b4a2901"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/reports/extraction-report.md",
+      "bytes": 3870,
+      "sha256": "e5831cfbfd32f6fe2ae8b0563048c4fcf7835cc879984bddd6974e6626e7fba2"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/reports/manifest.json",
+      "bytes": 14723,
+      "sha256": "cab3ec4b09977a5bf692cf2d7e323fdf98222909a444612fb3e87212e7fc2e31"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/App.tsx",
+      "bytes": 50640,
+      "sha256": "cb8c1b7ad562c4626873c5132441373dfae3f435099463ea0a2abb067c90f6f7"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/BackgroundTab.tsx",
+      "bytes": 6536,
+      "sha256": "2ef38256286a22a054a10147d1e2a73c850c2e4b5589f9bbae6fdf6d48b57940"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/BackupModal.tsx",
+      "bytes": 12427,
+      "sha256": "9300e91d1222337dae93ecb72f7eb6beb5a2400d871c499dc4b238c693c17fd1"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/CharacterSheetTab.tsx",
+      "bytes": 10447,
+      "sha256": "9983605b590fbea46c2850df8e4b7f92b3d504f7850bc73b2c4a328682808702"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/HelpModal.tsx",
+      "bytes": 4114,
+      "sha256": "904e7b3763a2470cedd00665df35e8ddab1e681e73d22d344834fcd58d9086d5"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/MovementTab.tsx",
+      "bytes": 2913,
+      "sha256": "1c45716fe8461692a5fed25f4efc746b8324740359706250b09b675ce635471c"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/NewsEditorialTab.tsx",
+      "bytes": 39006,
+      "sha256": "bd4baec902ea84f79cb51f8d61173a61b84da9584549dea0ca1c84481926d969"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/ReferencesTab.tsx",
+      "bytes": 24039,
+      "sha256": "8754060e417a19aebcf51eee4ded1485511c311d988cbec63588af0f60b82cc0"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/ResultTab.tsx",
+      "bytes": 14791,
+      "sha256": "6aac2e67bd90092e2f785d1dd5a23d69367d5712a60e5a7adca71dc736a91fd1"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/ScriptTab.tsx",
+      "bytes": 11075,
+      "sha256": "c71aec22fc3991533c86afaa08878ef5fe7f130820f9ff73718e067b5d1acde7"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/TopNavigation.tsx",
+      "bytes": 5493,
+      "sha256": "14bef9fdf6076a065e1bb7c95adf4baa41ef2ddd7dde56615e9daf857110074b"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/components/VoiceTab.tsx",
+      "bytes": 4901,
+      "sha256": "7ea7008160015b0a459f02a18bc2a9e456a20f3dfbeff24055a11c0fea97217c"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/constants.ts",
+      "bytes": 18345,
+      "sha256": "4beff456d88eb795dfd25ee22bb76e9c9f0c1b1ad932d243aceb45d26158e07e"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/data/sourceManifest.ts",
+      "bytes": 3280,
+      "sha256": "18cac4f2e07e278369c3d8637ece73beecf8c40f5baa728571bfaad2a1977e13"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/types.ts",
+      "bytes": 5417,
+      "sha256": "0b056841ce6032d0e61edc97f79b4acb704605b9271517804c27482201207168"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/utils/newsDeduplication.ts",
+      "bytes": 5139,
+      "sha256": "438c2ddd37bed68e173e9f5959499138abbb557da0e55dacf57a7a17de1ddeea"
+    },
+    {
+      "path": "03_EVIDENCIA_FLOW/source/utils/scriptAnalyzer.ts",
+      "bytes": 8556,
+      "sha256": "eaed27ace4a1122c54127b307526deb99969aaf758f93c09cf026d786ebad4fd"
+    },
+    {
+      "path": "04_OPERACION/.env.example",
+      "bytes": 630,
+      "sha256": "25b5d75e77ae9faf903f3efaf0c26f6e0e0d52bcc7209359404d4508b5e225fd"
+    },
+    {
+      "path": "04_OPERACION/CONTROL_ANTES_DE_EMPEZAR.md",
+      "bytes": 1191,
+      "sha256": "8ba33851c3aea24349056ec7e54cb410c9abf3e3edf71856d8d095fcfc8a3ef6"
+    },
+    {
+      "path": "04_OPERACION/README_AGENTE_Y_COMANDOS.md",
+      "bytes": 1723,
+      "sha256": "dd46dabb61884dbd1540cac58ec4926eadc90c552a82b569b7d762ff5369351d"
+    },
+    {
+      "path": "04_OPERACION/VALIDACION_REALIZADA.md",
+      "bytes": 1505,
+      "sha256": "bdb80a5faa18b7fe90f24d583804a9d4aba41a0349890d3e9e60c256df21caa9"
+    },
+    {
+      "path": "04_OPERACION/validar_paquete.py",
+      "bytes": 3197,
+      "sha256": "c40426070aad2e23634cfb27762adc7b6c5b4bda1a5d3fd17f8f1c78fa568e96"
+    },
+    {
+      "path": "05_EJEMPLOS/flow_manual_package_DEMO.json",
+      "bytes": 1404,
+      "sha256": "21778d8f41324e28b71b2cb1685053a748b5790f9d5a9e0c81b08bb55af7ef3c"
+    },
+    {
+      "path": "05_EJEMPLOS/graphic_spec_DEMO.json",
+      "bytes": 481,
+      "sha256": "f56b18c80bb88d7d8fd38d3f9abfc539fe9ae7709dc9bd0097f2c7e96a33f9b0"
+    },
+    {
+      "path": "05_EJEMPLOS/news_story_DEMO.json",
+      "bytes": 1087,
+      "sha256": "eb73bdef1ede2030956d867ce2e2b27a1b72a437b91a236bb61f3b2a4d61a4f7"
+    },
+    {
+      "path": "05_EJEMPLOS/production_plan_DEMO.json",
+      "bytes": 2129,
+      "sha256": "73380eea2f6b00cff547adea3d2fbc6e4ec411ea239875a5d288058dc72a9840"
+    },
+    {
+      "path": "05_EJEMPLOS/provider_config_DEMO.json",
+      "bytes": 337,
+      "sha256": "348c72c8545d403307fc7655bcd6dc815d4061b01b93b3e99d37cd90a0c3933b"
+    },
+    {
+      "path": "06_TASKS/BACKLOG.csv",
+      "bytes": 14855,
+      "sha256": "cfb7fb1c0ebf83edd79d55daf6e55148e345dd8384176c40e0539c70f7abb12e"
+    },
+    {
+      "path": "06_TASKS/BACKLOG.json",
+      "bytes": 42231,
+      "sha256": "1be5775fdc84bb01b94f2f74e4cf54518b37c9582b96d822725563022ed049cc"
+    },
+    {
+      "path": "06_TASKS/TEST_MATRIX.csv",
+      "bytes": 3924,
+      "sha256": "a692eacaa82c7b176370d49e3020cb02066f9d0f87481be6209f586fb699c135"
+    },
+    {
+      "path": "PROMPT_UNICO_PARA_AGENTE.md",
+      "bytes": 7830,
+      "sha256": "9634d6cfd65c9a9e8cfb5b9c9a8ebe76e68fdc8a57b71b7b15a975305677cd9c"
+    }
+  ]
+}

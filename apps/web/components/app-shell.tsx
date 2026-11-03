@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { VERSION } from "@/lib/version";
 import type { Me } from "@/lib/types";
 
 const NAV = [
@@ -86,7 +87,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       <footer className="mx-auto max-w-6xl px-4 pb-8 pt-2 text-xs text-neutral-600">
-        neural.news MVP · el contenido de las fuentes es dato de trabajo; la aprobación de guiones es siempre humana.
+        neural.news v{VERSION} · el contenido de las fuentes es dato de trabajo; la aprobación de
+        guiones es siempre humana.
       </footer>
     </div>
   );

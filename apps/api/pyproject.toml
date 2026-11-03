@@ -1,6 +1,6 @@
 [project]
 name = "neuralnews"
-version = "0.1.0"
+version = "1.0.0-beta.1"
 description = "neural.news — motor editorial de investigación y guiones sobre IA (MVP)"
 requires-python = ">=3.12"
 dependencies = [

@@ -1,0 +1,14 @@
+{
+  "provider_id": "local-demo",
+  "type": "LOCAL_OPENAI_COMPATIBLE",
+  "name": "Conector local pendiente",
+  "endpoint": "http://127.0.0.1:1234/v1",
+  "model_id": null,
+  "task": "write",
+  "enabled": false,
+  "secret_state": "NOT_APPLICABLE",
+  "paid_allowed": false,
+  "cost_ceiling": 0,
+  "currency": "EUR",
+  "config_revision": 1
+}

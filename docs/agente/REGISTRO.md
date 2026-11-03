@@ -277,7 +277,7 @@ prueba que lo vigila **cubre el requisito entero**.
 **Estado:** Fases 0, 1 y 2 **COMPLETADAS** y verificadas. Se crea `docs/agente/` dentro del repo
 activo para que el checkpoint quede **bajo control de versiones** (parte del riesgo R-26).
 
-**Nota sobre R-26:** la gobernanza de `newsV2/` sigue **fuera** de todo repositorio. Decidir si se
+**Nota sobre R-26:** la gobernanza de `docs/governance/` sigue **fuera** de todo repositorio. Decidir si se
 mueve a `neural-news/docs/governance/` (cambia rutas ya documentadas) o se versiona aparte requiere
 autorización del propietario; **no se ejecuta sin ella**.
 

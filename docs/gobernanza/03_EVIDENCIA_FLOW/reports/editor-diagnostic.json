@@ -1,0 +1,476 @@
+{
+  "url": "https://flow.google.com/project/2611c905-0036-41b5-95c0-1d6176678019/tool/73212675-e77c-4f80-bf9d-205a1b3a17e7?fromViewSource=tools&mode=EDIT",
+  "title": "Google Flow - neuraldotai",
+  "bodyStart": "Skip to main content\narrow_back\nHerramienta\nEditar\nstar\nSolicitar aparición destacada\nfavorite\nshare\nmore_vert\nHecho\ndashboard\nTodo el contenido multimedia\nimage\nImágenes\nvideocam\nVídeos\naccessibility_new\nCaracteres\nmovie\nEscenas\ndrive_folder_upload\nSubidas\nfolder\nBiblioteca\nadd\napps_spark_2\nHerramientas\nkeyboard_arrow_down\nadd\nCrear herramienta\ndelete\nPapelera\nleft_panel_close\nOcultar\nVista previa\nCódigo\nARCHIVOS\ncode\ntypes.ts\ncode\nconstants.ts\ncode\nutils/scriptAnalyzer.ts\ncode\ncomponents/TopNavigation.tsx\ncode\ncomponents/CharacterSheetTab.tsx\ncode\ncomponents/BackgroundTab.tsx\ncode\ncomponents",
+  "controls": [
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Atrás"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Editar icono"
+    },
+    {
+      "tag": "BUTTON",
+      "role": "radio",
+      "label": "Herramienta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": "radio",
+      "label": "Editar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "star Solicitar aparición destacada"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar como favorito"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Compartir"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Más opciones"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Hecho"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "dashboard Todo el contenido multimedia"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "image Imágenes"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "videocam Vídeos"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "accessibility_new Caracteres"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "movie Escenas"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "drive_folder_upload Subidas"
+    },
+    {
+      "tag": "A",
+      "role": null,
+      "label": "folder Biblioteca add"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Crear colección"
+    },
+    {
+      "tag": "A",
+      "role": null,
+      "label": "apps_spark_2Herramientas keyboard_arrow_down"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Mostrar u ocultar herramientas"
+    },
+    {
+      "tag": "A",
+      "role": null,
+      "label": "addCrear herramienta"
+    },
+    {
+      "tag": "A",
+      "role": null,
+      "label": "deletePapelera"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "left_panel_closeOcultar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": "tab",
+      "label": "Vista previa"
+    },
+    {
+      "tag": "BUTTON",
+      "role": "tab",
+      "label": "Código"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codetypes.ts"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codeconstants.ts"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codeutils/scriptAnalyzer.ts"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/TopNavigation.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/CharacterSheetTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/BackgroundTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/ScriptTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/VoiceTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/MovementTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/ResultTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/HelpModal.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codeApp.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/ReferencesTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/NewsEditorialTab.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codeutils/newsDeduplication.ts"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codedata/sourceManifest.ts"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "codecomponents/BackupModal.tsx"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Menú de depuración (simulacro de error)"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Cerrar asistente"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Restaurar herramienta a esta versión"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Buena respuesta"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Respuesta insatisfactoria"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Copiar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Marcar"
+    },
+    {
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Iniciar generación"
+    }
+  ],
+  "editor": {
+    "monaco": 0,
+    "codeMirror6": 0,
+    "codeMirror5": 0,
+    "ace": 0,
+    "textareas": 1
+  },
+  "treeItems": [],
+  "possibleFileControls": []
+}

@@ -799,7 +799,7 @@
   "info": {
     "description": "MVP editorial: fuentes, noticias, investigación, guiones, lotes y exportación.",
     "title": "neural.news API",
-    "version": "0.1.0"
+    "version": "1.0.0-beta.1"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -2,7 +2,7 @@
 
 **Repositorio activo:** `neural-news` · **Rama de trabajo:** `beta/v1` (desde `main` `ef01bd0`)
 **Repositorio hermano:** `archive/neuralnews-20261101/` — **archivado y sellado** (ADR-016). Es fuente de capacidades, no un segundo producto.
-**Plan rector:** [`newsV2/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md`](../newsV2/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md) · **Tarea:** [`newsV2/06_TASKS/TASK_NN-108_VERSION_BETA.md`](../newsV2/06_TASKS/TASK_NN-108_VERSION_BETA.md)
+**Plan rector:** [`docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md`](docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md) · **Tarea:** [`docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md`](docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md)
 
 **Etiquetas:** FUNCIONA (probado con test automático) · PARCIAL (funciona con límites documentados) · PENDIENTE_POR_ACTIVO (falta material del propietario) · PENDIENTE_POR_API (falta integración externa autorizada) · NO_IMPLEMENTADO (fuera de la primera ventana).
 
@@ -171,5 +171,5 @@ Todos **A** (verificados sobre el artefacto). **Estado**: `CERRADO` = corregido 
 | Bundles de git | `NeuralStories/backups/bundles/` |
 | Dump de BD | `NeuralStories/backups/db/neuralnews-2026-11-01.sql` |
 | Fuentes de Flow selladas | `NeuralStories/neural-news/storage/FLOW_RECOVERY_2026-11-01_DIR/` (17/17 verificadas) |
-| Plan rector | `newsV2/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md` |
-| Tarea | `newsV2/06_TASKS/TASK_NN-108_VERSION_BETA.md` |
+| Plan rector | `docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md` |
+| Tarea | `docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md` |

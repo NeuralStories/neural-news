@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 /**
@@ -32,6 +33,16 @@ function resolveApiUrl(): string {
 }
 
 const nextConfig: NextConfig = {
+  /**
+   * Fija la raíz del workspace de Next.
+   *
+   * Sin esto, Next **infiere** la raíz buscando un `package-lock.json` hacia
+   * arriba: si hay uno suelto en un directorio superior (en esta máquina, en
+   * `C:\Users\haxth3\`), Next lo elige como raíz y el build deja de usar este
+   * proyecto. Fijarla a la raíz del repositorio lo hace determinista
+   * (hallazgo B32, beta 1.0.0-beta.1).
+   */
+  outputFileTracingRoot: path.join(__dirname, "..", ".."),
   async rewrites() {
     const api = resolveApiUrl();
     return [

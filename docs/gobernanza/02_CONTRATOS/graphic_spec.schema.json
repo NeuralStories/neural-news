@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graphic_spec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "graphic_id",
+    "kind",
+    "title",
+    "format",
+    "unit",
+    "duration_ms",
+    "claim_ids",
+    "data",
+    "source_label",
+    "is_demo",
+    "revision_hash"
+  ],
+  "properties": {
+    "graphic_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "bar",
+        "line",
+        "timeline",
+        "percentage",
+        "number_card",
+        "diagram"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "9:16",
+        "16:9"
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "minLength": 1
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "claim_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "source_label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "is_demo": {
+      "type": "boolean"
+    },
+    "revision_hash": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

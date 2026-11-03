@@ -1,0 +1,6 @@
+﻿pip-audit NO ESTÁ INSTALADO en esta maquina.
+No se instala durante la entrega: el objetivo dice ejecutarlo solo si ya esta instalado.
+Comprobacion realizada el 2026-11-03 00:33:55.
+
+Comprobacion alternativa con pip list (paquetes de auditoria disponibles):
+

@@ -1,0 +1,37 @@
+{
+  "story_id": "demo-001",
+  "kind": "DEMO",
+  "title": "Comparación simulada de latencia (NO ES UNA NOTICIA REAL)",
+  "locale": "es-ES",
+  "status": "REVIEW_REQUIRED",
+  "sources": [
+    {
+      "snapshot_id": "demo-snapshot-1",
+      "url": "https://example.org/demo-article",
+      "fetched_at": "2026-10-30T18:00:00Z",
+      "published_at": null,
+      "sha256": "3c4daddd8778a36fa9d370db4a904570494dc923988331c05bd3d473b34a00b9",
+      "independence_group": "DEMO-SINGLE"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim-demo-1",
+      "text": "En datos simulados Alpha registró 120 ms y Beta 80 ms.",
+      "verification_status": "UNVERIFIED",
+      "evidence_ids": [
+        "evi-demo-1"
+      ],
+      "reviewed_by": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "evi-demo-1",
+      "snapshot_id": "demo-snapshot-1",
+      "quote": "EJEMPLO FICTICIO: El modelo Alpha respondió en 120 ms y Beta en 80 ms bajo el mismo ensayo ficticio.",
+      "position": 0
+    }
+  ],
+  "revision_hash": "ea624173259a923198726537fe75b3fbeb5f77c0ae6c05c1f948729aae244fb6"
+}

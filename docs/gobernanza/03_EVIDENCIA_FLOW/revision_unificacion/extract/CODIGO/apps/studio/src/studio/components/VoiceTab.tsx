@@ -1,0 +1,104 @@
+import React from 'react';
+import { VoiceConfig } from '../types';
+
+interface VoiceTabProps {
+  voiceConfig: VoiceConfig;
+  onUpdateSpeed: (speed: number) => void;
+}
+
+export const VoiceTab: React.FC<VoiceTabProps> = ({
+  voiceConfig,
+  onUpdateSpeed,
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* Declaración de capacidad real */}
+      <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-start gap-3">
+        <span className="material-symbols-outlined text-[20px] mt-0.5">info</span>
+        <div className="text-xs space-y-1">
+          <p className="font-semibold text-amber-200">
+            Aviso de Transparencia de Capacidades
+          </p>
+          <p className="text-amber-300/90 leading-relaxed">
+            Esta sección <strong>prepara la ficha técnica y directrices de locución</strong> para la voz de NeuralDotAI. 
+            El modelo de vídeo actual genera tomas visuales de 8 segundos. No se simula ni se genera audio falso si el motor de síntesis de voz no está acoplado.
+          </p>
+        </div>
+      </div>
+
+      {/* Ficha canónica de voz: Perfil Algenib */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-400 text-[22px]">record_voice_over</span>
+              <div>
+                <h3 className="text-sm font-bold text-white">Perfil Preferido: {voiceConfig.profile}</h3>
+                <span className="text-[11px] text-slate-400">Locutor Oficial de NeuralStories News</span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-mono font-semibold">
+              OFICIAL
+            </span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div>
+              <span className="text-slate-500 block text-[10px] uppercase font-mono">Género y Timbre</span>
+              <p className="text-slate-200 font-medium mt-0.5">{voiceConfig.timbre}</p>
+            </div>
+            <div>
+              <span className="text-slate-500 block text-[10px] uppercase font-mono">Variante Lingüística</span>
+              <p className="text-slate-200 font-medium mt-0.5">{voiceConfig.locale}</p>
+            </div>
+            <div>
+              <span className="text-slate-500 block text-[10px] uppercase font-mono">Cadencia y Dinamismo</span>
+              <p className="text-slate-300 leading-relaxed mt-0.5">{voiceConfig.cadenceDescription}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Ajuste de velocidad y control de ritmo */}
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 space-y-4 flex flex-col justify-between">
+          <div>
+            <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
+              Control de Ritmo de Locución
+            </h4>
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+              El estilo de NeuralStories exige un ritmo un <strong>15% a 20% más rápido</strong> que la lectura estándar para aportar frescura y densidad informativa.
+            </p>
+
+            <div className="space-y-3 bg-slate-950 p-4 rounded-lg border border-slate-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400">Multiplicador de velocidad:</span>
+                <span className="font-mono font-bold text-amber-400">
+                  {voiceConfig.speedMultiplier.toFixed(2)}x (+{Math.round((voiceConfig.speedMultiplier - 1) * 100)}%)
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min="1.0"
+                max="1.3"
+                step="0.01"
+                value={voiceConfig.speedMultiplier}
+                onChange={(e) => onUpdateSpeed(parseFloat(e.target.value))}
+                className="w-full accent-amber-500 cursor-pointer"
+              />
+
+              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                <span>1.0x (Estándar)</span>
+                <span className="text-amber-400">1.18x (Recomendado Algenib)</span>
+                <span>1.30x (Ultrarrápido)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 rounded bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 font-mono">
+            Directiva de modulación: Audio continuo, sin titubeos, dicción limpia, final de frase asertivo.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

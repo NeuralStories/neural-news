@@ -1,0 +1,520 @@
+{
+  "projectUrl": "https://flow.google.com/project/2611c905-0036-41b5-95c0-1d6176678019/tool/73212675-e77c-4f80-bf9d-205a1b3a17e7?fromViewSource=tools",
+  "generatedAt": "2026-10-28T10:08:45.375Z",
+  "complete": true,
+  "editorInventoryCount": 17,
+  "expectedCount": 17,
+  "expectedMissing": [],
+  "files": [
+    {
+      "path": "types.ts",
+      "label": "types.ts",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 5417,
+      "lines": 191,
+      "sha256": "0b056841ce6032d0e61edc97f79b4acb704605b9271517804c27482201207168"
+    },
+    {
+      "path": "constants.ts",
+      "label": "constants.ts",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 18345,
+      "lines": 381,
+      "sha256": "4beff456d88eb795dfd25ee22bb76e9c9f0c1b1ad932d243aceb45d26158e07e"
+    },
+    {
+      "path": "utils/scriptAnalyzer.ts",
+      "label": "utils/scriptAnalyzer.ts",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 8556,
+      "lines": 227,
+      "sha256": "eaed27ace4a1122c54127b307526deb99969aaf758f93c09cf026d786ebad4fd"
+    },
+    {
+      "path": "components/TopNavigation.tsx",
+      "label": "components/TopNavigation.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 5493,
+      "lines": 113,
+      "sha256": "14bef9fdf6076a065e1bb7c95adf4baa41ef2ddd7dde56615e9daf857110074b"
+    },
+    {
+      "path": "components/CharacterSheetTab.tsx",
+      "label": "components/CharacterSheetTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 10447,
+      "lines": 201,
+      "sha256": "9983605b590fbea46c2850df8e4b7f92b3d504f7850bc73b2c4a328682808702"
+    },
+    {
+      "path": "components/BackgroundTab.tsx",
+      "label": "components/BackgroundTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 6536,
+      "lines": 136,
+      "sha256": "2ef38256286a22a054a10147d1e2a73c850c2e4b5589f9bbae6fdf6d48b57940"
+    },
+    {
+      "path": "components/ScriptTab.tsx",
+      "label": "components/ScriptTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 11075,
+      "lines": 229,
+      "sha256": "c71aec22fc3991533c86afaa08878ef5fe7f130820f9ff73718e067b5d1acde7"
+    },
+    {
+      "path": "components/VoiceTab.tsx",
+      "label": "components/VoiceTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 4901,
+      "lines": 104,
+      "sha256": "7ea7008160015b0a459f02a18bc2a9e456a20f3dfbeff24055a11c0fea97217c"
+    },
+    {
+      "path": "components/MovementTab.tsx",
+      "label": "components/MovementTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 2913,
+      "lines": 68,
+      "sha256": "1c45716fe8461692a5fed25f4efc746b8324740359706250b09b675ce635471c"
+    },
+    {
+      "path": "components/ResultTab.tsx",
+      "label": "components/ResultTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 14791,
+      "lines": 313,
+      "sha256": "6aac2e67bd90092e2f785d1dd5a23d69367d5712a60e5a7adca71dc736a91fd1"
+    },
+    {
+      "path": "components/HelpModal.tsx",
+      "label": "components/HelpModal.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 4114,
+      "lines": 84,
+      "sha256": "904e7b3763a2470cedd00665df35e8ddab1e681e73d22d344834fcd58d9086d5"
+    },
+    {
+      "path": "App.tsx",
+      "label": "App.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 50640,
+      "lines": 856,
+      "sha256": "cb8c1b7ad562c4626873c5132441373dfae3f435099463ea0a2abb067c90f6f7"
+    },
+    {
+      "path": "components/ReferencesTab.tsx",
+      "label": "components/ReferencesTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 24039,
+      "lines": 523,
+      "sha256": "8754060e417a19aebcf51eee4ded1485511c311d988cbec63588af0f60b82cc0"
+    },
+    {
+      "path": "components/NewsEditorialTab.tsx",
+      "label": "components/NewsEditorialTab.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 39006,
+      "lines": 832,
+      "sha256": "bd4baec902ea84f79cb51f8d61173a61b84da9584549dea0ca1c84481926d969"
+    },
+    {
+      "path": "utils/newsDeduplication.ts",
+      "label": "utils/newsDeduplication.ts",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 5139,
+      "lines": 156,
+      "sha256": "438c2ddd37bed68e173e9f5959499138abbb557da0e55dacf57a7a17de1ddeea"
+    },
+    {
+      "path": "data/sourceManifest.ts",
+      "label": "data/sourceManifest.ts",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 3280,
+      "lines": 83,
+      "sha256": "18cac4f2e07e278369c3d8637ece73beecf8c40f5baa728571bfaad2a1977e13"
+    },
+    {
+      "path": "components/BackupModal.tsx",
+      "label": "components/BackupModal.tsx",
+      "pathInferred": false,
+      "status": "verificado contra el editor",
+      "method": "complete-numbered-dom",
+      "secondRead": "complete-numbered-dom",
+      "selection": {
+        "ariaSelected": null,
+        "ariaCurrent": "true",
+        "dataState": null,
+        "className": "file-item file-item-selected"
+      },
+      "bytes": 12427,
+      "lines": 294,
+      "sha256": "9300e91d1222337dae93ecb72f7eb6beb5a2400d871c499dc4b238c693c17fd1"
+    }
+  ],
+  "verification": {
+    "problems": [],
+    "imports": [
+      {
+        "from": "constants.ts",
+        "import": "./types"
+      },
+      {
+        "from": "utils/scriptAnalyzer.ts",
+        "import": "../types"
+      },
+      {
+        "from": "components/TopNavigation.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/TopNavigation.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/CharacterSheetTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/CharacterSheetTab.tsx",
+        "import": "flow-sdk"
+      },
+      {
+        "from": "components/CharacterSheetTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/CharacterSheetTab.tsx",
+        "import": "../constants"
+      },
+      {
+        "from": "components/BackgroundTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/BackgroundTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/BackgroundTab.tsx",
+        "import": "../constants"
+      },
+      {
+        "from": "components/ScriptTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/ScriptTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/VoiceTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/VoiceTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/MovementTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/MovementTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/ResultTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/ResultTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/HelpModal.tsx",
+        "import": "react"
+      },
+      {
+        "from": "App.tsx",
+        "import": "react"
+      },
+      {
+        "from": "App.tsx",
+        "import": "flow-sdk"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./types"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./constants"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./utils/scriptAnalyzer"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./utils/newsDeduplication"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/TopNavigation"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/NewsEditorialTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/CharacterSheetTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/BackgroundTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/ScriptTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/VoiceTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/MovementTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/ReferencesTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/ResultTab"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/HelpModal"
+      },
+      {
+        "from": "App.tsx",
+        "import": "./components/BackupModal"
+      },
+      {
+        "from": "components/ReferencesTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/ReferencesTab.tsx",
+        "import": "flow-sdk"
+      },
+      {
+        "from": "components/ReferencesTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/NewsEditorialTab.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/NewsEditorialTab.tsx",
+        "import": "../types"
+      },
+      {
+        "from": "components/NewsEditorialTab.tsx",
+        "import": "../constants"
+      },
+      {
+        "from": "components/NewsEditorialTab.tsx",
+        "import": "../utils/newsDeduplication"
+      },
+      {
+        "from": "utils/newsDeduplication.ts",
+        "import": "../types"
+      },
+      {
+        "from": "components/BackupModal.tsx",
+        "import": "react"
+      },
+      {
+        "from": "components/BackupModal.tsx",
+        "import": "flow-sdk"
+      },
+      {
+        "from": "components/BackupModal.tsx",
+        "import": "../data/sourceManifest"
+      }
+    ],
+    "externalImports": [
+      "flow-sdk",
+      "react"
+    ],
+    "flowImports": [
+      "flow-sdk"
+    ]
+  },
+  "migrationInventory": {
+    "missingScaffold": [
+      "package.json",
+      "index.html",
+      "tsconfig.json",
+      "vite.config.ts"
+    ],
+    "stylesOrAssets": [],
+    "compileTested": false
+  },
+  "zip": {
+    "name": "neural-news-source.zip",
+    "bytes": 229455,
+    "sha256": "da8e68e16422be0eb137427c2b710b06b1ea20730e12e27d493da178262fc0ab"
+  },
+  "fatalError": null,
+  "note": "Un hash de la copia local no demuestra por sí mismo que el editor haya entregado el archivo completo."
+}

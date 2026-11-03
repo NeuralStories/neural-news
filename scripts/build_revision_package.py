@@ -69,12 +69,12 @@ for name, src in extras:
 
 # Gobernanza: especificación rectora, documentación, tareas y evidencia de Flow
 for sub in ("01_DOCUMENTACION", "06_TASKS", "02_CONTRATOS"):
-    folder = BASE / "newsV2" / sub
+    folder = BASE / "proyecto final" / "docs" / "gobernanza" / sub
     if folder.exists():
         for f in sorted(folder.rglob("*")):
             if f.is_file() and "extract" not in str(f):
                 entries.append((f"gobernanza/{sub}/{f.relative_to(folder).as_posix()}", f))
-ev = BASE / "newsV2" / "03_EVIDENCIA_FLOW"
+ev = BASE / "proyecto final" / "docs" / "gobernanza" / "03_EVIDENCIA_FLOW"
 if ev.exists():
     for f in sorted(ev.rglob("*")):
         if f.is_file() and "revision_unificacion" not in str(f) and f.suffix.lower() != ".rar":

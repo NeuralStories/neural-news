@@ -1,0 +1,15 @@
+﻿# Comprobación: git_diff_check
+# Comando   : git diff --check -- . ":(exclude)docs/entrega/evidencias" ":(exclude)docs/gobernanza" && git diff --cached --check -- . ":(exclude)docs/entrega/evidencias" ":(exclude)docs/gobernanza"
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 0 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:55:33
+#
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/api/src/neuralnews/worker.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/agente/PLAN_MAESTRO.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/agente/TAREAS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/entrega/verificar.ps1', LF will be replaced by CRLF the next time Git touches it
+

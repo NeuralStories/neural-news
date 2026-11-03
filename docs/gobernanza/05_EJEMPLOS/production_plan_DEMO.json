@@ -1,0 +1,81 @@
+{
+  "plan_id": "plan-demo-1",
+  "story_id": "demo-001",
+  "script_revision_id": "script-demo-1",
+  "script_revision_hash": "5f4bc72cfa743d8ca544aeda623b24e2380456fba46359c5608a73f00a5c693c",
+  "format": "9:16",
+  "version": 1,
+  "identity": {
+    "name": "maxDotAi",
+    "status": "PENDING",
+    "asset_ids": [],
+    "verified_flow_handle": null
+  },
+  "narration": {
+    "text": "En esta prueba ficticia comparamos dos modelos. Alpha marca 120 milisegundos. Beta, 80. Los datos son simulados y no describen productos reales.",
+    "target_wpm": 150,
+    "estimated_ms": 12000,
+    "pauses_ms": 1000
+  },
+  "beats": [
+    {
+      "beat_id": "beat-1",
+      "text": "En esta prueba ficticia comparamos dos modelos.",
+      "start_ms": 0,
+      "end_ms": 4200,
+      "claim_ids": []
+    },
+    {
+      "beat_id": "beat-2",
+      "text": "Alpha marca 120 milisegundos. Beta, 80.",
+      "start_ms": 4200,
+      "end_ms": 8500,
+      "claim_ids": [
+        "claim-demo-1"
+      ]
+    },
+    {
+      "beat_id": "beat-3",
+      "text": "Los datos son simulados y no describen productos reales.",
+      "start_ms": 8500,
+      "end_ms": 12000,
+      "claim_ids": []
+    }
+  ],
+  "shots": [
+    {
+      "shot_id": "shot-1",
+      "start_ms": 0,
+      "end_ms": 4200,
+      "source_kind": "FLOW_CHARACTER_MANUAL",
+      "status": "PENDING_ASSET",
+      "purpose": "Introducción con personaje, pendiente de activo real",
+      "claim_ids": [],
+      "asset_id": null
+    },
+    {
+      "shot_id": "shot-2",
+      "start_ms": 4200,
+      "end_ms": 8500,
+      "source_kind": "EXACT_GRAPHIC",
+      "status": "DEMO",
+      "purpose": "Comparar barras con cifras exactas de ejemplo",
+      "claim_ids": [
+        "claim-demo-1"
+      ],
+      "asset_id": null
+    },
+    {
+      "shot_id": "shot-3",
+      "start_ms": 8500,
+      "end_ms": 12000,
+      "source_kind": "TITLE_CARD",
+      "status": "DEMO",
+      "purpose": "Aclaración visible de datos ficticios",
+      "claim_ids": [],
+      "asset_id": null
+    }
+  ],
+  "approval_state": "BLOCKED",
+  "revision_hash": "be4b055861ad394ca13084b25038a3685c49d685eac0560339c79e03f66fe1da"
+}

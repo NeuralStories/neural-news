@@ -1,0 +1,25 @@
+﻿# Comprobación: exportar_openapi
+# Comando   : python tools\exportar_openapi.py --check
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 3 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:55:19
+#
+OK: el contrato exportado coincide con el servido.
+{"ts": "2026-11-03T08:55:18.197031+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
+{"ts": "2026-11-03T08:55:18.198229+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
+{"ts": "2026-11-03T08:55:18.198988+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
+{"ts": "2026-11-03T08:55:18.199669+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
+{"ts": "2026-11-03T08:55:18.200340+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
+{"ts": "2026-11-03T08:55:18.200710+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> d38b9d62cb47, esquema inicial MVP
+INFO  [alembic.runtime.migration] Running upgrade d38b9d62cb47 -> d4ce8c95781e, nn107 studio proyectos y medios
+INFO  [alembic.runtime.migration] Running upgrade d4ce8c95781e -> b3c1d9e4f7a2, invalidaci�n de prompts por hash de guion
+INFO  [alembic.runtime.migration] Running upgrade b3c1d9e4f7a2 -> c4d2e8f1a5b6, motivo normalizado del fallo de un trabajo
+INFO  [alembic.runtime.migration] Running upgrade c4d2e8f1a5b6 -> d5e3f9a2b7c1, secretos de proveedor cifrados (b�veda)
+INFO  [alembic.runtime.migration] Running upgrade d5e3f9a2b7c1 -> e7a1b3c9d4f2, rutas de modelo por tarea + instant�nea en el trabajo
+

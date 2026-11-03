@@ -1,0 +1,11 @@
+﻿# Comprobación: generar_plan_casillas
+# Comando   : python tools\generar_plan_casillas.py --check
+# Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final
+# Veredicto : PASA
+# Código de salida: 0
+# Duración  : 0 s
+# Nota      : 
+# Fecha     : 2026-11-03 09:55:16
+#
+OK: PLAN.md est� al d�a.
+

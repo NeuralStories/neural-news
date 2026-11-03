@@ -1,0 +1,24 @@
+{
+  "graphic_id": "graph-demo-1",
+  "kind": "bar",
+  "title": "Comparación de latencia simulada",
+  "format": "9:16",
+  "unit": "ms",
+  "duration_ms": 4300,
+  "claim_ids": [
+    "claim-demo-1"
+  ],
+  "data": [
+    {
+      "label": "Alpha",
+      "value": 120
+    },
+    {
+      "label": "Beta",
+      "value": 80
+    }
+  ],
+  "source_label": "DATOS FICTICIOS — EJEMPLO",
+  "is_demo": true,
+  "revision_hash": "eaec4fbb07e2408e7da5cee77eae67e11a8e14cc0d9d59412e64962bea5e3b9f"
+}

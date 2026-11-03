@@ -1,9 +1,38 @@
 """NN-107 — Transiciones del montaje y movimiento del catálogo en las tomas."""
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parents[1]
+
+
+def _ffmpeg_available() -> Path | None:
+    """Directorio con el ejecutable de FFmpeg, si lo hay.
+
+    Mismo criterio que el resto de pruebas de vídeo (test_montage.py,
+    test_worker_jobs.py, test_latencia_handlers.py): primero el FFmpeg del
+    `PATH` y después el portable del workspace (`ffmpeg-local/`).
+
+    Antes esta prueba buscaba **solo** `ffmpeg-local/` y usaba `ff_dir`
+    sin comprobar que existiera: en una instalación limpia (un clon fuera del
+    workspace) la variable quedaba sin asignar y la prueba reventaba con
+    `UnboundLocalError` en vez de saltarse. Hallazgo de la auditoría A1.
+    """
+    en_path = shutil.which("ffmpeg")
+    if en_path:
+        return Path(en_path).parent
+    tools = Path(__file__).resolve().parents[2] / "ffmpeg-local"
+    for c in sorted(tools.glob("ffmpeg*/bin")):
+        if (c / "ffmpeg.exe").exists() or (c / "ffmpeg").exists():
+            return c
+    return None
+
+
+FF = _ffmpeg_available()
+pytestmark = pytest.mark.skipif(FF is None, reason="requiere FFmpeg local (sin Docker)")
 
 GUION = (
     "Apertura con el presentador canónico del programa. "
@@ -53,10 +82,6 @@ def test_transitions_assigned_and_applied_in_montage(demo_client, worker):
     assert transitions[0] == "corte_directo"
 
     # MP4 reales para cada toma (FFmpeg local, sin Docker)
-    tools = REPO.parent / "ffmpeg-local"
-    for c in sorted(tools.glob("ffmpeg*/bin")):
-        if (c / "ffmpeg.exe").exists():
-            ff_dir = c
     import subprocess
     import tempfile
     with tempfile.TemporaryDirectory() as td:
@@ -67,7 +92,7 @@ def test_transitions_assigned_and_applied_in_montage(demo_client, worker):
             ).json()
             clip = Path(td) / f"c{i}.mp4"
             subprocess.run([
-                str(ff_dir / "ffmpeg.exe"), "-hide_banner", "-loglevel", "error", "-y",
+                str(FF / ("ffmpeg.exe" if (FF / "ffmpeg.exe").exists() else "ffmpeg")), "-hide_banner", "-loglevel", "error", "-y",
                 "-f", "lavfi", "-i", f"testsrc=size=1080x1920:rate=30:duration=4",
                 "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", str(clip),
             ], check=True, timeout=120)

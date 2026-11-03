@@ -1,0 +1,33 @@
+# --- Ficheros de texto: LF en todas las plataformas ---------------------------
+#
+# Sin esto, git convierte a CRLF al hacer checkout en Windows y el clon limpio
+# rompe: el guion de bash (`supervisor.sh`) llega con CRLF (bash lo lee mal), los
+# SHA-256 del manifiesto del Studio dejan de cuadrar y varios `--check` fallan.
+# Hallazgo de la auditoría A1 de la beta 1.0.0-beta.1.
+* text=auto eol=lf
+
+# La gobernanza heredada es **evidencia verbatim**: no se normaliza, sus bytes
+# son los del manifiesto SHA-256 que la acompaña.
+docs/gobernanza/** -text
+
+# --- Binarios: nunca se tocan -----------------------------------------------
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.mp4 binary
+*.mov binary
+*.webm binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.exe binary
+*.node binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary

@@ -18,6 +18,12 @@ dependencies = [
     # Hash de contraseñas Argon2id (NN-117.5). Sin esta dependencia el sistema
     # cae a PBKDF2-SHA256, que sigue funcionando.
     "argon2-cffi>=23.1",
+    # Pillow: la usa `services/graphics.py` (tarjeta de gráfico PNG 1080x1920 y
+    # zonas seguras). Los imports son perezosos, así que la aplicación arranca
+    # sin ella, pero la función falla; y, sin declararla, **dos tests no se
+    # pueden recoger** y pytest aborta la suite entera en una instalación limpia
+    # (hallazgo de la auditoría A1: el repositorio no era autosuficiente).
+    "Pillow>=10.0",
 ]
 
 [project.optional-dependencies]

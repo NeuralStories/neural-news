@@ -78,8 +78,10 @@ informe con veredicto en `docs/entrega/AUDITORIA_BETA.md`.
   ninguno está en el índice.
 - **A5 (recorrido funcional)**: ver `docs/entrega/AUDITORIA_BETA.md`.
 
-- `ultimo_punto_verificado`: lo anterior, todo reejecutado sobre el commit
-  `104489e` de `release/1.0.0-beta.1`
+- `ultimo_punto_verificado`: lo anterior, todo reejecutado sobre la rama
+  `release/1.0.0-beta.1` ya corregida (14/14 comprobaciones del repo,
+  17/17 de la auditoría de la entrega, 15/15 de A2/A3/A4 y 17/17 del recorrido
+  funcional)
 
 ## Trabajo a medias sin verificar
 

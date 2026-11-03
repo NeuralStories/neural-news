@@ -13,6 +13,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es-ES">
       <head>
         {/*
+          Tema claro/oscuro: el atributo `data-tema` de `<html>` tiene que estar
+          **antes del primer pintado**. Si se pusiera desde React, la página se
+          pintaría primero en oscuro y luego saltaría a claro (destello). Este
+          script es síncrono y va en la cabecera, que es donde el navegador lo
+          ejecuta antes de dibujar el cuerpo.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('neural.tema');" +
+              "if(t==='claro'){document.documentElement.dataset.tema='claro';}}catch(e){}",
+          }}
+        />
+        {/*
           Iconos del Studio (Material Symbols).
 
           Antes era un `<link>` normal a Google Fonts: una petición **bloqueante**

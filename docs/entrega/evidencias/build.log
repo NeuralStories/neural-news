@@ -3,9 +3,9 @@
 # Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final\apps\web
 # Veredicto : PASA
 # Código de salida: 0
-# Duración  : 39 s
+# Duración  : 36 s
 # Nota      : 
-# Fecha     : 2026-11-03 18:37:03
+# Fecha     : 2026-11-03 22:18:21
 #
 
 > neural-news-web@1.0.0-beta.1 build
@@ -14,7 +14,7 @@
    ▲ Next.js 15.5.28
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 3.7s
+ ✓ Compiled successfully in 2.9s
    Linting and checking validity of types ...
    Collecting page data ...
    Generating static pages (0/11) ...
@@ -35,7 +35,7 @@ Route (app)                                 Size  First Load JS
 ├ ○ /lotes                               4.45 kB         111 kB
 ├ ○ /noticias                            4.01 kB         110 kB
 ├ ƒ /noticias/[id]                       5.81 kB         112 kB
-└ ○ /ops                                 3.08 kB         106 kB
+└ ○ /ops                                 6.53 kB         109 kB
 + First Load JS shared by all             103 kB
   ├ chunks/255-b1e2483a7e02feee.js       46.6 kB
   ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB

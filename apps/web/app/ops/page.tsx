@@ -1,250 +1,657 @@
 "use client";
 
 /**
- * Operación (NN-115.1): lo que el operador necesita para saber si el sistema
- * está vivo y qué está fallando.
+ * Operación: la consola del sistema.
  *
- * Antes, los endpoints `/api/v1/jobs`, `/usage` y `/provider-status` existían
- * pero **no había ninguna página** que los mostrara: había que consultar la
- * API a mano para saber por qué un trabajo había fallado.
+ * Esta vista es la **superficie de referencia** del sistema visual: fija los
+ * tokens, los estados semánticos, la rejilla de 1px y los patrones de
+ * tabla/telemetría que reutilizarán el resto de vistas.
+ *
+ * Decisiones:
+ * - **Cero dependencias**: todo sale del sistema de estilos de `globals.css`
+ *   y de los componentes de `components/ui/`.
+ * - **Densidad antes que decoración**: cifras tabulares en monoespaciado,
+ *   etiquetas en versalitas de 10 px y sin espacio que sobre.
+ * - **El dato viejo no se tira**: si un refresco falla, la última lectura
+ *   sigue en pantalla marcada como obsoleta (con el error exacto), porque un
+ *   panel vacío durante un fallo de red es peor que un dato con su fecha.
+ * - **Autorefresco de 15 s** con pausa manual: el operador decide si la
+ *   pantalla se repinta sola.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import type {
+  AlertaOperacion,
+  EstadoSalud,
+  JobInfo,
+  MetricasOperacion,
+  ProviderStatus,
+  UsageInfo,
+} from "@/lib/types";
+import { Estado, type TonoEstado } from "@/components/ui/estado";
+import { Metrica } from "@/components/ui/metrica";
+import { Panel } from "@/components/ui/panel";
+import { TablaOps, type Columna } from "@/components/ui/tabla";
+import { EsqueletoMetrica, EsqueletoPanel, Vacio } from "@/components/ui/estados";
+import {
+  IconoAlerta,
+  IconoCheck,
+  IconoCruce,
+  IconoPulso,
+  IconoRefrescar,
+  IconoReloj,
+} from "@/components/ui/icono";
 
-type Estado = "cargando" | "listo" | "error";
+const INTERVALO_MS = 15_000;
 
-type Alerta = { codigo: string; severidad: string; mensaje: string; trabajos?: number[] };
-
-type Metricas = {
-  jobs_total: number;
-  jobs_terminados_ok: number;
-  jobs_fallidos: number;
-  jobs_reintentables: number;
-  tasa_fallo: number;
-  duracion_media_s: number | null;
-  p95_duracion_s: number | null;
-  profundidad_cola: number;
-  ventana_horas: number;
-  por_error_kind: Record<string, number>;
+type Datos = {
+  salud: EstadoSalud;
+  trabajos: JobInfo[];
+  uso: UsageInfo;
+  proveedores: ProviderStatus[];
+  metricas: MetricasOperacion;
+  alertas: AlertaOperacion[];
 };
 
-export default function OperacionPage() {
-  const [salud, setSalud] = useState<Awaited<ReturnType<typeof api.health>> | null>(null);
-  const [trabajos, setTrabajos] = useState<Array<Record<string, unknown>>>([]);
-  const [uso, setUso] = useState<Record<string, unknown> | null>(null);
-  const [proveedores, setProveedores] = useState<Awaited<ReturnType<typeof api.providerStatus>> | null>(null);
-  const [metricas, setMetricas] = useState<Metricas | null>(null);
-  const [alertas, setAlertas] = useState<Alerta[]>([]);
-  const [estado, setEstado] = useState<Estado>("cargando");
-  const [error, setError] = useState<string | null>(null);
+type FiltroEstado = "todos" | "fallidos" | "en_curso" | "completados";
 
-  const cargar = async () => {
-    setEstado("cargando");
+const FILTROS_ESTADO: Array<{ clave: FiltroEstado; etiqueta: string }> = [
+  { clave: "todos", etiqueta: "todos" },
+  { clave: "fallidos", etiqueta: "fallidos" },
+  { clave: "en_curso", etiqueta: "en curso" },
+  { clave: "completados", etiqueta: "completados" },
+];
+
+/** Columnas que el operador puede ocultar (las secundarias). */
+const COLUMNAS_SECUNDARIAS = ["intento", "detalle"] as const;
+
+function hora(iso?: string): string {
+  if (!iso) return "—";
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "—";
+  return fecha.toLocaleTimeString("es-ES", { hour12: false });
+}
+
+function porcentaje(fraction: number): string {
+  return `${(fraction * 100).toFixed(1)} %`;
+}
+
+function tonoDeTrabajo(status: string): TonoEstado {
+  if (status === "DONE") return "ok";
+  if (status === "QUEUED" || status === "RUNNING") return "info";
+  if (status === "FAILED" || status === "UNKNOWN") return "crit";
+  return "idle";
+}
+
+function tonoDeProveedor(configured: boolean, state: string): TonoEstado {
+  if (configured) return "ok";
+  if (state === "mock") return "info";
+  if (state === "fuera_de_mvp") return "idle";
+  return "warn";
+}
+
+function etiquetaDeProveedor(configured: boolean, state: string): string {
+  if (configured) return "configurado";
+  if (state === "mock") return "simulado";
+  if (state === "fuera_de_mvp") return "fuera de mvp";
+  return "sin clave";
+}
+
+export default function OperacionPage() {
+  const [datos, setDatos] = useState<Datos | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [ultimaLectura, setUltimaLectura] = useState<Date | null>(null);
+  const [actualizando, setActualizando] = useState(false);
+  const [autorefresco, setAutorefresco] = useState(true);
+
+  const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
+  const [filtroTipo, setFiltroTipo] = useState<string>("todos");
+  const [trabajosDeAlerta, setTrabajosDeAlerta] = useState<number[] | null>(null);
+  const [ocultas, setOcultas] = useState<string[]>([]);
+
+  const cargar = useCallback(async () => {
+    setActualizando(true);
     try {
-      const [s, j, u, p, m] = await Promise.all([
+      const [salud, trabajos, uso, proveedores, metricas] = await Promise.all([
         api.health(),
         api.listJobs(),
         api.usage(),
         api.providerStatus(),
         api.metrics(),
       ]);
-      setSalud(s);
-      setTrabajos(j.items as unknown as Array<Record<string, unknown>>);
-      setUso(u as unknown as Record<string, unknown>);
-      setProveedores(p);
-      setMetricas(m.metricas as unknown as Metricas);
-      setAlertas((m.alertas as unknown as Alerta[]) ?? []);
+      setDatos({
+        salud,
+        trabajos: trabajos.items,
+        uso,
+        proveedores: proveedores.providers,
+        metricas: metricas.metricas,
+        alertas: metricas.alertas,
+      });
+      setUltimaLectura(new Date());
       setError(null);
-      setEstado("listo");
-    } catch (e) {
-      setError((e as Error).message);
-      setEstado("error");
+    } catch (fallo) {
+      setError((fallo as Error).message);
+    } finally {
+      setActualizando(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void cargar();
-    const t = setInterval(() => void cargar(), 15_000);
-    return () => clearInterval(t);
-  }, []);
+  }, [cargar]);
 
-  if (estado === "cargando" && !salud) {
-    return <p className="p-6 text-sm text-neutral-500">Cargando el estado del sistema…</p>;
+  useEffect(() => {
+    if (!autorefresco) return;
+    const temporizador = setInterval(() => void cargar(), INTERVALO_MS);
+    return () => clearInterval(temporizador);
+  }, [autorefresco, cargar]);
+
+  const tipos = useMemo(() => {
+    const distintos = new Set((datos?.trabajos ?? []).map((trabajo) => trabajo.type));
+    return Array.from(distintos).sort();
+  }, [datos]);
+
+  const trabajosFiltrados = useMemo(() => {
+    const base = datos?.trabajos ?? [];
+    return base.filter((trabajo) => {
+      if (filtroEstado === "fallidos" && trabajo.status !== "FAILED") return false;
+      if (filtroEstado === "en_curso" && !(trabajo.status === "QUEUED" || trabajo.status === "RUNNING"))
+        return false;
+      if (filtroEstado === "completados" && trabajo.status !== "DONE") return false;
+      if (filtroTipo !== "todos" && trabajo.type !== filtroTipo) return false;
+      if (trabajosDeAlerta && !trabajosDeAlerta.includes(trabajo.id)) return false;
+      return true;
+    });
+  }, [datos, filtroEstado, filtroTipo, trabajosDeAlerta]);
+
+  const columnas: Columna<JobInfo>[] = useMemo(
+    () => [
+      {
+        clave: "id",
+        cabecera: "#",
+        ancho: "4.5rem",
+        numerica: true,
+        render: (trabajo) => <span className="id">{trabajo.id}</span>,
+      },
+      {
+        clave: "tipo",
+        cabecera: "tipo",
+        ancho: "11rem",
+        render: (trabajo) => <span className="text-ink-2">{trabajo.type}</span>,
+      },
+      {
+        clave: "estado",
+        cabecera: "estado",
+        ancho: "9rem",
+        render: (trabajo) => (
+          <Estado
+            tono={tonoDeTrabajo(trabajo.status)}
+            etiqueta={trabajo.status_label || trabajo.status}
+          />
+        ),
+      },
+      {
+        clave: "intento",
+        cabecera: "intento",
+        ancho: "5rem",
+        numerica: true,
+        secundaria: true,
+        render: (trabajo) => <span className="num">{trabajo.attempt ?? 1}</span>,
+      },
+      {
+        clave: "motivo",
+        cabecera: "motivo",
+        ancho: "9rem",
+        render: (trabajo) =>
+          trabajo.error_kind_label ? (
+            <span className="text-ink-2">{trabajo.error_kind_label}</span>
+          ) : (
+            <span className="id">—</span>
+          ),
+      },
+      {
+        clave: "detalle",
+        cabecera: "detalle",
+        secundaria: true,
+        render: (trabajo) =>
+          trabajo.error ? (
+            <span className="text-ink-3" title={trabajo.error}>
+              {trabajo.error.length > 90 ? `${trabajo.error.slice(0, 90)}…` : trabajo.error}
+            </span>
+          ) : (
+            <span className="id">—</span>
+          ),
+      },
+      {
+        clave: "creado",
+        cabecera: "creado",
+        ancho: "6.5rem",
+        numerica: true,
+        render: (trabajo) => <span className="num">{hora(trabajo.created_at)}</span>,
+      },
+    ],
+    [],
+  );
+
+  if (!datos && !error) {
+    return (
+      <div className="space-y-3">
+        <div className="ops-panel">
+          <div className="ops-panel-head">
+            <span className="esqueleto h-2 w-40" />
+          </div>
+          <div className="ops-panel-body grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+            {Array.from({ length: 8 }).map((_, indice) => (
+              <EsqueletoMetrica key={indice} />
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <EsqueletoPanel lineas={8} />
+          <EsqueletoPanel lineas={5} />
+        </div>
+        <span className="sr-only">Cargando el estado del sistema…</span>
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold text-neutral-100">Operación</h1>
-        <button className="btn" onClick={() => void cargar()}>
-          Actualizar
-        </button>
-      </header>
-
-      {error ? (
-        <p className="text-sm text-red-400" role="alert">
-          No se ha podido leer el estado: {error}
-        </p>
-      ) : null}
-
-      {/* Alertas (NN-115.4): lo que el operador tiene que ver, arriba del todo. */}
-      {alertas.length > 0 ? (
-        <section className="card space-y-2" aria-label="Alertas">
-          <h2 className="text-sm font-semibold text-neutral-300">
-            Alertas ({alertas.length})
-          </h2>
-          <ul className="space-y-1 text-sm">
-            {alertas.map((a) => (
-              <li
-                key={a.codigo}
-                role="alert"
-                className={a.severidad === "error" ? "badge-err" : "badge-warn"}
-              >
-                {a.mensaje}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {metricas ? (
-        <section className="card space-y-2">
-          <h2 className="text-sm font-semibold text-neutral-300">
-            Métricas (últimas {metricas.ventana_horas} h)
-          </h2>
-          <ul className="space-y-1 text-sm">
-            <li className="flex flex-wrap items-baseline gap-2">
-              <span className="text-neutral-500">p95 de duración</span>
-              <span className="font-mono text-neutral-200">
-                {metricas.p95_duracion_s === null ? "—" : `${metricas.p95_duracion_s} s`}
-              </span>
-            </li>
-            <li className="flex flex-wrap items-baseline gap-2">
-              <span className="text-neutral-500">duración media</span>
-              <span className="font-mono text-neutral-200">
-                {metricas.duracion_media_s === null ? "—" : `${metricas.duracion_media_s} s`}
-              </span>
-            </li>
-            <li className="flex flex-wrap items-baseline gap-2">
-              <span className="text-neutral-500">tasa de fallo</span>
-              <span className="font-mono text-neutral-200">
-                {(metricas.tasa_fallo * 100).toFixed(1)} % ({metricas.jobs_fallidos} de{" "}
-                {metricas.jobs_total})
-              </span>
-            </li>
-            <li className="flex flex-wrap items-baseline gap-2">
-              <span className="text-neutral-500">profundidad de cola</span>
-              <span className="font-mono text-neutral-200">{metricas.profundidad_cola}</span>
-            </li>
-            {Object.keys(metricas.por_error_kind).length > 0 ? (
-              <li className="flex flex-wrap items-baseline gap-2">
-                <span className="text-neutral-500">fallos por motivo</span>
-                <span className="font-mono text-neutral-200">
-                  {Object.entries(metricas.por_error_kind)
-                    .map(([motivo, n]) => `${motivo}: ${n}`)
-                    .join(" · ")}
-                </span>
-              </li>
-            ) : null}
-          </ul>
-        </section>
-      ) : null}
-
-      {salud ? (
-        <section className="card space-y-2">
-          <h2 className="text-sm font-semibold text-neutral-300">Dependencias</h2>
-          <p className="text-xs text-neutral-500">
-            {salud.app} v{salud.version} · entorno {salud.env} ·{" "}
-            {salud.demo_mode ? "modo demo (servicios de pago bloqueados)" : "servicios de pago activos"}
-          </p>
-          <ul className="space-y-1 text-sm">
-            {Object.entries(salud.checks).map(([nombre, check]) => (
-              <li key={nombre} className="flex flex-wrap items-baseline gap-2">
-                <span className={check.ok ? "badge-ok" : "badge-err"}>
-                  {check.ok ? "OK" : "FALLA"}
-                </span>
-                <span className="text-neutral-300">{nombre}</span>
-                <span className="text-xs text-neutral-500">{check.detalle}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {uso ? (
-        <section className="card space-y-2">
-          <h2 className="text-sm font-semibold text-neutral-300">Consumo de hoy</h2>
-          <p className="text-sm text-neutral-400">
-            {String(uso.today_calls ?? 0)} llamadas · {String(uso.today_blocked ?? 0)} bloqueadas por
-            presupuesto · {Number(uso.today_spent_eur ?? 0).toFixed(4)} € consumidos
-          </p>
-        </section>
-      ) : null}
-
-      {proveedores ? (
-        <section className="card space-y-2">
-          <h2 className="text-sm font-semibold text-neutral-300">Proveedores</h2>
-          <ul className="space-y-1 text-sm">
-            {proveedores.providers.map((p) => (
-              <li key={p.key} className="flex flex-wrap items-baseline gap-2">
-                <span className={p.configured ? "badge-ok" : "badge-neutral"}>
-                  {p.configured ? "configurado" : "sin clave"}
-                </span>
-                <span className="text-neutral-300">{p.name}</span>
-                <span className="text-xs text-neutral-500">{p.note}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <section className="card space-y-2">
-        <h2 className="text-sm font-semibold text-neutral-300">Trabajos recientes</h2>
-        {trabajos.length === 0 ? (
-          <p className="text-sm text-neutral-500">Todavía no hay trabajos.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-neutral-500">
-                <tr>
-                  <th className="py-1 pr-3">#</th>
-                  <th className="py-1 pr-3">Tipo</th>
-                  <th className="py-1 pr-3">Estado</th>
-                  <th className="py-1 pr-3">Motivo</th>
-                  <th className="py-1 pr-3">Detalle</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trabajos.map((t) => (
-                  <tr key={String(t.id)} className="border-t border-neutral-900">
-                    <td className="py-1 pr-3 text-neutral-500">{String(t.id)}</td>
-                    <td className="py-1 pr-3 text-neutral-300">{String(t.type)}</td>
-                    <td className="py-1 pr-3">
-                      <span
-                        className={
-                          t.status === "DONE"
-                            ? "badge-ok"
-                            : t.status === "QUEUED" || t.status === "RUNNING"
-                              ? "badge-info"
-                              : "badge-err"
-                        }
-                      >
-                        {String(t.status_label ?? t.status)}
-                      </span>
-                    </td>
-                    <td className="py-1 pr-3 text-neutral-400">
-                      {t.error_kind_label ? String(t.error_kind_label) : "—"}
-                    </td>
-                    <td className="py-1 pr-3 text-xs text-neutral-500">
-                      {t.error ? String(t.error) : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+  if (!datos && error) {
+    return (
+      <Panel titulo="Operación · sin datos" meta="error de lectura">
+        <div className="alerta-fila alerta-fila-err" role="alert">
+          <IconoAlerta className="mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p>No se ha podido leer el estado del sistema.</p>
+            <p className="mt-1 break-words font-mono text-[11px] text-ink-2">{error}</p>
           </div>
-        )}
+        </div>
+        <div className="mt-3">
+          <button type="button" className="btn-sm" onClick={() => void cargar()}>
+            <IconoRefrescar /> Reintentar
+          </button>
+        </div>
+      </Panel>
+    );
+  }
+
+  if (!datos) return null;
+
+  const { salud, metricas, alertas, proveedores, uso, trabajos } = datos;
+  const degradado = salud.checks
+    ? Object.entries(salud.checks).filter(([, comprobacion]) => !comprobacion.ok)
+    : [];
+  const hayErrorCritico = !salud.ok || degradado.length > 0 || alertas.some((a) => a.severidad === "error");
+  const tonoGlobal: TonoEstado = hayErrorCritico ? "crit" : "ok";
+  const presupuestoUsado =
+    uso.budget.daily_limit_eur > 0
+      ? Math.min(1, uso.today_spent_eur / uso.budget.daily_limit_eur)
+      : 0;
+
+  const columnasTrabajo: Columna<JobInfo>[] = columnas.filter(
+    (columna) => !ocultas.includes(columna.clave),
+  );
+
+  return (
+    <div className="space-y-3">
+      {/* --- Banda de estado ------------------------------------------------ */}
+      <section className="ops-panel">
+        <div className="ops-panel-head">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+            <h1 className="text-sm font-semibold tracking-tight text-ink">Operación</h1>
+            <Estado
+              tono={tonoGlobal}
+              etiqueta={hayErrorCritico ? "degradado" : "nominal"}
+              variante="punto"
+            />
+            <span className="ops-panel-meta">
+              {salud.app} v{salud.version} · {salud.env} ·{" "}
+              {salud.demo_mode ? "modo demo" : "servicios de pago activos"}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <span className="ops-panel-meta">
+              {ultimaLectura ? `lectura ${hora(ultimaLectura.toISOString())}` : "sin lectura"}
+            </span>
+            <button
+              type="button"
+              className={`filtro ${autorefresco ? "filtro-on" : ""}`}
+              onClick={() => setAutorefresco((valor) => !valor)}
+              title="Autorefresco cada 15 s"
+            >
+              auto 15 s
+            </button>
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() => void cargar()}
+              disabled={actualizando}
+            >
+              <IconoRefrescar className={actualizando ? "animate-spin" : undefined} />
+              {actualizando ? "leyendo…" : "actualizar"}
+            </button>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="alerta-fila alerta-fila-warn border-l-warn" role="alert">
+            <IconoAlerta className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p>Última lectura fallida; se conserva la anterior ({hora(ultimaLectura?.toISOString())}).</p>
+              <p className="mt-1 break-words font-mono text-[11px] text-ink-2">{error}</p>
+            </div>
+          </div>
+        ) : null}
       </section>
+
+      {/* --- Alertas (lo primero que el operador tiene que ver) ------------ */}
+      {alertas.length > 0 ? (
+        <section className="ops-panel">
+          <div className="ops-panel-head">
+            <div className="flex items-center gap-2">
+              <h2 className="ops-panel-title">Alertas</h2>
+              <span className="ops-panel-meta">{alertas.length}</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-px bg-line">
+            {alertas.map((alerta) => (
+              <div
+                key={`${alerta.codigo}-${alerta.mensaje}`}
+                className={`alerta-fila ${
+                  alerta.severidad === "error" ? "alerta-fila-err" : "alerta-fila-warn"
+                }`}
+                role="alert"
+              >
+                <IconoAlerta className="mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-ink">{alerta.mensaje}</p>
+                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3">
+                    {alerta.codigo} · {alerta.severidad}
+                  </p>
+                </div>
+                {alerta.trabajos && alerta.trabajos.length > 0 ? (
+                  <button
+                    type="button"
+                    className="filtro shrink-0"
+                    onClick={() =>
+                      setTrabajosDeAlerta((actual) =>
+                        actual && actual === alerta.trabajos ? null : (alerta.trabajos ?? null),
+                      )
+                    }
+                  >
+                    {trabajosDeAlerta === alerta.trabajos ? "quitar filtro" : `ver ${alerta.trabajos.length} trabajos`}
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* --- Rejilla principal: telemetría + trabajo | contexto ------------ */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-3">
+          <Panel
+            titulo="Telemetría"
+            meta={`ventana ${metricas.ventana_horas} h`}
+            acciones={
+              <>
+                <span className="ops-panel-meta">
+                  {metricas.jobs_total} trabajos
+                </span>
+              </>
+            }
+          >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Metrica
+                etiqueta="completados"
+                valor={String(metricas.jobs_terminados_ok)}
+                tono="ok"
+                pista={`de ${metricas.jobs_total} en la ventana`}
+              />
+              <Metrica
+                etiqueta="fallidos"
+                valor={String(metricas.jobs_fallidos)}
+                tono={metricas.jobs_fallidos > 0 ? "crit" : "neutro"}
+                pista={porcentaje(metricas.tasa_fallo)}
+              />
+              <Metrica
+                etiqueta="tasa de fallo"
+                valor={porcentaje(metricas.tasa_fallo)}
+                tono={metricas.tasa_fallo > 0.2 ? "crit" : metricas.tasa_fallo > 0.05 ? "warn" : "ok"}
+                pista={`${metricas.jobs_fallidos} de ${metricas.jobs_total}`}
+              />
+              <Metrica
+                etiqueta="profundidad de cola"
+                valor={String(metricas.profundidad_cola)}
+                tono={metricas.profundidad_cola > 0 ? "warn" : "neutro"}
+                pista="trabajos sin recoger"
+              />
+              <Metrica
+                etiqueta="p95 de duración"
+                valor={metricas.p95_duracion_s === null ? "—" : metricas.p95_duracion_s.toFixed(3)}
+                sufijo="s"
+              />
+              <Metrica
+                etiqueta="duración media"
+                valor={metricas.duracion_media_s === null ? "—" : metricas.duracion_media_s.toFixed(3)}
+                sufijo="s"
+              />
+              <Metrica
+                etiqueta="reintentables"
+                valor={String(metricas.jobs_reintentables)}
+                tono={metricas.jobs_reintentables > 0 ? "warn" : "neutro"}
+              />
+              <Metrica
+                etiqueta="última lectura"
+                valor={ultimaLectura ? hora(ultimaLectura.toISOString()) : "—"}
+                pista={autorefresco ? "autorefresco 15 s" : "autorefresco en pausa"}
+              />
+            </div>
+
+            <div className="mt-3">
+              <div className="flex items-center justify-between">
+                <span className="ops-panel-title">reparto por tipo</span>
+                <span className="ops-panel-meta">
+                  {Object.keys(metricas.por_tipo).length} tipos
+                </span>
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {Object.entries(metricas.por_tipo).map(([tipo, numero]) => (
+                  <span key={tipo} className="chip">
+                    {tipo}
+                    <span className="tabular-nums text-ink-2">{numero}</span>
+                  </span>
+                ))}
+                {Object.keys(metricas.por_tipo).length === 0 ? (
+                  <span className="ops-panel-meta">sin trabajos en la ventana</span>
+                ) : null}
+              </div>
+            </div>
+
+            {Object.keys(metricas.por_error_kind).length > 0 ? (
+              <div className="mt-3">
+                <span className="ops-panel-title">fallos por motivo</span>
+                <div className="mt-1">
+                  {Object.entries(metricas.por_error_kind).map(([motivo, numero]) => (
+                    <div key={motivo} className="kv">
+                      <span className="kv-clave">{motivo}</span>
+                      <span className="kv-valor">{numero}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </Panel>
+
+          <Panel
+            titulo="Trabajos"
+            meta={`${trabajosFiltrados.length} de ${trabajos.length}`}
+            relleno="flush"
+            acciones={
+              <>
+                {FILTROS_ESTADO.map((filtro) => (
+                  <button
+                    key={filtro.clave}
+                    type="button"
+                    className={`filtro ${filtroEstado === filtro.clave ? "filtro-on" : ""}`}
+                    onClick={() => setFiltroEstado(filtro.clave)}
+                  >
+                    {filtro.etiqueta}
+                  </button>
+                ))}
+                <span className="mx-1 h-4 w-px bg-line" aria-hidden="true" />
+                <button
+                  type="button"
+                  className={`filtro ${filtroTipo !== "todos" ? "filtro-on" : ""}`}
+                  onClick={() => setFiltroTipo(filtroTipo === "todos" ? (tipos[0] ?? "todos") : "todos")}
+                  title="Filtrar por tipo de trabajo"
+                >
+                  {filtroTipo === "todos" ? "tipo: todos" : filtroTipo}
+                </button>
+                {COLUMNAS_SECUNDARIAS.map((clave) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    className={`filtro ${!ocultas.includes(clave) ? "filtro-on" : ""}`}
+                    onClick={() =>
+                      setOcultas((actual) =>
+                        actual.includes(clave)
+                          ? actual.filter((item) => item !== clave)
+                          : [...actual, clave],
+                      )
+                    }
+                    title="Mostrar u ocultar columna"
+                  >
+                    {clave}
+                  </button>
+                ))}
+                {trabajosDeAlerta ? (
+                  <button
+                    type="button"
+                    className="filtro filtro-on"
+                    onClick={() => setTrabajosDeAlerta(null)}
+                  >
+                    <IconoCruce /> alerta
+                  </button>
+                ) : null}
+              </>
+            }
+          >
+            <TablaOps
+              columnas={columnasTrabajo}
+              filas={trabajosFiltrados}
+              claveFila={(trabajo) => String(trabajo.id)}
+              vacio={
+                <Vacio
+                  titulo="No hay trabajos con estos filtros"
+                  pista="Quita los filtros o espera al siguiente refresco (15 s)."
+                  icono={<IconoPulso />}
+                />
+              }
+            />
+          </Panel>
+        </div>
+
+        {/* --- Columna de contexto ---------------------------------------- */}
+        <div className="min-w-0 space-y-3">
+          <Panel titulo="Consumo de hoy" meta={uso.budget.paid_services_enabled ? "pago activo" : "pago bloqueado"}>
+            <div className="grid grid-cols-3 gap-2">
+              <Metrica etiqueta="llamadas" valor={String(uso.today_calls)} />
+              <Metrica
+                etiqueta="bloqueadas"
+                valor={String(uso.today_blocked)}
+                tono={uso.today_blocked > 0 ? "warn" : "neutro"}
+              />
+              <Metrica etiqueta="consumido" valor={uso.today_spent_eur.toFixed(4)} sufijo="€" />
+            </div>
+            <div className="mt-3">
+              <div className="flex items-center justify-between">
+                <span className="ops-panel-title">presupuesto diario</span>
+                <span className="ops-panel-meta">
+                  {uso.budget.daily_limit_eur.toFixed(2)} € de límite
+                </span>
+              </div>
+              <div className="barra mt-1.5">
+                <div
+                  className={`barra-relleno ${
+                    presupuestoUsado > 0.8 ? "barra-relleno-crit" : presupuestoUsado > 0.5 ? "barra-relleno-warn" : ""
+                  }`}
+                  style={{ width: `${Math.round(presupuestoUsado * 100)}%` }}
+                />
+              </div>
+            </div>
+            {Object.keys(uso.by_provider).length > 0 ? (
+              <div className="mt-3">
+                <span className="ops-panel-title">por proveedor</span>
+                {Object.entries(uso.by_provider).map(([proveedor, llamadas]) => (
+                  <div key={proveedor} className="kv">
+                    <span className="kv-clave">{proveedor}</span>
+                    <span className="kv-valor">{llamadas}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </Panel>
+
+          <Panel titulo="Dependencias" meta={`${Object.keys(salud.checks ?? {}).length} comprobaciones`}>
+            <div className="flex flex-col gap-px bg-line">
+              {Object.entries(salud.checks ?? {}).map(([nombre, comprobacion]) => (
+                <div key={nombre} className="kv bg-surface">
+                  <span className="kv-clave truncate">{nombre}</span>
+                  <Estado
+                    tono={comprobacion.ok ? "ok" : "crit"}
+                    etiqueta={comprobacion.ok ? "ok" : "falla"}
+                    variante="punto"
+                  />
+                  <span className="kv-valor w-2/5 truncate text-ink-3" title={comprobacion.detalle}>
+                    {comprobacion.detalle}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel titulo="Proveedores" meta={`${proveedores.length}`}>
+            <div className="flex flex-col gap-px bg-line">
+              {proveedores.map((proveedor) => (
+                <div key={proveedor.key} className="kv bg-surface">
+                  <span className="kv-clave truncate" title={proveedor.note}>
+                    {proveedor.name}
+                  </span>
+                  <Estado
+                    tono={tonoDeProveedor(proveedor.configured, proveedor.state)}
+                    etiqueta={etiquetaDeProveedor(proveedor.configured, proveedor.state)}
+                    variante="punto"
+                  />
+                  <span className="kv-valor w-2/5 truncate text-ink-3" title={proveedor.note}>
+                    {proveedor.note}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel titulo="Cola" meta="últimos trabajos">
+            <div className="flex items-center gap-2">
+              <IconoReloj className="text-ink-3" />
+              <span className="text-xs text-ink-2">
+                {trabajos.length} trabajos listados · refresco automático cada 15 s
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1">
+              <span className="chip">
+                <IconoCheck className="text-ok" /> {metricas.jobs_terminados_ok} ok
+              </span>
+              <span className="chip">
+                <IconoAlerta className="text-crit" /> {metricas.jobs_fallidos} fallidos
+              </span>
+              <span className="chip">
+                <IconoPulso className="text-info" /> {metricas.profundidad_cola} en cola
+              </span>
+            </div>
+          </Panel>
+        </div>
+      </div>
     </div>
   );
 }

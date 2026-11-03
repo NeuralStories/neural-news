@@ -173,6 +173,10 @@ export interface JobInfo {
   attempt?: number;
   progress?: string | null;
   error?: string | null;
+  /** Motivo normalizado del fallo (`material`, `unknown`…). */
+  error_kind?: string | null;
+  /** El motivo normalizado, ya en lenguaje legible. */
+  error_kind_label?: string | null;
   created_at?: string;
 }
 
@@ -190,4 +194,50 @@ export interface UsageInfo {
   today_spent_eur: number;
   by_provider: Record<string, number>;
   budget: { paid_services_enabled: boolean; daily_limit_eur: number };
+}
+
+/** Métricas de la ventana operativa (calculadas desde la base de datos). */
+export interface MetricasOperacion {
+  ventana_horas: number;
+  jobs_total: number;
+  jobs_terminados_ok: number;
+  jobs_fallidos: number;
+  jobs_reintentables: number;
+  /** Fracción de trabajo fallido en la ventana (0–1). */
+  tasa_fallo: number;
+  duracion_media_s: number | null;
+  p95_duracion_s: number | null;
+  profundidad_cola: number;
+  por_tipo: Record<string, number>;
+  por_error_kind: Record<string, number>;
+}
+
+/** Aviso que el operador tiene que ver (`cola_parada`, `fallo_repetido`…). */
+export interface AlertaOperacion {
+  codigo: string;
+  severidad: string;
+  mensaje: string;
+  /** Trabajos implicados, cuando la alerta los delimita. */
+  trabajos?: number[];
+}
+
+export interface RespuestaMetricas {
+  metricas: MetricasOperacion;
+  alertas: AlertaOperacion[];
+}
+
+/** Comprobación de dependencia que devuelve `/v1/health`. */
+export interface ComprobacionSalud {
+  ok: boolean;
+  detalle: string;
+  items?: Array<{ key: string; configured: boolean }>;
+}
+
+export interface EstadoSalud {
+  ok: boolean;
+  app: string;
+  version: string;
+  demo_mode: boolean;
+  env: string;
+  checks: Record<string, ComprobacionSalud>;
 }

@@ -55,20 +55,8 @@ export const api = {
 
   providerStatus: () =>
     request<{ demo_mode: boolean; paid_services_enabled: boolean; providers: import("./types").ProviderStatus[] }>("/v1/provider-status"),
-  metrics: () =>
-    request<{
-      metricas: Record<string, unknown>;
-      alertas: Array<{ codigo: string; severidad: string; mensaje: string; trabajos?: number[] }>;
-    }>("/v1/metrics"),
-  health: () =>
-    request<{
-      ok: boolean;
-      app: string;
-      version: string;
-      demo_mode: boolean;
-      env: string;
-      checks: Record<string, { ok: boolean; detalle: string; items?: Array<{ key: string; configured: boolean }> }>;
-    }>("/v1/health"),
+  metrics: () => request<import("./types").RespuestaMetricas>("/v1/metrics"),
+  health: () => request<import("./types").EstadoSalud>("/v1/health"),
   usage: () => request<import("./types").UsageInfo>("/v1/usage"),
   updateBudget: (payload: { paid_services_enabled?: boolean; daily_limit_eur?: number }) =>
     request<Record<string, unknown>>("/v1/config/budget", { method: "PUT", body: JSON.stringify(payload) }),

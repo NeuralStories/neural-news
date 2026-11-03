@@ -36,6 +36,7 @@ DOCUMENTOS_BASE = [
     "docs/agente/REGISTRO.md",
     "docs/agente/ESTADO.md",
     "docs/adr/ADR-022-descartes-del-port.md",
+    "docs/DISENO.md",
 ]
 
 

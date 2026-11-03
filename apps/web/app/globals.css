@@ -1,11 +1,112 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Tokens del sistema visual
+   --------------------------------------------------------------------------
+   Base neutra (monotona) + acentos estrictamente funcionales:
+
+     ok    → activo / nominal      (emerald)
+     warn  → degradado / aviso     (amber)
+     crit  → fallo / crítico       (rose)
+     info  → telemetría / marcador (sky)
+     idle  → inactivo / sin dato   (zinc)
+
+   El tema oscuro es el de por defecto (la aplicación se diseñó así). El tema
+   claro existe como ámbito propio (`data-tema="claro"` sobre `<html>`) para que
+   la misma superficie sirva en las dos bases sin duplicar estilos.
+
+   Las utilidades de Tailwind se generan desde estos tokens con `@theme inline`
+   (`bg-surface`, `text-ink-2`, `border-line`…): el valor se resuelve **en
+   tiempo de ejecución**, así que cambiar de tema no recompila nada.
+   ========================================================================== */
+
 :root {
   color-scheme: dark;
+
+  /* Superficies (neutras, de más profunda a más elevada) */
+  --c-bg: #08080a;
+  --c-surface: #101013;
+  --c-surface-2: #16161a;
+  --c-surface-3: #1e1e23;
+
+  /* Líneas: 1px, siempre */
+  --c-line: #23232a;
+  --c-line-strong: #34343d;
+
+  /* Texto */
+  --c-ink: #e8e8ec;
+  --c-ink-2: #a4a4ae;
+  --c-ink-3: #6d6d77;
+
+  /* Acentos funcionales */
+  --c-ok: #34d399;
+  --c-warn: #fbbf24;
+  --c-crit: #fb7185;
+  --c-info: #38bdf8;
+  --c-idle: #71717a;
+
+  /* Tipografía: la pila nombra las fuentes pedidas y cae a las del sistema si
+     no están instaladas. No hay peticiones a terceros: el build no depende de
+     la red. */
+  --c-font-sans: Inter, "IBM Plex Sans", "Segoe UI Variable Text", "Segoe UI",
+    system-ui, -apple-system, sans-serif;
+  --c-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular,
+    "Cascadia Mono", Consolas, monospace;
+
+  /* Radios: sólo los de control industrial (sin `rounded-3xl` en datos) */
+  --c-radius: 4px;
+}
+
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  --c-bg: #f6f6f7;
+  --c-surface: #ffffff;
+  --c-surface-2: #fafafa;
+  --c-surface-3: #eeeef1;
+
+  --c-line: #dcdce2;
+  --c-line-strong: #c0c0c9;
+
+  --c-ink: #16161a;
+  --c-ink-2: #52525c;
+  --c-ink-3: #797982;
+
+  --c-ok: #047857;
+  --c-warn: #b45309;
+  --c-crit: #be123c;
+  --c-info: #0369a1;
+  --c-idle: #71717a;
+}
+
+/* Puente tokens → utilidades de Tailwind (`@theme inline` mantiene la
+   referencia a la variable, de modo que el cambio de tema es instantáneo). */
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-surface-3: var(--c-surface-3);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-ink-3: var(--c-ink-3);
+  --color-ok: var(--c-ok);
+  --color-warn: var(--c-warn);
+  --color-crit: var(--c-crit);
+  --color-info: var(--c-info);
+  --color-idle: var(--c-idle);
+
+  --font-sans: var(--c-font-sans);
+  --font-mono: var(--c-font-mono);
+
+  --radius-sm: var(--c-radius);
+  --radius-md: calc(var(--c-radius) + 2px);
 }
 
 body {
-  @apply bg-neutral-950 text-neutral-100 antialiased;
+  @apply bg-bg text-ink antialiased;
+  font-family: var(--c-font-sans);
 }
 
 /* --- Componentes (sólo utilidades Tailwind reales) --- */
@@ -19,98 +120,265 @@ body {
  * línea de cualquiera de estos componentes.
  */
 .badge {
-  @apply inline-block rounded px-2 py-0.5 text-xs font-medium;
+  @apply inline-block rounded-sm px-2 py-0.5 text-xs font-medium;
 }
 .badge-ok {
-  @apply inline-block rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-medium text-emerald-300;
+  @apply inline-block rounded-sm bg-ok/10 px-2 py-0.5 text-xs font-medium text-ok;
 }
 .badge-warn {
-  @apply inline-block rounded bg-amber-900/60 px-2 py-0.5 text-xs font-medium text-amber-300;
+  @apply inline-block rounded-sm bg-warn/10 px-2 py-0.5 text-xs font-medium text-warn;
 }
 .badge-err {
-  @apply inline-block rounded bg-red-900/60 px-2 py-0.5 text-xs font-medium text-red-300;
+  @apply inline-block rounded-sm bg-crit/10 px-2 py-0.5 text-xs font-medium text-crit;
 }
 .badge-info {
-  @apply inline-block rounded bg-sky-900/60 px-2 py-0.5 text-xs font-medium text-sky-300;
+  @apply inline-block rounded-sm bg-info/10 px-2 py-0.5 text-xs font-medium text-info;
 }
 .badge-neutral {
-  @apply inline-block rounded bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300;
+  @apply inline-block rounded-sm bg-surface-3 px-2 py-0.5 text-xs font-medium text-ink-2;
 }
 .badge-demo {
-  @apply inline-block rounded bg-fuchsia-900/60 px-2 py-0.5 text-xs font-medium text-fuchsia-300;
+  @apply inline-block rounded-sm bg-warn/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-warn;
 }
 
 .btn {
-  @apply inline-flex items-center justify-center rounded-md border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm font-medium transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-surface-3 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60 disabled:cursor-not-allowed disabled:opacity-40;
 }
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-md border border-sky-700 bg-sky-700 px-3 py-1.5 text-sm font-medium transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-info/60 bg-info/15 px-3 py-1.5 text-sm font-medium text-info transition hover:bg-info/25 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60 disabled:cursor-not-allowed disabled:opacity-40;
 }
 .btn-danger {
-  @apply inline-flex items-center justify-center rounded-md border border-red-800 bg-red-900/70 px-3 py-1.5 text-sm font-medium transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-crit/50 bg-crit/15 px-3 py-1.5 text-sm font-medium text-crit transition hover:bg-crit/25 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crit/60 disabled:cursor-not-allowed disabled:opacity-40;
 }
 
 .input {
-  @apply w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none placeholder:text-neutral-500 focus:border-sky-600;
+  @apply w-full rounded-md border border-line bg-surface-2 px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-3 focus:border-info/60;
 }
 
 .card {
-  @apply rounded-lg border border-neutral-800 bg-neutral-900 p-4;
+  @apply rounded-md border border-line bg-surface p-4;
 }
 
 /* Variante compacta: la que usa el Studio en sus paneles y modales. */
 .card-compact {
-  @apply rounded-lg border border-neutral-800 bg-neutral-900 p-3;
+  @apply rounded-md border border-line bg-surface p-3;
 }
 
 /* Variante «hueco»: caja sin relieve, para contenido dentro de una tarjeta. */
 .card-quiet {
-  @apply rounded-lg border border-neutral-800 bg-neutral-950 p-3;
+  @apply rounded-md border border-line bg-bg p-3;
 }
 
 /* Cabecera de un panel: título a la izquierda, acciones a la derecha. */
 .panel-header {
-  @apply flex items-center justify-between pb-3 border-b border-neutral-800;
+  @apply flex items-center justify-between pb-3 border-b border-line;
 }
 
 /* Pie de un modal: acciones a la derecha. */
 .modal-actions {
-  @apply pt-2 border-t border-neutral-800 flex justify-end gap-2;
+  @apply pt-2 border-t border-line flex justify-end gap-2;
 }
 
 /* Caja de contenido técnico (código, transcripciones, datos). */
 .inset {
-  @apply rounded border border-neutral-800/60 bg-neutral-950 p-2;
+  @apply rounded-sm border border-line bg-bg p-2;
 }
 
 /* Envoltorio con desplazamiento horizontal (tablas anchas). */
 .table-wrap {
-  @apply overflow-x-auto rounded-lg border border-neutral-800;
+  @apply overflow-x-auto rounded-md border border-line;
 }
 
 /* Campo del Studio (compacto, monoespaciado cuando el contexto lo pide). */
 .input-compact {
-  @apply w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-200 outline-none placeholder:text-neutral-500 focus:border-sky-500;
+  @apply w-full rounded-sm border border-line bg-bg px-2 py-1.5 text-xs text-ink outline-none placeholder:text-ink-3 focus:border-info/60;
 }
 
 /* Botón secundario compacto (el Studio usa texto pequeño). */
 .btn-sm {
-  @apply inline-flex items-center justify-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-sm border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-ink-2 transition hover:bg-surface-3 hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60 disabled:cursor-not-allowed disabled:opacity-40;
 }
 
 /* Botón principal compacto. */
 .btn-sm-primary {
-  @apply inline-flex items-center justify-center gap-1.5 rounded border border-sky-700 bg-sky-700 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-sm border border-info/50 bg-info/15 px-3 py-1.5 text-xs font-semibold text-info transition hover:bg-info/25 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60 disabled:cursor-not-allowed disabled:opacity-40;
 }
 
 .table-base {
   @apply w-full text-left text-sm;
 }
 .table-base th {
-  @apply border-b border-neutral-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-400;
+  @apply border-b border-line px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3;
 }
 .table-base td {
-  @apply border-b border-neutral-800/60 px-3 py-2 align-top;
+  @apply border-b border-line/60 px-3 py-2 align-top;
+}
+
+/* ==========================================================================
+   Base operativa (referencia: /ops)
+   --------------------------------------------------------------------------
+   Rejilla de 1px, estados semánticos y telemetría monoespaciada con cifras
+   tabulares. Estas clases son la base que reutilizarán el resto de vistas.
+   ========================================================================== */
+
+/* Panel de la rejilla operativa. */
+.ops-panel {
+  @apply rounded-md border border-line bg-surface;
+}
+.ops-panel-head {
+  @apply flex items-center justify-between gap-3 border-b border-line px-3 py-2;
+}
+/* Micro-rótulo de sección: monoespaciado, versalitas, tracking amplio. */
+.ops-panel-title {
+  @apply font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
+}
+.ops-panel-meta {
+  @apply font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
+}
+.ops-panel-body {
+  @apply p-3;
+}
+.ops-panel-body-flush {
+  @apply border-t border-line;
+}
+
+/* Estado: punto + etiqueta monoespaciada. */
+.estado {
+  @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em];
+}
+.estado-punto {
+  @apply h-2 w-2 shrink-0 rounded-[1px];
+}
+.estado-ok {
+  @apply text-ok;
+}
+.estado-warn {
+  @apply text-warn;
+}
+.estado-crit {
+  @apply text-crit;
+}
+.estado-info {
+  @apply text-info;
+}
+.estado-idle {
+  @apply text-idle;
+}
+.estado-punto-ok {
+  @apply bg-ok;
+}
+.estado-punto-warn {
+  @apply bg-warn;
+}
+.estado-punto-crit {
+  @apply bg-crit;
+}
+.estado-punto-info {
+  @apply bg-info;
+}
+.estado-punto-idle {
+  @apply bg-idle;
+}
+
+/* Teletría: valor grande, monoespaciado y con cifras tabulares. */
+.metrica {
+  @apply rounded-md border border-line bg-surface-2 px-3 py-2;
+}
+.metrica-label {
+  @apply block font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
+}
+.metrica-valor {
+  @apply mt-1 block font-mono text-xl leading-none tabular-nums text-ink;
+}
+.metrica-valor-ok {
+  @apply text-ok;
+}
+.metrica-valor-warn {
+  @apply text-warn;
+}
+.metrica-valor-crit {
+  @apply text-crit;
+}
+.metrica-pista {
+  @apply mt-1 block font-mono text-[11px] tabular-nums text-ink-3;
+}
+
+/* Barra de una sola regla (tasa de fallo, presupuesto): 2px de alto. */
+.barra {
+  @apply h-[3px] w-full overflow-hidden rounded-[1px] bg-surface-3;
+}
+.barra-relleno {
+  @apply h-full bg-ok;
+}
+.barra-relleno-warn {
+  @apply h-full bg-warn;
+}
+.barra-relleno-crit {
+  @apply h-full bg-crit;
+}
+.barra-relleno-info {
+  @apply h-full bg-info;
+}
+
+/* Tabla densa: cabecera pegajosa, líneas de 1px, cifras tabulares. */
+.tabla-ops {
+  @apply w-full border-collapse text-left text-xs;
+}
+.tabla-ops thead th {
+  @apply sticky top-0 z-10 border-b border-line bg-surface px-2 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
+}
+.tabla-ops td {
+  @apply border-b border-line/60 px-2 py-1 align-middle;
+}
+.tabla-ops tbody tr:hover {
+  @apply bg-surface-2;
+}
+.tabla-ops .num {
+  @apply font-mono tabular-nums text-ink-2;
+}
+.tabla-ops .id {
+  @apply font-mono tabular-nums text-ink-3;
+}
+
+/* Fila de clave/valor (detalle técnico). */
+.kv {
+  @apply flex items-baseline justify-between gap-3 border-b border-line/60 py-1 text-xs last:border-b-0;
+}
+.kv-clave {
+  @apply text-ink-3;
+}
+.kv-valor {
+  @apply text-right font-mono tabular-nums text-ink-2;
+}
+
+/* Alerta con franja de severidad. */
+.alerta-fila {
+  @apply flex items-start gap-2 border-l-2 border-line bg-surface-2 px-3 py-2 text-xs text-ink-2;
+}
+.alerta-fila-err {
+  @apply border-crit bg-crit/10 text-ink;
+}
+.alerta-fila-warn {
+  @apply border-warn bg-warn/10 text-ink;
+}
+
+/* Chip / filtro. */
+.chip {
+  @apply inline-flex items-center gap-1 rounded-sm border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
+}
+.filtro {
+  @apply inline-flex items-center gap-1 rounded-sm border border-line px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3 transition hover:border-line-strong hover:text-ink-2 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/60;
+}
+.filtro-on {
+  @apply border-info/50 bg-info/10 text-info;
+}
+
+/* Estados de carga y vacío (sin spinners: la forma es la del contenido final). */
+.esqueleto {
+  @apply rounded-[2px] bg-surface-3;
+}
+.vacio {
+  @apply flex flex-col items-center gap-1 py-6 text-center text-xs text-ink-3;
 }
 
 /* --- Utilidades propias --- */
@@ -135,4 +403,3 @@ body {
 .studio-root {
   @apply min-h-full w-full;
 }
-

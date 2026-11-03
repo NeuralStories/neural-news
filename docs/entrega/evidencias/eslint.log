@@ -3,9 +3,9 @@
 # Directorio: C:\Users\haxth3\Documents\NeuralStories\proyecto final\apps\web
 # Veredicto : PASA
 # Código de salida: 0
-# Duración  : 6 s
+# Duración  : 5 s
 # Nota      : 
-# Fecha     : 2026-11-03 18:36:24
+# Fecha     : 2026-11-03 22:17:46
 #
 npm warn Unknown user config "@ai-sdk/openai". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
 

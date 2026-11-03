@@ -5,15 +5,15 @@
 # Código de salida: 0
 # Duración  : 3 s
 # Nota      : 
-# Fecha     : 2026-11-03 18:38:57
+# Fecha     : 2026-11-03 22:20:15
 #
 OK: el contrato exportado coincide con el servido.
-{"ts": "2026-11-03T17:38:56.251214+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
-{"ts": "2026-11-03T17:38:56.252218+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
-{"ts": "2026-11-03T17:38:56.253432+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
-{"ts": "2026-11-03T17:38:56.253432+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
-{"ts": "2026-11-03T17:38:56.254605+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
-{"ts": "2026-11-03T17:38:56.254605+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
+{"ts": "2026-11-03T21:20:14.280176+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.schemas"}
+{"ts": "2026-11-03T21:20:14.281731+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.tables"}
+{"ts": "2026-11-03T21:20:14.282516+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.types"}
+{"ts": "2026-11-03T21:20:14.283202+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.constraints"}
+{"ts": "2026-11-03T21:20:14.283868+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.defaults"}
+{"ts": "2026-11-03T21:20:14.284255+00:00", "level": "INFO", "logger": "alembic.runtime.plugins", "event": "log", "message": "setup plugin alembic.autogenerate.comments"}
 INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
 INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
 INFO  [alembic.runtime.migration] Running upgrade  -> d38b9d62cb47, esquema inicial MVP

@@ -18,18 +18,22 @@ Set-Location $raiz
 function Info([string]$mensaje) { Write-Host $mensaje -ForegroundColor Cyan }
 
 Info "API    → http://127.0.0.1:$PuertoApi  (registro: _api.log)"
-Start-Process -FilePath "python" `
+$api = Start-Process -FilePath "python" `
   -ArgumentList "-m", "uvicorn", "neuralnews.main:app", "--host", "127.0.0.1", "--port", "$PuertoApi" `
   -WorkingDirectory (Join-Path $raiz "apps\api") `
   -RedirectStandardOutput (Join-Path $raiz "_api.log") `
-  -RedirectStandardError (Join-Path $raiz "_api.err.log")
+  -RedirectStandardError (Join-Path $raiz "_api.err.log") `
+  -PassThru
 
 Info "Worker → cola de trabajos (registro: _worker.log)"
-Start-Process -FilePath "python" `
+$worker = Start-Process -FilePath "python" `
   -ArgumentList "-m", "neuralnews.worker" `
   -WorkingDirectory (Join-Path $raiz "apps\api") `
   -RedirectStandardOutput (Join-Path $raiz "_worker.log") `
-  -RedirectStandardError (Join-Path $raiz "_worker.err.log")
+  -RedirectStandardError (Join-Path $raiz "_worker.err.log") `
+  -PassThru
+
+$pids = @{ api = $api.Id; worker = $worker.Id }
 
 if (-not $SinWeb) {
   Info "Web    → http://localhost:$PuertoWeb  (registro: _web.log)"
@@ -41,11 +45,20 @@ if (-not $SinWeb) {
   $npm = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
   if (-not $npm) { $npm = Get-Command "npm" -ErrorAction SilentlyContinue }
   if (-not $npm) { throw "No se encuentra npm en el PATH. Instala Node 20 o superior." }
-  Start-Process -FilePath $npm.Source -ArgumentList "run", "start", "--", "-p", "$PuertoWeb" `
+  $webProc = Start-Process -FilePath $npm.Source -ArgumentList "run", "start", "--", "-p", "$PuertoWeb" `
     -WorkingDirectory $web `
     -RedirectStandardOutput (Join-Path $raiz "_web.log") `
-    -RedirectStandardError (Join-Path $raiz "_web.err.log")
+    -RedirectStandardError (Join-Path $raiz "_web.err.log") `
+    -PassThru
+  $pids.web = $webProc.Id
 }
+
+# Los PIDs se registran en el mismo fichero que usa `scripts/beta_stop.mjs`:
+# así los dos lanzadores comparten una única parada y no quedan procesos
+# huérfanos (hallazgo de la auditoría A3).
+$dirLogs = Join-Path $raiz "storage\logs"
+New-Item -ItemType Directory -Force -Path $dirLogs | Out-Null
+$pids | ConvertTo-Json | Set-Content -Path (Join-Path $dirLogs "beta.pids.json") -Encoding utf8
 
 Start-Sleep -Seconds 6
 try {

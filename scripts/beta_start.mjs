@@ -29,6 +29,27 @@ const API_URL = process.env.NEURAL_BETA_API_URL || 'http://127.0.0.1:8000';
 const WEB_URL = process.env.NEURAL_BETA_WEB_URL || 'http://localhost:3000';
 const WINDOWS = process.platform === 'win32';
 
+/**
+ * Puerto en el que escucha un servicio.
+ *
+ * Antes los puertos estaban fijos en el código (8000 y 3000) y las variables
+ * `NEURAL_BETA_*_URL` solo cambiaban la URL **esperada**: era posible esperar
+ * en un puerto que nadie escuchaba, y no se podía levantar la pila en otro
+ * puerto (imposible, por ejemplo, para arrancar un clon limpio junto a la
+ * beta). Ahora el puerto sale de la URL o de `NEURAL_BETA_*_PORT`.
+ */
+function puertoDe(url, porDefecto) {
+  try {
+    const u = new URL(url);
+    return u.port ? Number(u.port) : porDefecto;
+  } catch {
+    return porDefecto;
+  }
+}
+
+const PUERTO_API = Number(process.env.NEURAL_BETA_API_PORT || puertoDe(API_URL, 8000));
+const PUERTO_WEB = Number(process.env.NEURAL_BETA_WEB_PORT || puertoDe(WEB_URL, 3000));
+
 mkdirSync(LOGS, { recursive: true });
 
 const log = (mensaje) => console.log(`[beta] ${mensaje}`);
@@ -84,7 +105,7 @@ const pids = {
   api: lanzar(
     'api',
     process.env.NEURAL_BETA_PYTHON || 'python',
-    ['-m', 'uvicorn', 'neuralnews.main:app', '--host', '127.0.0.1', '--port', '8000'],
+    ['-m', 'uvicorn', 'neuralnews.main:app', '--host', '127.0.0.1', '--port', String(PUERTO_API)],
     join(RAIZ, 'apps', 'api'),
   ),
   worker: lanzar(
@@ -95,7 +116,7 @@ const pids = {
   ),
   web: lanzarNpm(
     'web',
-    ['run', 'start'],
+    ['run', 'start', '--', '-p', String(PUERTO_WEB)],
     join(RAIZ, 'apps', 'web'),
   ),
 };
@@ -105,8 +126,8 @@ log('Esperando a que respondan…');
 const apiArriba = await esperar(`${API_URL}/api/v1/health`);
 const webArriba = await esperar(WEB_URL);
 
-log(`API: ${apiArriba ? 'respondiendo' : 'SIN RESPONDER'} → ${API_URL}`);
-log(`Web: ${webArriba ? 'respondiendo' : 'SIN RESPONDER'} → ${WEB_URL}`);
+log(`API: ${apiArriba ? 'respondiendo' : 'SIN RESPONDER'} → ${API_URL} (puerto ${PUERTO_API})`);
+log(`Web: ${webArriba ? 'respondiendo' : 'SIN RESPONDER'} → ${WEB_URL} (puerto ${PUERTO_WEB})`);
 log(`PIDs: ${PIDS}`);
 log('Para parar: node scripts/beta_stop.mjs');
 

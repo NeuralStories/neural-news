@@ -9,8 +9,8 @@ casillas —el que valida el supervisor externo— está en `PLAN.md` (generado 
 
 | id | estado | qué hace falta | evidencia |
 |---|---|---|---|
-| `DEC-01` | **COMPLETADA** | La gobernanza (`newsV2/`) dentro de Git, solo si cumplía las 4 condiciones | `docs/gobernance/` (328 ficheros, 15,2 MB): 0 hallazgos de secretos, ningún fichero > 50 MB, sin artefactos generados. Lo que no cumplía (`newsV2/neural-news/`, copia duplicada con su propio `.git`; `newsV2/flow-recovery/node_modules`, con un `.node` de 105 MB) queda **fuera y anotado** en el plan y en el informe final |
-| `DEC-02` | **APLAZADA** (post-beta) | Crear un remoto remoto de git (GitHub/GitLab). El remoto actual es local (`.remotes/neural-news.git`): es una acción externa | Sección 0 del `/goal` |
+| `DEC-01` | **COMPLETADA** | La gobernanza (`../../../newsV2/`) dentro de Git, solo si cumplía las 4 condiciones | `docs/gobernance/` (328 ficheros, 15,2 MB): 0 hallazgos de secretos, ningún fichero > 50 MB, sin artefactos generados. Lo que no cumplía (`../../../newsV2/neural-news/`, copia duplicada con su propio `.git`; `../../../newsV2/flow-recovery/node_modules`, con un `.node` de 105 MB) queda **fuera y anotado** en el plan y en el informe final |
+| `DEC-02` | **APLAZADA** (post-beta) | Crear un remoto remoto de git (GitHub/GitLab). El remoto actual es local (`../../../.remotes/neural-news.git`): es una acción externa | Sección 0 del `/goal` |
 | `SUP-01` | **APLAZADA** (post-beta) | Rellenar `AGENTE_CMD` en `supervisor.sh:5` con el comando real que lanza el agente en esta máquina. Sigue siendo un marcador de posición | Sección 0 del `/goal` |
 | `SUP-02` | **APLAZADA** (post-beta) | Configurar el relanzamiento automático (`crontab` + WSL/Git Bash). En esta máquina WSL no arranca (virtualización desactivada) | Sección 0 del `/goal` |
 

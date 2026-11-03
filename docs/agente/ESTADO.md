@@ -14,7 +14,7 @@
 (el remoto remoto queda aplazado por decisión del propietario).
 
 - `ultima_actualizacion`: 2026-11-03 10:05 (Europe/Madrid)
-- `plan_actual`: `neural-news/docs/agente/PLAN_MAESTRO.md` → ahora
+- `plan_actual`: `docs/agente/PLAN_MAESTRO.md` → ahora
   `proyecto final/docs/agente/PLAN_MAESTRO.md` (89 filas de tarea + el bloque
   «ENTREGA BETA» con F1–F8 y las decisiones) · espejo con casillas en
   `docs/agente/PLAN.md` (89/89 `[x]`) · cola operativa en `docs/agente/TAREAS.md`
@@ -97,7 +97,7 @@ solo este checkpoint, el registro, el plan y la auditoría de la entrega.
 ## Autorizaciones pendientes
 
 1. **`DEC-02` — remoto remoto de git (GitHub/GitLab)**: el remoto actual es local
-   (`.remotes/neural-news.git`). Crear uno externo y publicar la rama de la beta
+   (`../../../.remotes/neural-news.git`). Crear uno externo y publicar la rama de la beta
    son **acciones externas**: requieren autorización expresa.
 2. **`SUP-01` — `AGENTE_CMD` del supervisor**: `supervisor.sh:5` sigue siendo un
    marcador de posición (`tu_comando_de_agente_aqui --prompt PROMPT.md`).
@@ -150,8 +150,8 @@ expresamente (la sección 0 del `/goal` prohíbe el push).
 
 - **Repositorio activo:** `C:\Users\haxth3\Documents\NeuralStories\proyecto final`,
   rama `release/1.0.0-beta.1`, commit `1c63a3a`, tag `v1.0.0-beta.1`. Remoto:
-  `.remotes/neural-news.git` (local). Rama de desarrollo: `beta/v1` @ `4a6d5db`.
-- **Hermano congelado:** `archive/neuralnews-20261101/` (fuera de git): es
+  `../../../.remotes/neural-news.git` (local). Rama de desarrollo: `beta/v1` @ `4a6d5db`.
+- **Hermano congelado:** `../../../archive/neuralnews-20261101/` (fuera de git): es
   **fuente de capacidades**, no un segundo producto (ADR-016).
 - **Cómo se verifica todo (comandos que funcionan tal cual):**
 

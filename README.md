@@ -206,8 +206,8 @@ Todo lo anterior está declarado **en la interfaz y en `ESTADO_REAL.md`**, no so
   [docs/SECURITY.md](docs/SECURITY.md) · [docs/EDITORIAL_STYLE.md](docs/EDITORIAL_STYLE.md) ·
   [docs/PROVIDER_STATUS.md](docs/PROVIDER_STATUS.md) · [docs/DEPLOY.md](docs/DEPLOY.md)
 - **Gobernanza** (plan rector, registro de decisiones y riesgos):
-  [docs/gobernance/](docs/gobernanza/) ·
-  [plan rector de la beta](docs/gobernance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md)
+  [docs/gobernanza/](docs/gobernanza/) ·
+  [plan rector de la beta](docs/gobernanza/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md)
 - **Plan maestro ejecutado** (89 tareas, todas completadas) y su checkpoint:
   [docs/agente/PLAN_MAESTRO.md](docs/agente/PLAN_MAESTRO.md) ·
   [docs/agente/ESTADO.md](docs/agente/ESTADO.md)

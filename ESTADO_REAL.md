@@ -1,8 +1,8 @@
 # ESTADO REAL — neural.news (actualizado 01/11/2026)
 
 **Repositorio activo:** `neural-news` · **Rama de trabajo:** `beta/v1` (desde `main` `ef01bd0`)
-**Repositorio hermano:** `archive/neuralnews-20261101/` — **archivado y sellado** (ADR-016). Es fuente de capacidades, no un segundo producto.
-**Plan rector:** [`docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md`](docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md) · **Tarea:** [`docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md`](docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md)
+**Repositorio hermano:** `../archive/neuralnews-20261101/` — **archivado y sellado** (ADR-016). Es fuente de capacidades, no un segundo producto.
+**Plan rector:** [`docs/gobernanza/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md`](docs/gobernanza/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md) · **Tarea:** [`docs/gobernanza/06_TASKS/TASK_NN-108_VERSION_BETA.md`](docs/gobernanza/06_TASKS/TASK_NN-108_VERSION_BETA.md)
 
 **Etiquetas:** FUNCIONA (probado con test automático) · PARCIAL (funciona con límites documentados) · PENDIENTE_POR_ACTIVO (falta material del propietario) · PENDIENTE_POR_API (falta integración externa autorizada) · NO_IMPLEMENTADO (fuera de la primera ventana).
 
@@ -44,7 +44,7 @@ Commits `4b9ec04`, `d9f89f6`, `ef01bd0`. **Estado: PARCIAL** — la cadena de pr
 | Componente | Estado | Evidencia |
 |---|---|---|
 | Cadena de 3 proveedores: `yt-dlp` (principal) → `timedtext` (pistas manuales) → reproductor interno (ASR) | FUNCIONA | `tests/test_transcribe_ytdlp.py` (5), `test_transcribe_auto.py` (3), `test_transcribe_sources.py` (5) — **E** |
-| Binario `yt-dlp` local sin dependencias de Python ni claves de API | FUNCIONA | `tools/yt-dlp.exe` (23,6 MB); búsqueda por `NEURAL_YTDLP_PATH` → PATH → rutas del repo — **A** |
+| Binario `yt-dlp` local sin dependencias de Python ni claves de API | FUNCIONA | `../tools/yt-dlp.exe` (23,6 MB); búsqueda por `NEURAL_YTDLP_PATH` → PATH → rutas del repo — **A** |
 | Idioma preferido con desempate por variante regional (`es-419` antes que `es`) | FUNCIONA | `providers/transcript.py:_pick_language` — **A** |
 | Pista de pódcast `podcast:transcript` desde el feed RSS | **NO FUNCIONA** | **B1**: `api/sources.py:262` lee `source.metadata`, que no existe (el modelo expone `metadata_json`, `models.py:65`) → `AttributeError` enmascarado por el `except Exception` de `:290` |
 | UI de transcripción en `/fuentes` | PARCIAL | **B2** (la transcripción pegada se descarta), **B4** (errores en verde) — ver §5 |
@@ -85,7 +85,7 @@ Todos **A** (verificados sobre el artefacto). **Estado**: `CERRADO` = corregido 
 | **B10** | `tracks` calculado y no usado | `providers/transcript.py:123` | Código muerto | **CERRADO** — **A** |
 | **B11** | El nombre de la pista se interpolaba sin codificar | `providers/transcript.py:145-147` | Podía romper la URL | **CERRADO** — `quote()` — **A** |
 | **B12** | El docstring anunciaba un default `PENDING` inexistente | `services/director.py:13` | Discrepancia documentación↔código | **CERRADO** — docstring alineado con el comportamiento real — **A** |
-| **B13** | `HelpModal.tsx` sin usar | `features/studio/components/HelpModal.tsx` | 4 KB muertos | **CERRADO** — **eliminado**: es el «Manual y Contrato», herramienta retirada de la UI por decisión del propietario. Contenido recuperable en el historial |
+| **B13** | `HelpModal.tsx` sin usar | (eliminado en B13; ruta histórica: `features/studio/components/HelpModal.tsx`) | 4 KB muertos | **CERRADO** — **eliminado**: es el «Manual y Contrato», herramienta retirada de la UI por decisión del propietario. Contenido recuperable en el historial |
 | **B14** | `setError_clear` sin usar | `apps/web/lib/hooks.ts:46` | API muerta | **CERRADO** — eliminada — **A** |
 | **B15** | `logout` borraba todas las sesiones del actor | `api/auth.py:57-59` | Expulsaba también de otras pestañas | **CERRADO** — ahora cierra solo la sesión actual — **E** |
 | **B16** | `podcast:transcript` se leía del atributo `href` | `providers/transcript.py` | feedparser lo expone como `url`: **la transcripción de pódcast nunca se recuperó** | **CERRADO** — se aceptan `href` y `url` — **E** |
@@ -146,13 +146,13 @@ Todos **A** (verificados sobre el artefacto). **Estado**: `CERRADO` = corregido 
 
 | Ítem | Estado | Evidencia |
 |---|---|---|
-| Artefactos sueltos (13 MB de ZIP/RAR y 2 directorios) sacados del árbol | FUNCIONA | `neural-news/storage/` (gitignored) + `backups/MANIFIESTO_SELLADO_2026-11-01.txt` — **E** |
+| Artefactos sueltos (13 MB de ZIP/RAR y 2 directorios) sacados del árbol | FUNCIONA | `storage/` (gitignored) + `../backups/MANIFIESTO_SELLADO_2026-11-01.txt` — **E** |
 | Backup previo a NN-107 verificado | FUNCIONA | SHA-256 `c08d99b4…77d69d` **coincide** con el registrado — **E** |
 | Dump de PostgreSQL + restauración verificada | FUNCIONA | 20 tablas con recuento idéntico entre original y copia restaurada — **E** |
 | Bundles de git de ambos repos | FUNCIONA | `git bundle verify` → *is okay* — **E** |
-| Remoto local + push de ambas ramas | FUNCIONA | `.remotes/neural-news.git` (3 ramas + tag) y `.remotes/neuralnews.git` — **E** |
+| Remoto local + push de ambas ramas | FUNCIONA | `../.remotes/neural-news.git` (3 ramas + tag) y `../.remotes/neuralnews.git` — **E** |
 | Clon limpio desde el remoto | FUNCIONA | 27 commits, árbol de 141 ficheros **idéntico**, working tree limpio — **E** |
-| Repositorio hermano archivado y sellado | FUNCIONA | `archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto) + `backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt` — **E** |
+| Repositorio hermano archivado y sellado | FUNCIONA | `../archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto) + `../backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt` — **E** |
 | Rama `beta/v1` creada desde `main` | FUNCIONA | `ef01bd0` — **E** |
 
 > **Nota operativa:** la pila del repositorio hermano estaba **en marcha** (API en `:8800`, web en `:3100`) mientras se archivaba. Se detuvieron **solo** esos dos procesos; la pila principal (`neural-news`, API `:8000`, web `:3000`, worker) **siguió activa** durante toda la operación.
@@ -163,13 +163,13 @@ Todos **A** (verificados sobre el artefacto). **Estado**: `CERRADO` = corregido 
 
 | Qué | Dónde |
 |---|---|
-| Repositorio activo | `NeuralStories/neural-news/` (rama `beta/v1`) |
-| Remoto local | `NeuralStories/.remotes/neural-news.git` |
-| Repositorio hermano archivado | `NeuralStories/archive/neuralnews-20261101/` |
-| Manifiesto de sellado | `NeuralStories/backups/MANIFIESTO_SELLADO_2026-11-01.txt` |
-| Manifiesto de archivo | `NeuralStories/backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt` |
-| Bundles de git | `NeuralStories/backups/bundles/` |
-| Dump de BD | `NeuralStories/backups/db/neuralnews-2026-11-01.sql` |
-| Fuentes de Flow selladas | `NeuralStories/neural-news/storage/FLOW_RECOVERY_2026-11-01_DIR/` (17/17 verificadas) |
-| Plan rector | `docs/governance/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md` |
-| Tarea | `docs/governance/06_TASKS/TASK_NN-108_VERSION_BETA.md` |
+| Repositorio activo | esta misma carpeta (raíz del repositorio), rama `release/1.0.0-beta.1` |
+| Remoto local | `../.remotes/neural-news.git` |
+| Repositorio hermano archivado | `../archive/neuralnews-20261101/` |
+| Manifiesto de sellado | `../backups/MANIFIESTO_SELLADO_2026-11-01.txt` |
+| Manifiesto de archivo | `../backups/MANIFIESTO_ARCHIVE_neuralnews_2026-11-01.txt` |
+| Bundles de git | `../backups/bundles/` |
+| Dump de BD | `../backups/db/neuralnews-2026-11-01.sql` |
+| Fuentes de Flow selladas | `storage/FLOW_RECOVERY_2026-11-01_DIR/` (17/17 verificadas) |
+| Plan rector | `docs/gobernanza/01_DOCUMENTACION/18_PLAN_MAESTRO_BETA.md` |
+| Tarea | `docs/gobernanza/06_TASKS/TASK_NN-108_VERSION_BETA.md` |

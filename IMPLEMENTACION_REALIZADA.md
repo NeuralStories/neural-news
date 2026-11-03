@@ -186,7 +186,7 @@ Ejecutada por HTTP contra `localhost:3000` con PostgreSQL local:
    chest_punch_zoom, subtle_dolly, horizontal_flip…) y sus prompts regenerados a v2 incluyendo el
    movimiento y la transición de entrada. La animática del piloto se reconstruyó con las
    transiciones (h264 1080x1920, 25,6 s según ffprobe; evidencia en
-   `REVISION_NN107_FLOW/evidencia/piloto001_animatica_916.mp4`).
+   `../REVISION_NN107_FLOW/evidencia/piloto001_animatica_916.mp4`).
 - Corrección adicional: `run_director` desvincula tomas/beats antes de sustituir la línea de
   tiempo (FK violations en PostgreSQL al replanificar proyectos con tomas).
 - Pruebas al cierre: **122 passed, 0 fallos, 1 skip** + 2 E2E en verde.
@@ -223,7 +223,7 @@ Commits `4b9ec04` (buscar o crear la transcripción), `d9f89f6` (ASR de cualquie
   puede no tener la pista genérica; se descartan las variantes encadenadas (`es-es-419`), que son
   traducciones automáticas de otra lengua.
 - **Reintento con backoff ante el 429 de YouTube** (3 intentos, una sola pista por intento).
-- **Verificación real ejecutada:** `tools/sub5/x.en.json3` descargado con `yt-dlp`; la fuente #22
+- **Verificación real ejecutada:** `../tools/sub5/x.en.json3` descargado con `yt-dlp`; la fuente #22
   transcrita vía HTTP (`POST /api/v1/sources/22/transcribe` → 200) con el contenido almacenado.
 - **Pruebas:** `test_transcribe_sources.py` (5), `test_transcribe_auto.py` (3), `test_transcribe_ytdlp.py` (5).
 - **Estado honesto: PARCIAL.** La cadena funciona, pero el recorrido de usuario tiene defectos
@@ -233,11 +233,11 @@ Commits `4b9ec04` (buscar o crear la transcripción), `d9f89f6` (ASR de cualquie
 ## FASE 6 — Preparación de la beta (01/11/2026) — NN-108 / NN-119
 
 - **Consolidación del repositorio.** El hermano `neuralnews` queda **archivado y sellado** en
-  `archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto), con manifiesto
+  `../archive/neuralnews-20261101/` (20 024 ficheros, repo git válido con su remoto), con manifiesto
   SHA-256 de sus 121 ficheros versionados. Se detiene **solo** su pila (API `:8800`, web `:3100`);
   la pila principal sigue en marcha.
-- **Remoto local + backups verificados.** `.remotes/neural-news.git` (3 ramas + tag) y
-  `.remotes/neuralnews.git`; dos bundles git verificados; dump de PostgreSQL **restaurado en base
+- **Remoto local + backups verificados.** `../.remotes/neural-news.git` (3 ramas + tag) y
+  `../.remotes/neuralnews.git`; dos bundles git verificados; dump de PostgreSQL **restaurado en base
   limpia con recuento idéntico en 20 tablas**; backup previo a NN-107 con SHA-256 coincidente.
 - **Artefactos sueltos fuera del árbol** (13 MB de ZIP/RAR + 2 directorios) → `storage/`, con
   manifiesto de sellado. Las **17/17 fuentes de Flow** contrastan con `reports/manifest.json`.

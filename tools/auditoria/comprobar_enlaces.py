@@ -44,6 +44,31 @@ RE_ENLACE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 RE_RUTA = re.compile(r"`([A-Za-z0-9_./\\-]+\.[A-Za-z0-9]+)`")
 RE_PLACEHOLDER = re.compile(r"[<>{}\[\]*]")
 
+# Rutas de **estado de máquina**: las escribe la herramienta de trabajo y están
+# ignoradas por git (no se versionan), pero se citan en los documentos. No son
+# enlaces rotos: son ficheros que existen solo en la máquina.
+RUTAS_ESTADO_MAQUINA = {
+    "docs/agente/espera.txt",
+    "docs/agente/TERMINADO",
+}
+
+# Marcadores de **referencia histórica**: cuando la propia línea dice que el
+# fichero ya no está (se eliminó, se retiró, se movió), la ruta no es una
+# afirmación de que exista ahora. Se cuentan aparte para que la omisión sea
+# visible en el informe.
+MARCADORES_HISTORICOS = (
+    "eliminado",
+    "eliminado en",
+    "histórico",
+    "histórica",
+    "retirado",
+    "retirada",
+    "ya no existe",
+    "no existe (",
+    "se movió",
+    "reubicado",
+)
+
 
 def _indice_de_ficheros() -> list[str]:
     """Rutas de todos los ficheros del repositorio (sin node_modules ni .next)."""
@@ -105,8 +130,9 @@ def _buscar_por_nombre(nombre: str) -> bool:
     return (RAIZ / nombre).exists()
 
 
-def revisar() -> list[str]:
+def revisar() -> tuple[list[str], int]:
     rotos: list[str] = []
+    historicos = 0
     for relativo in DOCUMENTOS:
         fichero = RAIZ / relativo
         if not fichero.exists():
@@ -114,52 +140,65 @@ def revisar() -> list[str]:
             continue
         texto = fichero.read_text(encoding="utf-8")
         base = fichero.parent
-        destinos: list[str] = []
-        for coincidencia in RE_ENLACE.finditer(texto):
-            destinos.append(coincidencia.group(1).strip())
-        for coincidencia in RE_RUTA.finditer(texto):
-            destinos.append(coincidencia.group(1).strip())
-        for destino in destinos:
-            if not destino or destino.startswith(("http://", "https://", "mailto:", "#")):
-                continue
-            if RE_PLACEHOLDER.search(destino):
-                continue
-            limpio = destino.split("#", 1)[0].split("?", 1)[0].strip()
-            if not limpio:
-                continue
-            # Una ruta que empieza por «/» es un camino de URL, no un fichero.
-            if limpio.startswith("/"):
-                continue
-            # Los registros y bases son ficheros de runtime: no viven en el repo.
-            if limpio.lower().endswith((".log", ".db", ".sqlite")):
-                continue
-            # `storage/…` es el directorio de runtime (ignorado por git).
-            if limpio.replace("\\", "/").startswith("storage/"):
-                continue
-            # `node_modules/…` describe el entorno instalado, no el repositorio.
-            if limpio.replace("\\", "/").startswith("node_modules/"):
-                continue
-            if "/" in limpio or "\\" in limpio:
-                # Es una ruta: se resuelve contra el documento, contra la raíz y
-                # por sufijo (las rutas relativas a un subdirectorio son válidas).
-                if (
-                    _existe(base / limpio)
-                    or _existe(RAIZ / limpio)
-                    or _coincide_por_sufijo(limpio)
-                ):
+        for numero, linea in enumerate(texto.splitlines(), start=1):
+            es_historica = any(marcador in linea.lower() for marcador in MARCADORES_HISTORICOS)
+            destinos: list[str] = []
+            for coincidencia in RE_ENLACE.finditer(linea):
+                destinos.append(coincidencia.group(1).strip())
+            for coincidencia in RE_RUTA.finditer(linea):
+                destinos.append(coincidencia.group(1).strip())
+            for destino in destinos:
+                if not destino or destino.startswith(("http://", "https://", "mailto:", "#")):
                     continue
-                # Una rama o un tag no son ficheros: `release/1.0.0-beta.1`.
-                if not Path(limpio).suffix.lower() in EXTENSIONES_FICHERO:
+                if RE_PLACEHOLDER.search(destino):
                     continue
-                rotos.append(f"{relativo}: «{destino}» no existe")
-                continue
-            # Nombre suelto: solo se comprueba si su extensión es de fichero.
-            extension = Path(limpio).suffix.lower()
-            if extension not in EXTENSIONES_FICHERO:
-                continue
-            if not _buscar_por_nombre(limpio):
-                rotos.append(f"{relativo}: «{limpio}» no existe en el repositorio")
-    return rotos
+                limpio = destino.split("#", 1)[0].split("?", 1)[0].strip()
+                if not limpio:
+                    continue
+                # Estado de máquina: no se versiona, pero se cita en los documentos.
+                if limpio.replace("\\", "/") in RUTAS_ESTADO_MAQUINA:
+                    continue
+                # Una ruta que empieza por «/» es un camino de URL, no un fichero.
+                if limpio.startswith("/"):
+                    continue
+                # Los registros y bases son ficheros de runtime: no viven en el repo.
+                if limpio.lower().endswith((".log", ".db", ".sqlite")):
+                    continue
+                # `storage/…` es el directorio de runtime (ignorado por git).
+                if limpio.replace("\\", "/").startswith("storage/"):
+                    continue
+                # `node_modules/…` describe el entorno instalado, no el repositorio.
+                if limpio.replace("\\", "/").startswith("node_modules/"):
+                    continue
+                if "/" in limpio or "\\" in limpio:
+                    # Es una ruta: se resuelve contra el documento, contra la raíz y
+                    # por sufijo (las rutas relativas a un subdirectorio son válidas).
+                    if (
+                        _existe(base / limpio)
+                        or _existe(RAIZ / limpio)
+                        or _coincide_por_sufijo(limpio)
+                    ):
+                        continue
+                    # Una rama o un tag no son ficheros: `release/1.0.0-beta.1`.
+                    if not Path(limpio).suffix.lower() in EXTENSIONES_FICHERO:
+                        continue
+                    if es_historica:
+                        historicos += 1
+                        continue
+                    rotos.append(f"{relativo}:{numero}: «{destino}» no existe")
+                    continue
+                # Nombre suelto: solo se comprueba si su extensión es de fichero.
+                extension = Path(limpio).suffix.lower()
+                if extension not in EXTENSIONES_FICHERO:
+                    continue
+                if not _buscar_por_nombre(limpio):
+                    if es_historica:
+                        historicos += 1
+                        continue
+                    rotos.append(
+                        f"{relativo}:{numero}: «{limpio}» no existe en el repositorio"
+                    )
+    return rotos, historicos
 
 
 def main() -> int:
@@ -172,13 +211,22 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="Salida en JSON.")
     args = parser.parse_args()
 
-    rotos = revisar()
+    rotos, historicos = revisar()
     if args.json:
-        print(json.dumps({"rotos": rotos, "total": len(rotos)}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                {"rotos": rotos, "total": len(rotos), "historicos_omitidos": historicos},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
     else:
         for linea in rotos:
             print(f"ROTO  {linea}")
-        print(f"\n{len(rotos)} destinos rotos en {len(DOCUMENTOS)} documentos.")
+        print(
+            f"\n{len(rotos)} destinos rotos en {len(DOCUMENTOS)} documentos "
+            f"({historicos} referencias históricas omitidas)."
+        )
     return 1 if rotos else 0
 
 

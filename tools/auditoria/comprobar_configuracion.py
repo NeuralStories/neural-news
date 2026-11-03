@@ -16,8 +16,8 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -30,7 +30,6 @@ RE_PY_GETENV = re.compile(r"os\.getenv\(\s*[\"']([A-Z0-9_]+)[\"']")
 RE_PY_ITEM = re.compile(r"os\.environ\[\s*[\"']([A-Z0-9_]+)[\"']\s*\]")
 RE_JS_DOT = re.compile(r"process\.env\.([A-Z0-9_]+)")
 RE_JS_CORCHETE = re.compile(r"process\.env\[\s*[\"']([A-Z0-9_]+)[\"']\s*\]")
-RE_CAMPO_SETTINGS = re.compile(r"^\s{4}([a-z_][a-z0-9_]*)\s*:\s*.*=\s*Field\(", re.MULTILINE)
 RE_EJEMPLO = re.compile(r"^#?\s*([A-Z][A-Z0-9_]*)\s*=", re.MULTILINE)
 
 # Variables de Node que no son configuración del producto.
@@ -43,6 +42,30 @@ def _ficheros(patron: str) -> list[Path]:
         for p in RAIZ.glob(patron)
         if p.is_file() and "node_modules" not in p.parts and ".next" not in p.parts
     ]
+
+
+def _campos_de_settings(ruta: Path) -> list[str]:
+    """Campos declarados en la clase `Settings` (pydantic-settings).
+
+    Se usa el AST, no una regex: los campos pueden llevar o no `Field(...)` y
+    una regex da falsos negativos (declararía «no leídas» variables que sí lo
+    están) y falsos positivos.
+    """
+    try:
+        arbol = ast.parse(ruta.read_text(encoding="utf-8", errors="ignore"))
+    except SyntaxError:
+        return []
+    campos: list[str] = []
+    for nodo in ast.walk(arbol):
+        if not isinstance(nodo, ast.ClassDef) or nodo.name != "Settings":
+            continue
+        for item in nodo.body:
+            if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                nombre = item.target.id
+                if nombre.startswith("model_"):
+                    continue
+                campos.append(nombre)
+    return campos
 
 
 def variables_del_codigo() -> dict[str, list[str]]:
@@ -61,9 +84,8 @@ def variables_del_codigo() -> dict[str, list[str]]:
                 anota(nombre, relativo)
 
     for fichero in _ficheros("apps/api/src/neuralnews/config.py"):
-        texto = fichero.read_text(encoding="utf-8", errors="ignore")
         relativo = fichero.relative_to(RAIZ).as_posix()
-        for campo in RE_CAMPO_SETTINGS.findall(texto):
+        for campo in _campos_de_settings(fichero):
             anota(f"NEURAL_{campo.upper()}", relativo)
 
     for patron_base in ("apps/web/**/*.ts", "apps/web/**/*.tsx", "apps/web/**/*.mjs", "scripts/*.mjs"):

@@ -20,7 +20,12 @@ RAIZ = Path(__file__).resolve().parents[2]
 
 # Documentos que se revisan (la gobernanza heredada se excluye: es evidencia
 # verbatim y sus enlaces apuntan a rutas de la copia histórica).
-DOCUMENTOS = [
+#
+# Los documentos de `docs/entrega/` se descubren **en el disco**: una lista
+# escrita a mano se queda corta en cuanto se añade un informe (pasó con
+# AUDITORIA_BETA.md, que no estaba en la lista y por eso no se revisaban sus
+# enlaces).
+DOCUMENTOS_BASE = [
     "README.md",
     "CHANGELOG.md",
     "ESTADO_REAL.md",
@@ -31,14 +36,22 @@ DOCUMENTOS = [
     "docs/agente/REGISTRO.md",
     "docs/agente/ESTADO.md",
     "docs/adr/ADR-022-descartes-del-port.md",
-    "docs/entrega/RESUMEN_COMPLETO.md",
-    "docs/entrega/NOTAS_BETA.md",
-    "docs/entrega/GUIA_PRUEBAS_BETA.md",
-    "docs/entrega/INFORME_FINAL.md",
-    "docs/entrega/RESUMEN_VERIFICACIONES.md",
-    "docs/entrega/evidencias/F1_linea_base.md",
-    "docs/entrega/evidencias/F6_lanzamiento.md",
 ]
+
+
+def _documentos_de_entrega() -> list[str]:
+    """Todos los `.md` de `docs/entrega/`, incluidos los de `evidencias/`."""
+    base = RAIZ / "docs" / "entrega"
+    if not base.is_dir():
+        return []
+    return sorted(
+        ruta.relative_to(RAIZ).as_posix()
+        for ruta in base.rglob("*.md")
+        if ruta.is_file()
+    )
+
+
+DOCUMENTOS = DOCUMENTOS_BASE + _documentos_de_entrega()
 
 RE_ENLACE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 RE_RUTA = re.compile(r"`([A-Za-z0-9_./\\-]+\.[A-Za-z0-9]+)`")

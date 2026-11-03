@@ -74,7 +74,7 @@ usa la web). Script: `tools/auditoria/recorrido_funcional.py`; resumen:
 | 2.4 «Investigar» | **PASA** | `job_id` creado |
 | 2.5 afirmaciones con estado y sin confirmaciones sin evidencia | **PASA** | 0 confirmadas sin evidencia |
 | 2.6 el Estudio (8 pasos) carga | **PASA** | HTTP 200 |
-| 2.9 «Lotes → nuevo lote» y exportar | **PASA** | el contrato exige **exactamente 5 o 10** noticias; con 3 de demo la API responde «Selecciona exactamente 10 noticias». Se crean 7 con el proveedor «manual» (texto propio, sin red) → lote creado (`id=1`, 10 noticias), exportado (trabajo `DONE`), estado `READY_FOR_REVIEW` y **ZIP descargable** (8 127 bytes) con `lote/manifiesto.json`, `lote/guiones.md` y `lote/guiones/*.md`. El **storyboard y los prompts van dentro del manifiesto**, no en ficheros aparte |
+| 2.9 «Lotes → nuevo lote» y exportar | **PASA** | el contrato exige **exactamente 5 o 10** noticias; con 3 de demo la API responde «Selecciona exactamente 10 noticias». Se crean 7 con el proveedor «manual» (texto propio, sin red) → lote creado (`id=1`, 10 noticias), exportado (trabajo `DONE`), estado `READY_FOR_REVIEW` y **ZIP descargable** (8 127 bytes) con el manifiesto JSON, los guiones en Markdown y los guiones sueltos. El **storyboard y los prompts van dentro del manifiesto**, no en ficheros aparte |
 | 3.2 sin evidencia, estado `UNVERIFIED` | **PASA** | comprobación informativa |
 | 3.3 alerta «cola parada» en `/ops` | **PASA** (tras corregir la guía) | la alerta real es `cola_parada` y avisa de **trabajos sin recoger desde hace >5 min**, no «del worker parado en menos de un minuto» |
 
@@ -105,7 +105,7 @@ cambiar el producto):
 - La guía dice «pulsa «Actualizar»» en el paso 2.2, sin indicar **qué** se
   actualiza ni que el estado se ve en `/fuentes`.
 - El paquete de un lote no lleva el storyboard como fichero aparte (va dentro de
-  `manifiesto.json`): la guía no lo precisa.
+  el manifiesto): la guía no lo precisa.
 
 ---
 
@@ -132,7 +132,7 @@ Batería reproducible: `tools/auditoria/verificar_clon_limpio.ps1`.
 | Ruta | Qué faltaba | Por qué rompía |
 |---|---|---|
 | `apps/api/pyproject.toml` | la dependencia **`Pillow>=10.0`** | `services/graphics.py` la usa con import perezozo: la app arranca, pero **dos tests no se pueden recoger** y `pytest` aborta la suite entera (exit 2) |
-| `apps/api/pyproject.toml` | la dependencia **`cryptography>=42.0`** | `services/vault.py` la usa para la bóveda de secretos: **ocho tests de la bóveda fallan** en instalación limpia |
+| `apps/api/pyproject.toml` | la dependencia **`cryptography>=42.0`** | `apps/api/src/neuralnews/vault.py` la usa para la bóveda de secretos: **ocho tests de la bóveda fallan** en instalación limpia |
 | `apps/api/pyproject.toml` | cota superior de **`fastapi`** | `fastapi>=0.115` sin acotar: el equipo tenía 0.115.8 y el clon 0.162.0; el contrato OpenAPI versionado solo cuadra con una de las dos |
 | `apps/web/features/studio/data/manifiestoStudio.generado.json` | hashes de los ficheros del Studio | generado con **CRLF** en Windows: no cuadra con los bytes versionados (LF) → el test «manifiesto al día» falla en el clon |
 | `apps/web/lib/estados.generado.ts` | igual que el anterior | idem |
@@ -187,15 +187,42 @@ Evidencia: `docs/entrega/evidencias/auditoria/A1_clon_*.log` y
 
 | Cosa | Estado | Por qué |
 |---|---|---|
-| `scripts/supervisor.sh` y el crontab | **BLOQUEADA** | WSL no arranca (virtualización desactivada); nada depende de bash/cron |
+| `supervisor.sh` (raiz del repositorio) y el crontab | **BLOQUEADA** | WSL no arranca (virtualización desactivada); nada depende de bash/cron |
 | **Cuota** de la plataforma | **desconocido** | no hay herramienta de consulta de cuota ni de saldo |
 
 ---
 
-## 4. Hallazgos
+### 3.4 A3.4 — `scripts\start.ps1` frente a `beta_start.mjs`
+
+Ambos levantan **la misma pila** (API `uvicorn neuralnews.main:app`, worker
+`python -m neuralnews.worker` y web `npm run start`) y ambos dejan los
+procesos desacoplados (no se paran al cerrar la terminal). La auditoría
+comprobó el código de los dos y su comportamiento real.
+
+| | `scripts\start.ps1` | `scripts\beta_start.mjs` |
+|---|---|---|
+| Dependencia | PowerShell (Windows) | **Node 20+**: funciona en Windows, macOS y Linux |
+| Puertos | parámetros `-PuertoApi` / `-PuertoWeb` | variables `NEURAL_BETA_API_PORT` / `NEURAL_BETA_WEB_PORT` (o el puerto de `NEURAL_BETA_*_URL`) |
+| Registro | `_api.log`, `_worker.log`, `_web.log` en la raíz | `storage/logs/{api,worker,web}.log` |
+| Comprobación | una línea «Salud: …» tras 6 s | espera por HTTP y reporta API y web por separado |
+| Opción | `-SinWeb` (levanta solo API y worker) | no tiene equivalente |
+| **PIDs** | **registra `storage/logs/beta.pids.json`** (corregido en esta auditoría) | **registra `storage/logs/beta.pids.json`** |
+| **Parada** | `beta_stop.mjs` (mismo fichero) o `stop.ps1` (barrido por línea de comandos) | `beta_stop.mjs` o `stop.ps1` |
+
+**Diferencias que siguen existiendo:** el lenguaje y la dependencia (PowerShell
+frente a Node), dónde caen los registros, cómo se eligen los puertos y el
+`-SinWeb`. **Unificado en esta auditoría:** los dos lanzadores registran sus
+PIDs en el mismo fichero y ambos dejan la pila en el mismo estado, así que
+cualquiera de los dos se para con `beta_stop.mjs` (y `stop.ps1` para cualquiera
+de los dos). Antes, una pila arrancada con `start.ps1` **no se paraba** con
+`beta_stop.mjs` (B50).
+
+---
 
 Gravedad: **ALTA** = impide instalar/arancar o hace que la entrega mienta ·
 **MEDIA** = incoherencia verificable · **BAJA** = limpieza.
+
+## 4. Hallazgos
 
 | # | Hallazgo | Gravedad | Estado | Corrección |
 |---|---|---|---|---|
@@ -209,7 +236,7 @@ Gravedad: **ALTA** = impide instalar/arancar o hace que la entrega mienta ·
 | B48 | `bootstrap.ps1` no construía la web → en un clon limpio la web no arranca | ALTA | Corregido | `bootstrap.ps1` construye con `NEURAL_ENV=local`; `start.ps1` avisa si falta el build |
 | B49 | `beta_start.mjs` con puertos fijos: las URLs de espera eran configurables, los puertos no | MEDIA | Corregido | `NEURAL_BETA_API_PORT` / `NEURAL_BETA_WEB_PORT` (y puerto derivado de la URL) |
 | B50 | `beta_stop.mjs` solo paraba los PIDs registrados: una pila de `start.ps1` quedaba huérfana | ALTA | Corregido | `start.ps1` registra PIDs + barrido de huérfanos en `beta_stop.mjs` |
-| B51 | 9 destinos rotos en la documentación (nombre del directorio de gobernanza, rutas del workspace, `bootstrap.sh`, un fichero de prueba hipotético) | MEDIA | Corregido | `tools/auditoria/correcciones_documentales.py` + reescritura de los enlaces |
+| B51 | 9 destinos rotos en la documentación (nombre del directorio de gobernanza, rutas del workspace, la variante bootstrap.sh que el plan cita pero no se entrega, y un fichero de prueba hipotético) | MEDIA | Corregido | `tools/auditoria/correcciones_documentales.py` + reescritura de los enlaces |
 | B52 | `.env.example` no recogía 8 variables que el código lee | BAJA | Corregido | documentadas (comentadas) en `.env.example` |
 | B53 | `.gitignore` tenía reglas muertas (`docs/governance/…`): un `.env` o un `.sqlite` dentro de `docs/gobernanza/` no se ignoraba | BAJA | Corregido | reglas apuntando a `docs/gobernanza/**` |
 | B54 | Un test (`test_transiciones_movimiento.py`) usaba `ff_dir` sin comprobar: `UnboundLocalError` en clon limpio | MEDIA | Corregido | se salta con motivo si no hay FFmpeg |
@@ -222,7 +249,7 @@ Gravedad: **ALTA** = impide instalar/arancar o hace que la entrega mienta ·
 - **P1 (decisión del propietario)**: `v1.0.0-beta.1` ya **no representa** lo que
   se entrega (el tag no incluye ninguna de estas correcciones). El tag **no se
   ha movido**. Propuesta: publicar **`1.0.0-beta.2`**.
-- **P2**: `scripts/supervisor.sh` y el crontab no se pueden ejecutar aquí
+- **P2**: `supervisor.sh` (raiz del repositorio) y el crontab no se pueden ejecutar aquí
   (WSL no arranca: virtualización desactivada). **Sin verificar.**
 - **P3**: la **cuota** no es consultable con las herramientas disponibles →
   **desconocido** (no se inventa ningún valor).

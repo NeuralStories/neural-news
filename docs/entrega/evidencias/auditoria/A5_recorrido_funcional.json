@@ -25,7 +25,7 @@
     "veredicto": "PASA",
     "esperado": "HTTP 200",
     "obtenido": "HTTP 200",
-    "detalle": "{'metricas': {'ventana_horas': 24, 'jobs_total': 166, 'jobs_terminados_ok': 154, 'jobs_fallidos': 9, 'jobs_reintentables': 0, 'tasa_fallo': 0.0542, 'duracion_media_s': 0.054, 'p95_duracion_s': 0.165, "
+    "detalle": "{'metricas': {'ventana_horas': 24, 'jobs_total': 167, 'jobs_terminados_ok': 158, 'jobs_fallidos': 9, 'jobs_reintentables': 0, 'tasa_fallo': 0.0539, 'duracion_media_s': 0.054, 'p95_duracion_s': 0.169, "
   },
   {
     "paso": "1.5 los proveedores sin clave se declaran como no configurados",
@@ -73,7 +73,7 @@
     "paso": "2.4 «Investigar» responde y deja la noticia investigada",
     "veredicto": "PASA",
     "esperado": "HTTP 200/202",
-    "obtenido": "HTTP 200: {'job_id': 329, 'created': False}",
+    "obtenido": "HTTP 200: {'job_id': 345, 'created': True}",
     "detalle": ""
   },
   {
@@ -87,22 +87,22 @@
     "paso": "2.9 «Lotes → nuevo lote» con noticias seleccionadas",
     "veredicto": "PASA",
     "esperado": "HTTP 200/201 con el lote creado",
-    "obtenido": "HTTP 200: {'id': 4, 'name': 'Auditoria A5', 'target_size': 10, 'status': 'DRAFT'}",
+    "obtenido": "HTTP 200: {'id': 5, 'name': 'Auditoria A5', 'target_size': 10, 'status': 'DRAFT'}",
     "detalle": ""
   },
   {
     "paso": "2.9b el lote se exporta (ZIP con manifiesto, guiones y storyboard)",
     "veredicto": "PASA",
     "esperado": "HTTP 200/202 con el trabajo de exportación encolado",
-    "obtenido": "HTTP 200: {'job_id': 330, 'created': False}",
+    "obtenido": "HTTP 200: {'job_id': 346, 'created': True}",
     "detalle": ""
   },
   {
     "paso": "2.9c el paquete se puede descargar",
-    "veredicto": "FALLA",
+    "veredicto": "PASA",
     "esperado": "HTTP 200 con el fichero ZIP",
-    "obtenido": "HTTP 404 (61 bytes de respuesta)",
-    "detalle": ""
+    "obtenido": "HTTP 200 (7877 bytes de respuesta)",
+    "detalle": "trabajo de exportación: DONE"
   },
   {
     "paso": "3.2 sin evidencia, el estado es UNVERIFIED",
@@ -116,6 +116,6 @@
     "veredicto": "PASA",
     "esperado": "alerta con código «cola_parada» (tras >5 min de cola)",
     "obtenido": "alerta encontrada",
-    "detalle": "{\"metricas\": {\"ventana_horas\": 24, \"jobs_total\": 167, \"jobs_terminados_ok\": 157, \"jobs_fallidos\": 9, \"jobs_reintentables\": 0, \"tasa_fallo\": 0.0539, \"duracion_media_s\": 0.055, \"p95_duracion_s\": 0.169, \"profundidad_cola\": 1, \"por_tipo\": {\"build_montage\": 9, \"dra"
+    "detalle": "{\"metricas\": {\"ventana_horas\": 24, \"jobs_total\": 170, \"jobs_terminados_ok\": 160, \"jobs_fallidos\": 9, \"jobs_reintentables\": 0, \"tasa_fallo\": 0.0529, \"duracion_media_s\": 0.055, \"p95_duracion_s\": 0.169, \"profundidad_cola\": 1, \"por_tipo\": {\"build_montage\": 9, \"dra"
   }
 ]

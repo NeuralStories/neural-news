@@ -51,7 +51,7 @@ no representa lo que se entrega, **no se ha movido el tag**: se propone
 | «La versión es `1.0.0-beta.1` en todas partes» | 5 ficheros estáticos + `/health` en vivo | **PASA** (6/6) |
 | «No hay secretos en el repositorio» | `tools/scan_secrets.py` + `tools/auditoria/comprobar_secretos_historial.py` (nuevo) | **PASA**: 0 hallazgos en árbol e historial |
 | «El tag `v1.0.0-beta.1` está anotado y apunta a `1c63a3a`» | `git cat-file -t` / `git rev-list -n1` | **PASA** |
-| «Los commits posteriores al tag solo tocan documentación» | `git show --stat` de `7c18c29`, `87b07cc`, `c02e055` | **PASA** (solo `docs/`) — pero los commits **de esta auditoría** sí tocan código, por eso el tag ya no representa lo entregado |
+| «Los commits posteriores al tag solo tocan documentación» | `git show --name-only` de `7c18c29`, `87b07cc`, `c02e055` | **FALLA (parcial)**: `87b07cc` **creó `scripts/auditar_entrega.mjs`** (186 líneas): es **código de verificación**, no de producto. `apps/`, `infra/`, `packages/` y `tests/` siguen **idénticos al tag**, así que el tag sí representa el producto; pero la afirmación literal «solo documentación» es falsa |
 
 ---
 
@@ -157,6 +157,39 @@ Batería reproducible: `tools/auditoria/verificar_clon_limpio.ps1`.
 Evidencia: `docs/entrega/evidencias/auditoria/A1_clon_*.log` y
 `A1_clon_resumen.json`.
 
+### 3.3 Todas las comprobaciones de la auditoría, con veredicto y log
+
+| Comprobación | Veredicto | exit | Log |
+|---|---|---|---|
+| A1.1–A1.10 clon limpio (instalación, pytest, tsc, eslint, build, Playwright, arranque 3001/8001, parada) | **PASA** | 0 en todos | `A1_clon_01..09.log`, `A1_clon_resumen.json` |
+| A1 (tag original) instalación y suite | **FALLA** | 2 | `A1_clon_04_pytest.log` (primera ejecución, superada) |
+| A2.1 el directorio de gobernanza es `docs/gobernanza` | **PASA** | 0 | `A2_A3_A4.log` |
+| A2.2 enlaces y rutas de 17 documentos | **PASA** | 0 | `A2_A3_A4.log` |
+| A2.3 `.env.example` = variables del código (42/42) | **PASA** | 0 | `A2_A3_A4.log` |
+| A2.4 versión en los 6 sitios (5 ficheros + `/health`) | **PASA** | 0 | `A2_A3_A4.log`, `comprobar_configuracion.py` |
+| A3.1 parada en frío | **PASA** | 0 | `A2_A3_A4.log` |
+| A3.2 arranque: 200 en web y `/health` | **PASA** | 0 | `A2_A3_A4.log` |
+| A3.3 segunda parada: puertos libres, 0 huérfanos | **PASA** | 0 | `A2_A3_A4.log` |
+| A3.4 segundo arranque (idempotencia) | **PASA** | 0 | `A2_A3_A4.log` |
+| A4.1 tag anotado → `1c63a3a` | **PASA** | 0 | `A2_A3_A4.log` |
+| A4.2 commits post-tag: 0 cambios en código de producto | **PASA** | 0 | `A2_A3_A4.log` (con el matiz de B57) |
+| A4.3 `git diff --check` sin errores | **PASA** | 0 | `A2_A3_A4.log` |
+| A4.4a secretos en árbol e historial (`scan_secrets.py`) | **PASA** | 0 | `A2_A3_A4.log` |
+| A4.4b secretos en `git log -p` (patrones de clave) | **PASA** | 0 | `A2_A3_A4.log` |
+| A4.5 `.gitignore` y nada prohibido en el índice | **PASA** | 0 | `A2_A3_A4.log` |
+| A4.6 gobernanza = manifiesto SHA-256 (223/223) | **PASA** | 0 | `A2_A3_A4.log` |
+| A5 recorrido funcional (17 pasos de la guía) | **PASA** | 0 | `A5_recorrido_funcional.json` |
+| 14 comprobaciones del repo (`docs/entrega/verificar.ps1`) | **14/14 PASA** | 0 | `docs/entrega/evidencias/*.log` |
+| 17 comprobaciones de `scripts/auditar_entrega.mjs` | **17/17 PASA** | 0 | salida de consola |
+
+**Bloqueadas / no comprobables en esta máquina** (se escriben como
+*desconocido*, sin inventar):
+
+| Cosa | Estado | Por qué |
+|---|---|---|
+| `scripts/supervisor.sh` y el crontab | **BLOQUEADA** | WSL no arranca (virtualización desactivada); nada depende de bash/cron |
+| **Cuota** de la plataforma | **desconocido** | no hay herramienta de consulta de cuota ni de saldo |
+
 ---
 
 ## 4. Hallazgos
@@ -182,6 +215,7 @@ Gravedad: **ALTA** = impide instalar/arancar o hace que la entrega mienta ·
 | B54 | Un test (`test_transiciones_movimiento.py`) usaba `ff_dir` sin comprobar: `UnboundLocalError` en clon limpio | MEDIA | Corregido | se salta con motivo si no hay FFmpeg |
 | B55 | La guía no decía que un lote exige **exactamente 5 o 10 noticias** (con los 3 datos de demo, el paso 2.9 no se puede hacer) | BAJA | Corregido | `GUIA_PRUEBAS_BETA.md` |
 | B56 | La guía prometía la alerta «cola parada» «en menos de un minuto» al parar el worker: la alerta real avisa de trabajos sin recoger desde hace >5 min | BAJA | Corregido | `GUIA_PRUEBAS_BETA.md` |
+| B57 | El commit post-tag `87b07cc` creó `scripts/auditar_entrega.mjs` (código de verificación, no de producto): la afirmación «los commits post-tag solo tocan documentación» era **literalmente falsa** | MEDIA | Documentado | No se toca el historial (prohibido reescribirlo): se documenta en el informe y el check A4.2 distingue producto de herramienta |
 
 ### Pendientes
 

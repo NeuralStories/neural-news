@@ -7,8 +7,14 @@
 * text=auto eol=lf
 
 # La gobernanza heredada es **evidencia verbatim**: no se normaliza, sus bytes
-# son los del manifiesto SHA-256 que la acompaña.
-docs/gobernanza/** -text
+# son los del manifiesto SHA-256 que la acompaña (`MANIFIESTO_ARCHIVOS_SHA256.txt`).
+#
+# Hallazgo de la auditoría A4: con `core.autocrlf=true` (valor por defecto en
+# Windows), git convertía CRLF→LF al confirmar, de modo que el contenido
+# entregado en el tag NO cuadraba con su propio manifiesto (72 de 223
+# entradas). Los bytes originales (CRLF) son los que declara el manifiesto, así
+# que se fijan con `-text`: git no los toca en ninguna plataforma.
+docs/gobernanza/** -text whitespace=cr-at-eol
 
 # --- Binarios: nunca se tocan -----------------------------------------------
 *.png binary

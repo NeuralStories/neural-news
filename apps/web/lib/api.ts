@@ -51,13 +51,19 @@ export const api = {
   exportBatch: (id: number) => request<{ job_id: number }>(`/v1/batches/${id}/export`, { method: "POST" }),
 
   getJob: (id: number) => request<import("./types").JobInfo>(`/v1/jobs/${id}`),
-  listJobs: () => request<{ items: import("./types").JobInfo[] }>("/v1/jobs"),
+  // Las lecturas de la consola aceptan `signal`: el ciclo nuevo aborta al
+  // anterior en vuelo para que una respuesta lenta nunca pise a una fresca.
+  listJobs: (opciones?: { signal?: AbortSignal }) =>
+    request<{ items: import("./types").JobInfo[] }>("/v1/jobs", opciones),
 
-  providerStatus: () =>
-    request<{ demo_mode: boolean; paid_services_enabled: boolean; providers: import("./types").ProviderStatus[] }>("/v1/provider-status"),
-  metrics: () => request<import("./types").RespuestaMetricas>("/v1/metrics"),
-  health: () => request<import("./types").EstadoSalud>("/v1/health"),
-  usage: () => request<import("./types").UsageInfo>("/v1/usage"),
+  providerStatus: (opciones?: { signal?: AbortSignal }) =>
+    request<{ demo_mode: boolean; paid_services_enabled: boolean; providers: import("./types").ProviderStatus[] }>("/v1/provider-status", opciones),
+  metrics: (opciones?: { signal?: AbortSignal }) =>
+    request<import("./types").RespuestaMetricas>("/v1/metrics", opciones),
+  health: (opciones?: { signal?: AbortSignal }) =>
+    request<import("./types").EstadoSalud>("/v1/health", opciones),
+  usage: (opciones?: { signal?: AbortSignal }) =>
+    request<import("./types").UsageInfo>("/v1/usage", opciones),
   updateBudget: (payload: { paid_services_enabled?: boolean; daily_limit_eur?: number }) =>
     request<Record<string, unknown>>("/v1/config/budget", { method: "PUT", body: JSON.stringify(payload) }),
   getScoreWeights: () => request<Record<string, number>>("/v1/settings/score-weights"),

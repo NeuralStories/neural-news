@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { VERSION } from "@/lib/version";
 import type { Me } from "@/lib/types";
 import { IconoLuna, IconoSol } from "@/components/ui/icono";
+import { aplicarSkin, skinGuardado, SKINS, type Skin } from "@/lib/apariencia";
 
 const NAV = [
   { href: "/fuentes", label: "Fuentes" },
@@ -23,16 +24,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [checked, setChecked] = useState(false);
   const [tema, setTema] = useState<"oscuro" | "claro">("oscuro");
+  const [skin, setSkin] = useState<Skin>("base");
 
   /*
    * Tema: los tokens de `globals.css` tienen dos bases (oscura y clara) y el
    * conmutador sólo cambia el atributo `data-tema` de `<html>`. El atributo lo
    * pone un script en línea de `layout.tsx` **antes del primer pintado** (si
    * no, habría un destello del tema oscuro al cargar en modo claro).
+   *
+   * Skin: mismo mecanismo con `data-skin` (`lib/apariencia.ts`); aquí sólo se
+   * sincroniza el estado inicial —el script en línea ya aplicó el guardado— y
+   * se aplica en caliente al cambiar el selector.
    */
   useEffect(() => {
     setTema(document.documentElement.dataset.tema === "claro" ? "claro" : "oscuro");
+    setSkin(skinGuardado());
   }, []);
+
+  const cambiarSkin = (siguiente: Skin) => {
+    aplicarSkin(siguiente);
+    setSkin(siguiente);
+  };
 
   const alternarTema = () => {
     const siguiente = tema === "oscuro" ? "claro" : "oscuro";
@@ -77,7 +89,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-line bg-bg/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+        {/* La cabecera comparte el ancho del contenido: en /ops la consola
+            mide 1680 px y los bordes de la marca y los controles deben
+            alinear con los bordes de la rejilla (antes quedaba a 6xl). */}
+        <div className={`mx-auto flex ${ancho} flex-wrap items-center gap-3 px-4 py-3`}>
           <Link href="/fuentes" className="text-lg font-semibold tracking-tight">
             neural<span className="text-info">.news</span>
           </Link>
@@ -106,6 +121,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Salir
               </button>
             )}
+            <select
+              className="selector-skin"
+              value={skin}
+              onChange={(evento) => cambiarSkin(evento.target.value as Skin)}
+              aria-label="Skin de la interfaz"
+              title="Skin de la interfaz"
+            >
+              {SKINS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nombre}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={alternarTema}

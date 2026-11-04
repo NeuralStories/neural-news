@@ -45,9 +45,15 @@ test("recorrido crítico completo: fuente → noticias → guion → aprobación
   await expect(page).toHaveURL(/\/noticias\/\d+/);
 
   // 4) Investigar: las afirmaciones aparecen con estado de verificación.
+  //    El panel se delimita por su **cabecera**, no por hasText: el resumen
+  //    superior también contiene la palabra «afirmaciones» (métrica) y el
+  //    .first() resolvía al panel equivocado.
   await page.getByRole("button", { name: "Investigar" }).click();
   await expect(page.getByRole("heading", { name: "Afirmaciones" })).toBeVisible();
-  const panelAfirmaciones = page.locator("section", { hasText: "Afirmaciones" }).first();
+  const panelAfirmaciones = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { name: "Afirmaciones" }) })
+    .first();
   await expect(panelAfirmaciones).toContainText(/Sin verificar|Confirmada/, { timeout: 40_000 });
 
   // 5) Generar borrador de guion.

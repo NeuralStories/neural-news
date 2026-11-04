@@ -1,0 +1,103 @@
+{
+  "resumen": [
+    {
+      "ruta": "/",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\acceso-oscuro.png"
+    },
+    {
+      "ruta": "/",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\acceso-claro.png"
+    },
+    {
+      "ruta": "/fuentes",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\fuentes-oscuro.png"
+    },
+    {
+      "ruta": "/fuentes",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\fuentes-claro.png"
+    },
+    {
+      "ruta": "/noticias",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\noticias-oscuro.png"
+    },
+    {
+      "ruta": "/noticias",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\noticias-claro.png"
+    },
+    {
+      "ruta": "/estudio",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\estudio-oscuro.png"
+    },
+    {
+      "ruta": "/estudio",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\estudio-claro.png"
+    },
+    {
+      "ruta": "/lotes",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\lotes-oscuro.png"
+    },
+    {
+      "ruta": "/lotes",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\lotes-claro.png"
+    },
+    {
+      "ruta": "/configuracion",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\configuracion-oscuro.png"
+    },
+    {
+      "ruta": "/configuracion",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\configuracion-claro.png"
+    },
+    {
+      "ruta": "/ops",
+      "tema": "oscuro",
+      "fondo": "rgb(8, 8, 10)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\operacion-oscuro.png"
+    },
+    {
+      "ruta": "/ops",
+      "tema": "claro",
+      "fondo": "rgb(246, 246, 247)",
+      "desborde": 0,
+      "fichero": "C:\\Users\\haxth3\\Documents\\NeuralStories\\proyecto final\\docs\\entrega\\evidencias\\vistas\\operacion-claro.png"
+    }
+  ],
+  "errores": []
+}

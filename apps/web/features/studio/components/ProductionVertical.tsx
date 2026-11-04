@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useJobPolling } from '@/lib/hooks';
 import { request } from '@/lib/http';
+import { IconoAlerta } from '@/components/ui/icono';
 import {
   ProjectConflict,
   projectApi,
@@ -236,9 +237,9 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
     });
 
   return (
-    <div className="space-y-4 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-4">
+    <div className="space-y-4 rounded-md border border-sky-900/60 bg-neutral-900/70 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+        <h3 className="text-sm font-bold text-ink flex items-center gap-2">
           Producción vertical (director determinista → tomas → paquete Flow → importación)
         </h3>
         <button
@@ -266,7 +267,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
         {shots.map((shot) => {
           const take = takesByShot.get(shot.id);
           return (
-            <li key={shot.id} className="rounded-lg border border-neutral-800 bg-neutral-950/70 p-3 space-y-2">
+            <li key={shot.id} className="rounded-md border border-neutral-800 bg-neutral-950/70 p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <span className="font-mono font-bold text-sky-300">
                   Toma {shot.sequence + 1} · {KIND_LABELS[shot.shot_kind] ?? shot.shot_kind}
@@ -286,7 +287,9 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
                   <p className="text-[11px] font-mono text-neutral-300">
                     Toma #{take.id} · estado: <strong>{take.status}</strong> · prompt: v{take.prompt_versions}
                     {take.needs_review && (
-                      <strong className="ml-2 text-sky-400">⚠ Revisar: el guion cambió</strong>
+                      <strong className="ml-2 text-sky-400 inline-flex items-center gap-1 align-baseline">
+                        <IconoAlerta tamano={12} /> Revisar: el guion cambió
+                      </strong>
                     )}
                   </p>
                   <div className="flex flex-wrap gap-2 text-[11px]">
@@ -348,14 +351,14 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
                           <button
                             onClick={() => approveTake(take, 'APROBADA')}
                             disabled={busy !== null}
-                            className="rounded bg-emerald-700 px-2 py-1 text-[11px] font-bold text-white hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
+                            className="rounded bg-emerald-700 px-2 py-1 text-[11px] font-bold text-ink hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
                           >
                             Aprobar toma
                           </button>
                           <button
                             onClick={() => approveTake(take, 'RECHAZADA')}
                             disabled={busy !== null}
-                            className="rounded bg-rose-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
+                            className="rounded bg-rose-800 px-2 py-1 text-[11px] font-bold text-ink hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
                           >
                             Rechazar toma
                           </button>
@@ -377,7 +380,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           );
         })}
       </ul>
-      <div className="space-y-3 rounded-lg border border-emerald-900/60 bg-neutral-900/70 p-4">
+      <div className="space-y-3 rounded-md border border-emerald-900/60 bg-neutral-900/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
             Montaje (animática 9:16 con FFmpeg — sin locución, sin Docker)
@@ -385,7 +388,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           <button
             onClick={buildMontage}
             disabled={busy !== null}
-            className="rounded bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
+            className="rounded bg-emerald-700 px-3 py-1.5 text-xs font-bold text-ink hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
           >
             {busy === 'montage' ? 'Montando…' : 'Validar y montar lo disponible'}
           </button>
@@ -409,7 +412,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
           </div>
         )}
       </div>
-      <div className="space-y-2 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-3">
+      <div className="space-y-2 rounded-md border border-sky-900/60 bg-neutral-900/70 p-3">
         <h4 className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
           Gráficos programáticos (datos verificados, nunca inventados)
         </h4>
@@ -435,7 +438,7 @@ export const ProductionVertical: React.FC<ProductionVerticalProps> = ({
               className="block w-16 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-neutral-100" />
           </label>
           <button onClick={createGraphic} disabled={busy !== null || graphicValue === ''}
-            className="rounded bg-sky-700 px-2 py-1 font-semibold text-white hover:bg-sky-600 disabled:opacity-50 cursor-pointer">
+            className="rounded bg-sky-700 px-2 py-1 font-semibold text-ink hover:bg-sky-600 disabled:opacity-50 cursor-pointer">
             {busy === 'graphic' ? 'Creando…' : 'Crear gráfico'}
           </button>
         </div>

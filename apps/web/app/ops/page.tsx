@@ -16,9 +16,17 @@
  *   sigue en pantalla marcada como obsoleta (con el error exacto), porque un
  *   panel vacío durante un fallo de red es peor que un dato con su fecha.
  * - **Autorefresco de 15 s** con pausa manual: el operador decide si la
- *   pantalla se repinta sola.
+ *   pantalla se repinta sola; con la pestaña oculta no se sondea y al volver
+ *   se lee inmediatamente.
+ * - **Lectura parcial**: cada bloque (salud, trabajos, uso, proveedores,
+ *   métricas) se lee por separado y el ciclo nuevo aborta al anterior en
+ *   vuelo. Un fallo no tira la pantalla: los paneles que sí respondieron se
+ *   pintan y los que no conservan su última lectura buena, marcada.
+ * - **Cabeceras ordenables**: `#`, `estado` y `creado` ordenan en cliente;
+ *   el tercer clic devuelve el orden del servidor (creado descendente).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type {
   AlertaOperacion,
@@ -31,7 +39,7 @@ import type {
 import { Estado, type TonoEstado } from "@/components/ui/estado";
 import { Metrica } from "@/components/ui/metrica";
 import { Panel } from "@/components/ui/panel";
-import { TablaOps, type Columna } from "@/components/ui/tabla";
+import { TablaOps, type Columna, type OrdenTabla } from "@/components/ui/tabla";
 import { EsqueletoMetrica, EsqueletoPanel, Vacio } from "@/components/ui/estados";
 import {
   IconoAlerta,
@@ -44,6 +52,9 @@ import {
 
 const INTERVALO_MS = 15_000;
 
+/** Bloques independientes de la lectura: cada uno falla por su cuenta. */
+type ClaveLectura = "salud" | "trabajos" | "uso" | "proveedores" | "metricas";
+
 type Datos = {
   salud: EstadoSalud;
   trabajos: JobInfo[];
@@ -52,6 +63,9 @@ type Datos = {
   metricas: MetricasOperacion;
   alertas: AlertaOperacion[];
 };
+
+/** Fallos de la última lectura, por bloque (vacío = lectura completa). */
+type FalloLectura = Partial<Record<ClaveLectura, string>>;
 
 type FiltroEstado = "todos" | "fallidos" | "en_curso" | "completados";
 
@@ -65,15 +79,29 @@ const FILTROS_ESTADO: Array<{ clave: FiltroEstado; etiqueta: string }> = [
 /** Columnas que el operador puede ocultar (las secundarias). */
 const COLUMNAS_SECUNDARIAS = ["intento", "detalle"] as const;
 
+/** Hora legible: hoy → HH:MM:SS; antes de hoy → `dd/mm HH:MM`. Una consola
+ *  de operación no puede distinguir «hace 5 s» de «ayer» con la hora sola. */
 function hora(iso?: string): string {
   if (!iso) return "—";
   const fecha = new Date(iso);
   if (Number.isNaN(fecha.getTime())) return "—";
-  return fecha.toLocaleTimeString("es-ES", { hour12: false });
+  const hoy = new Date();
+  const mismoDia =
+    fecha.getFullYear() === hoy.getFullYear() &&
+    fecha.getMonth() === hoy.getMonth() &&
+    fecha.getDate() === hoy.getDate();
+  if (mismoDia) return fecha.toLocaleTimeString("es-ES", { hour12: false });
+  const dia = `${String(fecha.getDate()).padStart(2, "0")}/${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+  return `${dia} ${fecha.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
 }
 
 function porcentaje(fraction: number): string {
   return `${(fraction * 100).toFixed(1)} %`;
+}
+
+/** Primer fallo de una lectura (para el mensaje del banner de error). */
+function primerFalloDe(lecturas: Array<{ fallo: string | null }>): string {
+  return lecturas.find((lectura) => lectura.fallo)?.fallo ?? "error de lectura";
 }
 
 function tonoDeTrabajo(status: string): TonoEstado {
@@ -98,41 +126,109 @@ function etiquetaDeProveedor(configured: boolean, state: string): string {
 }
 
 export default function OperacionPage() {
+  const router = useRouter();
+  const parametros = useSearchParams();
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fallos, setFallos] = useState<FalloLectura>({});
   const [ultimaLectura, setUltimaLectura] = useState<Date | null>(null);
   const [actualizando, setActualizando] = useState(false);
   const [autorefresco, setAutorefresco] = useState(true);
+  const [orden, setOrden] = useState<OrdenTabla | null>(null);
 
-  const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
-  const [filtroTipo, setFiltroTipo] = useState<string>("todos");
-  const [trabajosDeAlerta, setTrabajosDeAlerta] = useState<number[] | null>(null);
+  // Los filtros viven **en la URL**: una vista de operaciones se comparte
+  // (mando, enlace) con el filtro puesto, y recargar no pierde el contexto.
+  const filtroEstado = (parametros.get("estado") ?? "todos") as FiltroEstado;
+  const filtroTipo = parametros.get("tipo") ?? "todos";
+  // El filtro de alerta guarda el **código** de la alerta, no el array de
+  // trabajos: cada ciclo trae objetos nuevos y una comparación por identidad
+  // dejaba el filtro aplicado con el botón ya incapaz de quitarlo.
+  const [codigoAlerta, setCodigoAlerta] = useState<string | null>(null);
   const [ocultas, setOcultas] = useState<string[]>([]);
+  const controlador = useRef<AbortController | null>(null);
+  const datosRef = useRef<Datos | null>(null);
+
+  const actualizarUrl = useCallback(
+    (cambios: Record<string, string>) => {
+      const siguiente = new URLSearchParams(parametros.toString());
+      for (const [clave, valor] of Object.entries(cambios)) {
+        if (valor && valor !== "todos") siguiente.set(clave, valor);
+        else siguiente.delete(clave);
+      }
+      router.replace(`/ops${siguiente.toString() ? `?${siguiente}` : ""}`, { scroll: false });
+    },
+    [parametros, router],
+  );
 
   const cargar = useCallback(async () => {
+    controlador.current?.abort();
+    const actual = new AbortController();
+    controlador.current = actual;
+    const { signal } = actual;
     setActualizando(true);
+
+    /** Un bloque que falla no propaga: devuelve su fallo para el banner. */
+    const leer = async <T,>(
+      clave: ClaveLectura,
+      peticion: () => Promise<T>,
+    ): Promise<{ clave: ClaveLectura; dato: T | null; fallo: string | null }> => {
+      try {
+        return { clave, dato: await peticion(), fallo: null };
+      } catch (fallo) {
+        if (signal.aborted || (fallo as Error).name === "AbortError") throw fallo;
+        return { clave, dato: null, fallo: (fallo as Error).message };
+      }
+    };
+
     try {
       const [salud, trabajos, uso, proveedores, metricas] = await Promise.all([
-        api.health(),
-        api.listJobs(),
-        api.usage(),
-        api.providerStatus(),
-        api.metrics(),
+        leer("salud", () => api.health({ signal })),
+        leer("trabajos", () => api.listJobs({ signal })),
+        leer("uso", () => api.usage({ signal })),
+        leer("proveedores", () => api.providerStatus({ signal })),
+        leer("metricas", () => api.metrics({ signal })),
       ]);
-      setDatos({
-        salud,
-        trabajos: trabajos.items,
-        uso,
-        proveedores: proveedores.providers,
-        metricas: metricas.metricas,
-        alertas: metricas.alertas,
-      });
-      setUltimaLectura(new Date());
+      if (signal.aborted) return;
+
+      const previo = datosRef.current;
+      const completos = [salud, trabajos, uso, proveedores, metricas].filter(
+        (lectura) => lectura.fallo === null,
+      );
+      const nuevosFallos: FalloLectura = {};
+      for (const lectura of [salud, trabajos, uso, proveedores, metricas]) {
+        if (lectura.fallo) nuevosFallos[lectura.clave] = lectura.fallo;
+      }
+      setFallos(nuevosFallos);
+
+      if (completos.length === 0) {
+        // Lectura entera fallida: el dato viejo no se tira. Si no había
+        // nada, es el error de arranque de siempre.
+        setError(primerFalloDe([salud, trabajos, uso, proveedores, metricas]));
+        return;
+      }
+      if (completos.length < 5 && !previo) {
+        // Primera lectura parcial: sin datos previos que conservar.
+        setError(primerFalloDe([salud, trabajos, uso, proveedores, metricas]));
+        return;
+      }
+
+      // El bloque que falló conserva su última lectura buena (obsoleta).
+      const siguiente: Datos = {
+        salud: salud.dato ?? previo!.salud,
+        trabajos: trabajos.dato ? trabajos.dato.items : previo!.trabajos,
+        uso: uso.dato ?? previo!.uso,
+        proveedores: proveedores.dato ? proveedores.dato.providers : previo!.proveedores,
+        metricas: metricas.dato ? metricas.dato.metricas : previo!.metricas,
+        alertas: metricas.dato ? metricas.dato.alertas : previo!.alertas,
+      };
+      datosRef.current = siguiente;
       setError(null);
-    } catch (fallo) {
-      setError((fallo as Error).message);
+      setDatos(siguiente);
+      setUltimaLectura(new Date());
+    } catch {
+      /* lectura abortada por un ciclo más nuevo: no se pinta nada */
     } finally {
-      setActualizando(false);
+      if (!signal.aborted) setActualizando(false);
     }
   }, []);
 
@@ -142,14 +238,34 @@ export default function OperacionPage() {
 
   useEffect(() => {
     if (!autorefresco) return;
-    const temporizador = setInterval(() => void cargar(), INTERVALO_MS);
+    const temporizador = setInterval(() => {
+      // Pestaña oculta: el operador no está mirando, no se sondea.
+      if (document.hidden) return;
+      void cargar();
+    }, INTERVALO_MS);
     return () => clearInterval(temporizador);
+  }, [autorefresco, cargar]);
+
+  // Al volver a la pestaña, lectura inmediata (el último ciclo pudo saltarse).
+  useEffect(() => {
+    const alVolver = () => {
+      if (!document.hidden && autorefresco) void cargar();
+    };
+    document.addEventListener("visibilitychange", alVolver);
+    return () => document.removeEventListener("visibilitychange", alVolver);
   }, [autorefresco, cargar]);
 
   const tipos = useMemo(() => {
     const distintos = new Set((datos?.trabajos ?? []).map((trabajo) => trabajo.type));
     return Array.from(distintos).sort();
   }, [datos]);
+
+  // Trabajos de la alerta filtrada, derivados del **código**: estable entre
+  // ciclos de autorefresco (los arrays llegan nuevos en cada lectura).
+  const trabajosDeAlerta = useMemo(() => {
+    if (!codigoAlerta) return null;
+    return datos?.alertas.find((alerta) => alerta.codigo === codigoAlerta)?.trabajos ?? null;
+  }, [codigoAlerta, datos]);
 
   const trabajosFiltrados = useMemo(() => {
     const base = datos?.trabajos ?? [];
@@ -164,6 +280,32 @@ export default function OperacionPage() {
     });
   }, [datos, filtroEstado, filtroTipo, trabajosDeAlerta]);
 
+  // Orden en cliente sobre la ventana filtrada; `null` = el orden del
+  // servidor (creado descendente). Tres estados: asc → desc → sin orden.
+  const trabajosOrdenados = useMemo(() => {
+    if (!orden) return trabajosFiltrados;
+    const sentido = orden.dir === "asc" ? 1 : -1;
+    const filas = [...trabajosFiltrados];
+    if (orden.clave === "id") filas.sort((a, b) => (a.id - b.id) * sentido);
+    else if (orden.clave === "creado")
+      filas.sort(
+        (a, b) =>
+          (new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()) *
+          sentido,
+      );
+    else if (orden.clave === "estado")
+      filas.sort((a, b) => a.status.localeCompare(b.status) * sentido);
+    return filas;
+  }, [trabajosFiltrados, orden]);
+
+  const alternarOrden = useCallback((clave: string) => {
+    setOrden((actual) => {
+      if (actual?.clave !== clave) return { clave, dir: "asc" };
+      if (actual.dir === "asc") return { clave, dir: "desc" };
+      return null; // tercer clic: vuelve el orden del servidor
+    });
+  }, []);
+
   const columnas: Columna<JobInfo>[] = useMemo(
     () => [
       {
@@ -171,6 +313,7 @@ export default function OperacionPage() {
         cabecera: "#",
         ancho: "4.5rem",
         numerica: true,
+        ordenable: true,
         render: (trabajo) => <span className="id">{trabajo.id}</span>,
       },
       {
@@ -183,6 +326,7 @@ export default function OperacionPage() {
         clave: "estado",
         cabecera: "estado",
         ancho: "9rem",
+        ordenable: true,
         render: (trabajo) => (
           <Estado
             tono={tonoDeTrabajo(trabajo.status)}
@@ -227,7 +371,12 @@ export default function OperacionPage() {
         cabecera: "creado",
         ancho: "6.5rem",
         numerica: true,
-        render: (trabajo) => <span className="num">{hora(trabajo.created_at)}</span>,
+        ordenable: true,
+        render: (trabajo) => (
+          <span className="num" title={trabajo.created_at}>
+            {hora(trabajo.created_at)}
+          </span>
+        ),
       },
     ],
     [],
@@ -281,7 +430,12 @@ export default function OperacionPage() {
     ? Object.entries(salud.checks).filter(([, comprobacion]) => !comprobacion.ok)
     : [];
   const hayErrorCritico = !salud.ok || degradado.length > 0 || alertas.some((a) => a.severidad === "error");
-  const tonoGlobal: TonoEstado = hayErrorCritico ? "crit" : "ok";
+  const clavesFallidas = Object.keys(fallos) as ClaveLectura[];
+  const tonoGlobal: TonoEstado = hayErrorCritico
+    ? "crit"
+    : clavesFallidas.length > 0
+      ? "warn"
+      : "ok";
   const presupuestoUsado =
     uso.budget.daily_limit_eur > 0
       ? Math.min(1, uso.today_spent_eur / uso.budget.daily_limit_eur)
@@ -300,7 +454,7 @@ export default function OperacionPage() {
             <h1 className="text-sm font-semibold tracking-tight text-ink">Operación</h1>
             <Estado
               tono={tonoGlobal}
-              etiqueta={hayErrorCritico ? "degradado" : "nominal"}
+              etiqueta={hayErrorCritico ? "degradado" : clavesFallidas.length > 0 ? "lectura parcial" : "nominal"}
               variante="punto"
             />
             <span className="ops-panel-meta">
@@ -326,7 +480,7 @@ export default function OperacionPage() {
               onClick={() => void cargar()}
               disabled={actualizando}
             >
-              <IconoRefrescar className={actualizando ? "animate-spin" : undefined} />
+              <IconoRefrescar />
               {actualizando ? "leyendo…" : "actualizar"}
             </button>
           </div>
@@ -338,6 +492,19 @@ export default function OperacionPage() {
             <div className="min-w-0">
               <p>Última lectura fallida; se conserva la anterior ({hora(ultimaLectura?.toISOString())}).</p>
               <p className="mt-1 break-words font-mono text-[11px] text-ink-2">{error}</p>
+            </div>
+          </div>
+        ) : clavesFallidas.length > 0 ? (
+          <div className="alerta-fila alerta-fila-warn" role="alert">
+            <IconoAlerta className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <p>
+                Lectura parcial: sin {clavesFallidas.join(", ")}. Esos paneles conservan su
+                última lectura buena; el resto está fresco.
+              </p>
+              <p className="mt-1 break-words font-mono text-[11px] text-ink-2">
+                {clavesFallidas.map((clave) => `${clave}: ${fallos[clave]}`).join(" · ")}
+              </p>
             </div>
           </div>
         ) : null}
@@ -371,14 +538,14 @@ export default function OperacionPage() {
                 {alerta.trabajos && alerta.trabajos.length > 0 ? (
                   <button
                     type="button"
-                    className="filtro shrink-0"
+                    className={`filtro shrink-0 ${codigoAlerta === alerta.codigo ? "filtro-on" : ""}`}
                     onClick={() =>
-                      setTrabajosDeAlerta((actual) =>
-                        actual && actual === alerta.trabajos ? null : (alerta.trabajos ?? null),
-                      )
+                      setCodigoAlerta((actual) => (actual === alerta.codigo ? null : alerta.codigo))
                     }
                   >
-                    {trabajosDeAlerta === alerta.trabajos ? "quitar filtro" : `ver ${alerta.trabajos.length} trabajos`}
+                    {codigoAlerta === alerta.codigo
+                      ? "quitar filtro"
+                      : `ver ${alerta.trabajos.length} trabajos`}
                   </button>
                 ) : null}
               </div>
@@ -442,9 +609,9 @@ export default function OperacionPage() {
                 tono={metricas.jobs_reintentables > 0 ? "warn" : "neutro"}
               />
               <Metrica
-                etiqueta="última lectura"
-                valor={ultimaLectura ? hora(ultimaLectura.toISOString()) : "—"}
-                pista={autorefresco ? "autorefresco 15 s" : "autorefresco en pausa"}
+                etiqueta="trabajos"
+                valor={String(metricas.jobs_total)}
+                pista={`ventana de ${metricas.ventana_horas} h`}
               />
             </div>
 
@@ -456,7 +623,10 @@ export default function OperacionPage() {
                 </span>
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1">
-                {Object.entries(metricas.por_tipo).map(([tipo, numero]) => (
+                {/* Descendente por recuento: lo más frecuente se lee primero. */}
+                {Object.entries(metricas.por_tipo)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([tipo, numero]) => (
                   <span key={tipo} className="chip">
                     {tipo}
                     <span className="tabular-nums text-ink-2">{numero}</span>
@@ -494,7 +664,7 @@ export default function OperacionPage() {
                     key={filtro.clave}
                     type="button"
                     className={`filtro ${filtroEstado === filtro.clave ? "filtro-on" : ""}`}
-                    onClick={() => setFiltroEstado(filtro.clave)}
+                    onClick={() => actualizarUrl({ estado: filtro.clave })}
                   >
                     {filtro.etiqueta}
                   </button>
@@ -503,7 +673,9 @@ export default function OperacionPage() {
                 <button
                   type="button"
                   className={`filtro ${filtroTipo !== "todos" ? "filtro-on" : ""}`}
-                  onClick={() => setFiltroTipo(filtroTipo === "todos" ? (tipos[0] ?? "todos") : "todos")}
+                  onClick={() =>
+                    actualizarUrl({ tipo: filtroTipo === "todos" ? (tipos[0] ?? "todos") : "todos" })
+                  }
                   title="Filtrar por tipo de trabajo"
                 >
                   {filtroTipo === "todos" ? "tipo: todos" : filtroTipo}
@@ -525,11 +697,11 @@ export default function OperacionPage() {
                     {clave}
                   </button>
                 ))}
-                {trabajosDeAlerta ? (
+                {codigoAlerta ? (
                   <button
                     type="button"
                     className="filtro filtro-on"
-                    onClick={() => setTrabajosDeAlerta(null)}
+                    onClick={() => setCodigoAlerta(null)}
                   >
                     <IconoCruce /> alerta
                   </button>
@@ -539,8 +711,10 @@ export default function OperacionPage() {
           >
             <TablaOps
               columnas={columnasTrabajo}
-              filas={trabajosFiltrados}
+              filas={trabajosOrdenados}
               claveFila={(trabajo) => String(trabajo.id)}
+              orden={orden}
+              alOrdenar={alternarOrden}
               vacio={
                 <Vacio
                   titulo="No hay trabajos con estos filtros"

@@ -42,11 +42,12 @@ test("beta: fuente → transcripción en cola → noticia → guion → estudio 
   await expect(fila).toBeVisible({ timeout: 30_000 });
 
   // 2) La transcripción se pide en segundo plano: la interfaz responde enseguida
-  //    y avisa de que está en cola.
-  await fila.getByRole("button", { name: /Buscar transcripción/ }).click();
-  await expect(page.getByText(/Buscando transcripción|Transcripción almacenada|No se ha encontrado transcripción/)).toBeVisible({
-    timeout: 30_000,
-  });
+  //    y avisa de que está en cola. El detalle de la fuente se abre desde la
+  //    fila («Ver el detalle») y el botón que PIDE la transcripción es
+  //    «Transcribir»; «Buscar transcripción» sólo lee una existente.
+  await fila.getByRole("button", { name: "Ver el detalle" }).click();
+  await page.getByRole("button", { name: "Transcribir" }).click();
+  await expect(page.getByText("Transcribiendo…")).toBeVisible({ timeout: 30_000 });
   // El aviso nunca se disfraza de error si no hay transcripción.
   await expect(page.getByText(/Traceback|has no attribute/)).toHaveCount(0);
 
@@ -119,7 +120,7 @@ test("beta: fuente → transcripción en cola → noticia → guion → estudio 
   await page.getByLabel(/Noticia del motor editorial/).selectOption(String(storyId));
   await page.getByRole("button", { name: /Crear y abrir el Studio/ }).click();
   await expect(page).toHaveURL(/\/estudio\?project=\d+/);
-  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await expect(page.getByText(/Estado sincronizado|Guardado/)).toBeVisible();
 
   // 7) Producción: el montaje se PIDE en cola; la interfaz no se queda colgada.
   await page.getByRole("button", { name: /Producción y Vídeo/ }).first().click();

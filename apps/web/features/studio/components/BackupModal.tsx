@@ -4,6 +4,7 @@ import { computeSha256 } from '../data/sourceManifest';
 import MANIFIESTO from '../data/manifiestoStudio.generado.json';
 import { errorMessage as mensajeDeError } from '../utils/errorMessage';
 import type { StudioExportPackage } from '../types';
+import { IconoCheck, IconoCruce } from '@/components/ui/icono';
 
 /**
  * Centro de mantenimiento del Studio (NN-113.15).
@@ -102,7 +103,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
       });
 
       setDownloadStatus('done');
-      setStatusMessage(`✓ Paquete descargado (${totalFiles} fuentes auditadas y estado del Studio).`);
+      setStatusMessage(`Paquete descargado (${totalFiles} fuentes auditadas y estado del Studio).`);
       setTimeout(() => setDownloadStatus('idle'), 4000);
     } catch (err) {
       console.error(err);
@@ -115,14 +116,14 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-4xl w-full p-5 sm:p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[92vh]">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-md max-w-4xl w-full p-5 sm:p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[92vh]">
         {/* Cabecera */}
         <div className="panel-header">
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded bg-sky-500 flex items-center justify-center text-neutral-950 font-black text-sm">
             </span>
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <h2 className="text-base font-bold text-ink flex items-center gap-2">
                 Centro de mantenimiento
               </h2>
               <p className="text-[11px] text-neutral-400 font-mono">
@@ -134,9 +135,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
             onClick={onClose}
             aria-label="Cerrar el centro de mantenimiento"
             title="Cerrar"
-            className="text-neutral-400 hover:text-white p-1 rounded hover:bg-neutral-800 transition cursor-pointer"
+            className="text-neutral-400 hover:text-ink p-1 rounded hover:bg-neutral-800 transition cursor-pointer"
           >
-            ✕
+            <IconoCruce />
           </button>
         </div>
 
@@ -154,7 +155,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
 
           <div className="card-quiet">
             <span className="text-[10px] uppercase text-neutral-500 block">Líneas de Código</span>
-            <span className="text-base font-bold text-white mt-0.5 block">
+            <span className="text-base font-bold text-ink mt-0.5 block">
               {totalLines.toLocaleString()}
             </span>
             <span className="text-[10px] text-neutral-400">{MANIFIESTO.scope}</span>
@@ -162,7 +163,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
 
           <div className="card-quiet">
             <span className="text-[10px] uppercase text-neutral-500 block">Caracteres Reales</span>
-            <span className="text-base font-bold text-white mt-0.5 block">
+            <span className="text-base font-bold text-ink mt-0.5 block">
               {(totalChars / 1024).toFixed(1)} KB
             </span>
             <span className="text-[10px] text-neutral-400">{totalChars.toLocaleString()} caracteres</span>
@@ -182,7 +183,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
         {/* Notificación de estado */}
         {statusMessage && (
           <div
-            className={`p-3 rounded-lg text-xs font-mono flex items-center gap-2 border ${
+            className={`p-3 rounded-md text-xs font-mono flex items-center gap-2 border ${
               downloadStatus === 'done'
                 ? 'bg-emerald-950/80 border-emerald-800 text-emerald-200'
                 : downloadStatus === 'error'
@@ -203,7 +204,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
             </span>
           </div>
 
-          <div className="bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden max-h-64 overflow-y-auto font-mono text-xs">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-md overflow-hidden max-h-64 overflow-y-auto font-mono text-xs">
             <table className="w-full text-left">
               <thead className="bg-neutral-900/90 text-neutral-400 text-[10px] uppercase tracking-wider sticky top-0 border-b border-neutral-800">
                 <tr>
@@ -226,8 +227,8 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
                       <code>{file.sha256.slice(0, 12)}...</code>
                     </td>
                     <td className="py-1.5 px-3 text-center">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                        Íntegro ✓
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                        <IconoCheck tamano={12} /> Íntegro
                       </span>
                     </td>
                   </tr>
@@ -253,7 +254,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose, paque
             <button
               onClick={handleDownloadFullSource}
               disabled={downloadStatus === 'exporting' || isAuditing || !paqueteSha256}
-              className="px-5 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 disabled:opacity-50 text-neutral-950 font-bold rounded text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-sky-500/20"
+              className="px-5 py-2 bg-info/20 text-info hover:bg-info/30 disabled:opacity-50 text-neutral-950 font-bold rounded text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-sm shadow-sky-500/20"
             >
               <span>
                 {downloadStatus === 'exporting' ? 'Descargando...' : 'Descargar JSON con Manifiesto'}

@@ -70,7 +70,7 @@ Las clases viven todas en `globals.css`.
 | `.ops-panel` · `.ops-panel-head` · `.ops-panel-title` · `.ops-panel-meta` · `.ops-panel-body` | rejilla operativa |
 | `.estado` · `.estado-punto` · `.estado-ok`… · `.estado-punto-ok`… | estado semántico (punto + etiqueta) |
 | `.metrica` · `.metrica-label` · `.metrica-valor` · `.metrica-pista` | lectura de telemetría |
-| `.tabla-ops` · `.tabla-ops .num` · `.tabla-ops .id` | tabla densa con cabecera pegajosa |
+| `.tabla-ops` · `.tabla-ops .num` · `.tabla-ops .id` | tabla densa con cabecera pegajosa. La tabla tiene **ancho mínimo** (`min-w-[52rem]`) y cada columna declara su `ancho` como **mínimo**: sin eso la columna larga (título, tema) se estrangula y sus textos se parten en ocho líneas. La tabla se desplaza en horizontal dentro de su envoltorio |
 | `.barra` · `.barra-relleno`(`-warn`/`-crit`/`-info`) | barra de una regla (tasa, presupuesto) |
 | `.kv` · `.kv-clave` · `.kv-valor` | fila clave/valor |
 | `.alerta-fila` · `.alerta-fila-err` · `.alerta-fila-warn` | aviso con franja de severidad |
@@ -88,7 +88,65 @@ Las clases viven todas en `globals.css`.
 | `<EsqueletoMetrica>` `<EsqueletoTabla>` `<EsqueletoPanel>` `<Vacio>` | estados de carga y vacío con **la forma del contenido final** (sin *layout shift*, sin spinners). |
 | `icono.tsx` | iconos SVG en línea de 16 px, trazo 1,75, `currentColor`. Sin librería de iconos. |
 
-## 4. Reglas para las vistas que vengan
+## 4. Estado de la migración
+
+Todas las rutas de `apps/web/app` están migradas al sistema.
+
+| Ruta | Qué es | Sistema aplicado |
+|---|---|---|
+| `/` | acceso en modo demo | `Panel`, `Vacio`, `kv`, `alerta-fila`, error con código literal y reintento |
+| `/fuentes` | inventario de fuentes | alta con modos URL/texto/fichero, `TablaOps` con filtros **en la URL** (estado, proveedor, texto, página) y columnas ocultables; detalle de la fuente en columna lateral (`Metrica`, `kv`, `Estado`, transcripción) |
+| `/noticias` | catálogo de noticias | banda de `Metrica`, `TablaOps` con filtros en la URL (estado, orden, texto, página) y 3 columnas ocultables; duplicados en `<details>` |
+| `/noticias/[id]` | ficha de una noticia | cabecera con `Estado`, telemetría, rejilla 2:1, afirmaciones y evidencias en `TablaOps` densas, versiones de guion, prompts en `inset`, storyboard |
+| `/estudio` | lanzador del Studio | alta de proyecto (`Panel`, `input`), `TablaOps` de proyectos con `Estado`, `Metrica` de resumen; el Studio (`features/studio`) hereda la base por tokens |
+| `/lotes` | lotes de producción | `Metrica` de resumen, catálogo de noticias y de lotes en `TablaOps` con filtros en la URL, reordenación accesible (subir/bajar con nombre), exportación y ZIP |
+| `/configuracion` | proveedores y ajustes | paneles por sección, `TablaOps` de proveedores con `Estado`, `kv` de ajustes, conmutador de tema |
+| `/ops` | consola de operación | banda de estado, alertas con filtro, telemetría en `Metrica`, `TablaOps` de trabajos con filtros en la URL y columnas ocultables, columna de contexto (consumo, dependencias, proveedores) |
+
+### Cómo se hizo sin reescribir 3 800 líneas
+
+La escala de color heredada (`neutral-*`, `sky-*`, `emerald-*`, `rose-*`,
+`amber-*`) se **redirige a los tokens** en `@theme inline`. Con eso, el Studio
+y el resto de vistas heredan la base nueva (oscura y clara) sin tocar su
+lógica; después, una pasada mecánica (`tools/auditoria/migrar_tokens_web.py`)
+retira los patrones prohibidos que quedaban: radios largos, sombras
+decorativas, gradientes de acento, `text-white` (invisible en tema claro) y los
+spinners (el icono de recarga no gira: el estado va en la etiqueta).
+
+### Skins (apariencia)
+
+Un skin es un **intercambio de variables CSS**, no un tema alternativo con
+componentes: `data-skin` sobre `<html>` y un bloque de tokens por skin en
+`globals.css`. La semántica de los acentos (`ok`/`warn`/`crit`/`info`/`idle`)
+es idéntica en todos; sólo cambia la familia de tono, el radio y la pila
+tipográfica.
+
+| Skin | Qué cambia |
+|---|---|
+| `base` (Industrial) | zinc casi negro, radios 4 px, Inter + JetBrains Mono |
+| `slate` | neutros azules de sala de control, mismo ritmo que la base |
+| `papel` | papiro cálido, tipografía IBM Plex |
+| `fosforo` | verdor CRT, todo monoespaciado |
+| `carbon` | negro puro, radios 2 px, máxima densidad de fila |
+| `plex` | IBM Carbon: radios 0, acento azul, trazo cuadrado |
+
+Cada skin define sus **dos bases** (oscura y clara). El catálogo vive en
+`apps/web/lib/apariencia.ts` (`SKINS`, `aplicarSkin`, `skinGuardado`), la
+persistencia es `localStorage["neural.skin"]` y el atributo lo pone un script
+en línea en `layout.tsx` **antes del primer pintado** (sin destello), igual
+que `data-tema`. El selector está en la cabecera y también en el panel
+«Apariencia» de Configuración.
+
+### Iconos: un solo sistema, cero peticiones
+
+Los marcadores de estado del Studio eran **glifos tipográficos y emoji**
+(✓ ✕ ⚠ ⏳ ⚓ 🍌). Ahora todos son iconos SVG del sistema
+(`apps/web/components/ui/icono.tsx`): 16 px, trazo 1,75, `currentColor`.
+Con ello la web **no hace ninguna petición a terceros**: la única que quedaba
+(carga de Material Symbols en `layout.tsx`) era además una petición muerta y
+se ha eliminado (`components/carga-fuente-iconos.tsx`).
+
+## 5. Reglas para las vistas que vengan
 
 1. **Cero dependencias nuevas.** Si hace falta algo (tabla virtualizada,
    gráficas), se escribe o se deja para después; no se añade una librería sin
@@ -106,7 +164,7 @@ Las clases viven todas en `globals.css`.
    lectura marcada como obsoleta.
 7. **Sin spinners circulares**: el esqueleto tiene la forma del contenido.
 
-## 5. Comprobaciones
+## 6. Comprobaciones
 
 `npm run typecheck`, `npm run lint`, `npm run build`,
 `python tools/check_clases.py` y `python tools/check_a11y.py` (0 bloqueantes,
@@ -114,3 +172,42 @@ Las clases viven todas en `globals.css`.
 del repositorio (`docs/entrega/verificar.ps1`) incluye además las pruebas de
 Playwright: el conmutador de tema y el ancho ampliado de `/ops` no deben
 romper la navegación.
+
+`apps/web/e2e/sistema-visual.spec.ts` recorre **todas** las rutas migradas y
+comprueba, en **oscuro y claro**: que la vista responde, que no desborda
+horizontalmente, que el conmutador de tema cambia el fondo de verdad (atributo
+`data-tema` y color computado) y que no hay errores de consola.
+
+### El E2E es parte del contrato de la interfaz
+
+Al migrar una vista, sus rótulos, cabeceras de tabla y botones **no se
+tienen que renombrar**: el E2E del repositorio los busca por texto. Concretamente
+se conservan:
+
+- rótulos: «Entrar en modo demo», «Añadir fuente», «Aportar texto, archivo o
+  transcripción», «Registrar y analizar», «Volver a analizar», «Analizar
+  vídeo», «Buscar transcripción», «Investigar», «Guardar borrador»,
+  «Aprobar esta versión», «Preparar escenas», «Crear lote», «Crear y abrir el
+  Studio», «Nombre», «Proporción», «Noticia del motor editorial»;
+- encabezados: «Fecha real», «Verificación», «Duplicados», «Puntuación»,
+  «Título», «Tipo», «Enlace», «Acciones»;
+- encabezados de página: «Fuentes registradas», «Añadir fuente».
+
+`tools/auditoria/comparar_cabeceras.py` compara las cabeceras de cada vista
+migrada con las del tag y avisa de las que el E2E podría dejar de encontrar;
+`tools/auditoria/alinear_cabeceras.py` las deja en su forma canónica.
+
+### Comprobaciones propias de la migración
+
+Además de las del repositorio:
+
+- `node tools/auditoria/capturar_vistas.mjs` — recorre todas las rutas en
+  oscuro y claro, comprueba que no desbordan y deja una captura por vista en
+  `docs/entrega/evidencias/vistas/` (con `resumen.json`: fondo computado,
+  desborde y errores de consola).
+- `node tools/auditoria/diagnostico_red.mjs` — qué peticiones fallan por ruta.
+- `python tools/auditoria/migrar_tokens_web.py` — pasada mecánica de tokens
+  (radios, sombras, gradientes, `text-white`, spinners).
+
+La propuesta visual completa, con los hallazgos auditados y lo que queda
+pendiente, está en `docs/entrega/PROPUESTA_VISUAL_DASHBOARD.md`.

@@ -4,8 +4,16 @@
  *
  * Genérica y tipada: la consola la usa para los trabajos y el resto de vistas
  * podrán reutilizarla para fuentes, noticias o lotes sin copiar el marcado.
+ *
+ * Ordenación: las columnas que declaran `ordenable` reciben su cabecera como
+ * botón (con `aria-sort` en el `th` y el chevron del estado); el criterio de
+ * orden lo aplica la página que usa la tabla —el componente no sabe ordenar
+ * datos—, así que la misma pieza sirve para orden en cliente o en servidor.
  */
 import { memo, type ReactNode } from "react";
+import { IconoOrden } from "./icono";
+
+export type OrdenTabla = { clave: string; dir: "asc" | "desc" };
 
 export type Columna<T> = {
   /** Identificador estable de la columna. */
@@ -20,6 +28,8 @@ export type Columna<T> = {
   ancho?: string;
   /** Ocultable por el usuario (columna secundaria). */
   secundaria?: boolean;
+  /** La cabecera ordena por esta columna (requiere `alOrdenar`). */
+  ordenable?: boolean;
 };
 
 export type PropsTabla<T> = {
@@ -31,6 +41,10 @@ export type PropsTabla<T> = {
   ocultas?: string[];
   /** Estado vacío (se muestra cuando no hay filas). */
   vacio?: ReactNode;
+  /** Orden activo; `null` = el orden de llegada (el del servidor). */
+  orden?: OrdenTabla | null;
+  /** Clic en una cabecera ordenable. */
+  alOrdenar?: (clave: string) => void;
 };
 
 function TablaOpsImpl<T>({
@@ -39,6 +53,8 @@ function TablaOpsImpl<T>({
   claveFila,
   ocultas = [],
   vacio,
+  orden = null,
+  alOrdenar,
 }: PropsTabla<T>) {
   const visibles = columnas.filter((columna) => !ocultas.includes(columna.clave));
 
@@ -51,16 +67,32 @@ function TablaOpsImpl<T>({
       <table className="tabla-ops">
         <thead>
           <tr>
-            {visibles.map((columna) => (
-              <th
-                key={columna.clave}
-                scope="col"
-                style={columna.ancho ? { width: columna.ancho } : undefined}
-                className={columna.numerica ? "text-right" : undefined}
-              >
-                {columna.cabecera}
-              </th>
-            ))}
+            {visibles.map((columna) => {
+              const manda = orden?.clave === columna.clave;
+              return (
+                <th
+                  key={columna.clave}
+                  scope="col"
+                  style={columna.ancho ? { minWidth: columna.ancho } : undefined}
+                  className={columna.numerica ? "text-right" : undefined}
+                  aria-sort={manda ? (orden.dir === "asc" ? "ascending" : "descending") : undefined}
+                >
+                  {columna.ordenable && alOrdenar ? (
+                    <button
+                      type="button"
+                      className="orden-cabecera"
+                      onClick={() => alOrdenar(columna.clave)}
+                      title={`Ordenar por ${columna.cabecera}`}
+                    >
+                      {columna.cabecera}
+                      <IconoOrden dir={manda ? orden.dir : "asc"} activo={manda} />
+                    </button>
+                  ) : (
+                    columna.cabecera
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>

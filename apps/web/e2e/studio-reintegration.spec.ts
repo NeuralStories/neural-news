@@ -57,7 +57,7 @@ test("studio: ocho etapas, guardado real y persistencia tras recargar", async ({
   await page.getByLabel(/Noticia del motor editorial/).selectOption(String(storyId));
   await page.getByRole("button", { name: /Crear y abrir el Studio/ }).click();
   await expect(page).toHaveURL(/\/estudio\?project=\d+/);
-  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await expect(page.getByText(/Estado sincronizado|Guardado/)).toBeVisible();
 
   // Cero iframes: el Studio vive en la página.
   await expect(page.locator("iframe")).toHaveCount(0);
@@ -94,7 +94,7 @@ test("studio: ocho etapas, guardado real y persistencia tras recargar", async ({
   // (3) Fondo: cambiar la proporción del estudio y esperar guardado real.
   await page.getByRole("button", { name: /Fondo CRT/ }).first().click();
   await page.getByRole("button", { name: /9:16/ }).first().click();
-  await expect(page.getByText(/Guardado ✓/).first()).toBeVisible();
+  await expect(page.getByText(/Guardado/).first()).toBeVisible();
 
   // (4) Guion y Escenas: texto único que debe sobrevivir a la recarga.
   await page.getByRole("button", { name: /Guion y Escenas/ }).first().click();
@@ -102,20 +102,20 @@ test("studio: ocho etapas, guardado real y persistencia tras recargar", async ({
   const editor = page.locator("textarea").first();
   await expect(editor).toBeVisible();
   await editor.fill(guionUnico);
-  await expect(page.getByText(/Guardado ✓/).first()).toBeVisible();
+  await expect(page.getByText(/Guardado/).first()).toBeVisible();
 
   // (5) Voz: velocidad editable (hipótesis Algenib, no calibración confirmada).
   await page.getByRole("button", { name: /Voz Algenib/ }).first().click();
   await expect(page.getByText(/hipótesis Algenib, sin calibrar/)).toBeVisible();
   const velocidad = page.locator('input[type="range"]');
   await velocidad.fill("1.26");
-  await expect(page.getByText(/Guardado ✓/).first()).toBeVisible();
+  await expect(page.getByText(/Guardado/).first()).toBeVisible();
 
   // (6) Movimiento: alternar un movimiento del catálogo.
   await page.getByRole("button", { name: /Movimiento/ }).first().click();
   const toggle = page.getByText("Travelling Frontal Continuo").first();
   await toggle.click();
-  await expect(page.getByText(/Guardado ✓/).first()).toBeVisible();
+  await expect(page.getByText(/Guardado/).first()).toBeVisible();
 
   // (7) Referencias: las dos bibliotecas separadas se muestran.
   await page.getByRole("button", { name: /Referencias/ }).first().click();
@@ -129,7 +129,7 @@ test("studio: ocho etapas, guardado real y persistencia tras recargar", async ({
 
   // Persistencia: recargar la página y recuperar el estado del servidor.
   await page.reload();
-  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await expect(page.getByText(/Estado sincronizado|Guardado/)).toBeVisible();
   await page.getByRole("button", { name: /Guion y Escenas/ }).first().click();
   await expect(page.locator("textarea").first()).toHaveValue(new RegExp(guionUnico));
 

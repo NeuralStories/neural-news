@@ -25,7 +25,7 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
       <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
               Escenario Físico: Plató de Monitores CRT
             </h3>
             <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
@@ -41,7 +41,7 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
               className={`px-3 py-1 rounded text-xs font-mono font-medium transition cursor-pointer flex items-center gap-1 ${
                 aspectRatio === '16:9'
                   ? 'bg-sky-500 text-neutral-950 font-bold shadow'
-                  : 'text-neutral-400 hover:text-white'
+                  : 'text-neutral-400 hover:text-ink'
               }`}
             >
               16:9 Horizontal
@@ -51,7 +51,7 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
               className={`px-3 py-1 rounded text-xs font-mono font-medium transition cursor-pointer flex items-center gap-1 ${
                 aspectRatio === '9:16'
                   ? 'bg-sky-500 text-neutral-950 font-bold shadow'
-                  : 'text-neutral-400 hover:text-white'
+                  : 'text-neutral-400 hover:text-ink'
               }`}
             >
               9:16 Vertical
@@ -68,15 +68,15 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
             <div
               key={preset.id}
               onClick={() => onSelectPreset(preset)}
-              className={`rounded-lg border p-4 bg-neutral-900 transition-all cursor-pointer flex flex-col justify-between ${
+              className={`rounded-md border p-4 bg-neutral-900 transition-all cursor-pointer flex flex-col justify-between ${
                 isSelected
-                  ? 'border-sky-500 ring-1 ring-sky-500/50 shadow-lg shadow-sky-950/20'
+                  ? 'border-sky-500 ring-1 ring-sky-500/50 shadow-sm shadow-sky-950/20'
                   : 'border-neutral-800 hover:border-neutral-700 hover:bg-neutral-850'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white">{preset.title}</span>
+                  <span className="text-xs font-bold text-ink">{preset.title}</span>
                   <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-950 text-sky-400 border border-neutral-800">
                     {preset.aspectRatio}
                   </span>
@@ -96,7 +96,7 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
               <div className="pt-3 mt-3 border-t border-neutral-800/60 flex items-center justify-between">
                 <span className="text-[11px] text-neutral-500 font-mono">Encuadre cerrado pecho</span>
                 <span className={`text-xs font-semibold ${isSelected ? 'text-sky-400' : 'text-neutral-400'}`}>
-                  {isSelected ? '✓ Seleccionado' : 'Elegir'}
+                  {isSelected ? 'Seleccionado' : 'Elegir'}
                 </span>
               </div>
             </div>
@@ -105,12 +105,12 @@ export const BackgroundTab: React.FC<BackgroundTabProps> = ({
       </div>
 
       {/* Opción de vincular imagen de fondo aprobada previamente */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex items-center justify-between">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-md p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-neutral-800 text-neutral-300">
             </div>
           <div>
-            <h4 className="text-xs font-semibold text-white">¿Tienes un fotograma de plató CRT ya renderizado?</h4>
+            <h4 className="text-xs font-semibold text-ink">¿Tienes un fotograma de plató CRT ya renderizado?</h4>
             <p className="text-xs text-neutral-400">
               {customReferenceMediaId
                 ? 'Fondo de referencia importado y vinculado para el renderizado.'

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import type { ArticleApprovalStatus, NewsArticle, VerificationStatus } from '../../types';
 import { BATCH_5_NEWS_SAMPLE } from '../../constants';
 import { errorMessage as mensajeDeError } from '../../utils/errorMessage';
+import { IconoAlerta, IconoCheck, IconoCruce } from '@/components/ui/icono';
 
 /**
  * Modal de importación de lotes de noticias en JSON (NN-113.13).
@@ -38,7 +39,9 @@ interface ModalImportarLoteProps {
 
 export const ModalImportarLote: React.FC<ModalImportarLoteProps> = ({ onImportar, onCerrar }) => {
   const [batchJsonInput, setBatchJsonInput] = useState('');
-  const [batchFeedback, setBatchFeedback] = useState<string | null>(null);
+  // El tono viaja con el mensaje (no se adivina del texto: antes era un
+  // `startsWith('✓')`, un marcador tipográfico haciendo de semántica).
+  const [batchFeedback, setBatchFeedback] = useState<{ tono: 'ok' | 'crit'; texto: string } | null>(null);
   const [batchDupeList, setBatchDupeList] = useState<string[]>([]);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,7 +84,10 @@ export const ModalImportarLote: React.FC<ModalImportarLoteProps> = ({ onImportar
       }));
 
       const res = onImportar(formatted);
-      setBatchFeedback(`✓ Importadas con éxito: ${res.importedCount} noticias. Descartadas por duplicidad: ${res.duplicateCount}.`);
+      setBatchFeedback({
+        tono: 'ok',
+        texto: `Importadas con éxito: ${res.importedCount} noticias. Descartadas por duplicidad: ${res.duplicateCount}.`,
+      });
       setBatchDupeList(res.duplicateDetails);
 
       if (res.importedCount > 0 && res.duplicateCount === 0) {
@@ -92,7 +98,10 @@ export const ModalImportarLote: React.FC<ModalImportarLoteProps> = ({ onImportar
         }, 2200);
       }
     } catch (err) {
-      setBatchFeedback(`Error en validación JSON: ${mensajeDeError(err) ?? 'error desconocido'}`);
+      setBatchFeedback({
+        tono: 'crit',
+        texto: `Error en validación JSON: ${mensajeDeError(err) ?? 'error desconocido'}`,
+      });
     }
   };
 
@@ -112,18 +121,18 @@ export const ModalImportarLote: React.FC<ModalImportarLoteProps> = ({ onImportar
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-md max-w-2xl w-full p-6 space-y-4 shadow-2xl">
         <div className="panel-header">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-white">Importar Lotes de Noticias JSON</h3>
+            <h3 className="text-sm font-bold text-ink">Importar Lotes de Noticias JSON</h3>
           </div>
           <button
             onClick={onCerrar}
             aria-label="Cerrar la ventana de importación de lotes"
             title="Cerrar"
-            className="text-neutral-400 hover:text-white p-1 rounded cursor-pointer"
+            className="text-neutral-400 hover:text-ink p-1 rounded cursor-pointer"
           >
-            ✕
+            <IconoCruce />
           </button>
         </div>
 
@@ -133,12 +142,13 @@ export const ModalImportarLote: React.FC<ModalImportarLoteProps> = ({ onImportar
 
         {batchFeedback && (
           <div className={`p-3 rounded text-xs flex items-start gap-2 border ${
-            batchFeedback.startsWith('✓')
+            batchFeedback.tono === 'ok'
               ? 'bg-emerald-950/80 border-emerald-800 text-emerald-200'
               : 'bg-rose-950/80 border-rose-800 text-rose-200'
           }`}>
+            {batchFeedback.tono === 'ok' ? <IconoCheck /> : <IconoAlerta />}
             <div className="flex-1">
-              <span>{batchFeedback}</span>
+              <span>{batchFeedback.texto}</span>
               {batchDupeList.length > 0 && (
                 <ul className="mt-1.5 list-disc list-inside text-[11px] font-mono opacity-90 space-y-0.5">
                   {batchDupeList.map((d, i) => (
@@ -164,7 +174,7 @@ export const ModalImportarLote: React.FC<ModalImportarLoteProps> = ({ onImportar
               <button
                 type="button"
                 onClick={() => batchFileInputRef.current?.click()}
-                className="text-neutral-300 hover:text-white underline cursor-pointer"
+                className="text-neutral-300 hover:text-ink underline cursor-pointer"
               >
                 Subir Archivo .json
               </button>

@@ -60,7 +60,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
 }) => {
   const current = TABS.find((t) => t.id === currentTab);
 
-  /** Estado de cada sección: hecho (✓), requiere atención (!) o pendiente (○). */
+  /** Estado de cada sección: hecho, requiere atención o pendiente (lo pinta el badge, no un glifo). */
   const stateOf = (tab: TabDef): 'done' | 'attention' | 'pending' => {
     if (tab.id === 'noticias') {
       if (approvedNewsCount === 0) return 'attention';
@@ -127,25 +127,28 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
                           title={`${tab.label} — ${state === 'done' ? 'completo' : state === 'attention' ? 'requiere atención' : 'pendiente'}`}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
                             isActive
-                              ? 'bg-sky-500 text-neutral-950 shadow-md shadow-sky-500/20 font-semibold'
-                              : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
+                              ? 'bg-info/20 text-info font-semibold border border-info/50'
+                              : 'text-ink-2 hover:text-ink hover:bg-surface-2 border border-transparent'
                           }`}
                         >
                           <span>{tab.label}</span>
+                          {/*
+                            Estado de la etapa: el punto cuadrado del sistema
+                            (`.estado-punto`), no glifos de texto. El significado
+                            está en el `title` del botón.
+                          */}
                           <span
                             aria-hidden
-                            className={`text-[11px] ${
+                            className={`estado-punto ${
                               isActive
-                                ? 'text-neutral-900'
+                                ? 'estado-punto-info'
                                 : state === 'done'
-                                  ? 'text-emerald-400'
+                                  ? 'estado-punto-ok'
                                   : state === 'attention'
-                                    ? 'text-sky-400'
-                                    : 'text-neutral-600'
+                                    ? 'estado-punto-warn'
+                                    : 'estado-punto-idle'
                             }`}
-                          >
-                            {state === 'done' ? '✓' : state === 'attention' ? '!' : '○'}
-                          </span>
+                          />
                           {badge(tab)}
                         </button>
                       );
@@ -193,7 +196,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
           <button
             onClick={onAbrirMantenimiento}
             title="Centro de mantenimiento: auditoría SHA-256 de las fuentes y exportación"
-            className={`order-2 shrink-0 px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300 hover:text-white hover:border-sky-600 text-xs font-medium transition cursor-pointer ${
+            className={`order-2 shrink-0 px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300 hover:text-ink hover:border-sky-600 text-xs font-medium transition cursor-pointer ${
               embedded ? 'order-1' : ''
             }`}
           >

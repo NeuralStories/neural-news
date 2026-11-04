@@ -79,6 +79,226 @@
   --c-idle: #71717a;
 }
 
+/* ==========================================================================
+   Skins: capas de apariencia sobre los tokens
+   --------------------------------------------------------------------------
+   Un skin es **sólo un intercambio de tokens** (superficies, líneas, texto,
+   acentos funcionales, radios y pilas tipográficas). Ningún componente
+   cambia: el puente `@theme inline` y la escala heredada (`neutral-*`,
+   `sky-*`, `emerald-*`…) siguen resolviendo contra `--c-*`, así que el
+   producto entero adopta la piel sin tocar una línea de marcado.
+
+   - Activación: atributo `data-skin` sobre `<html>`. Persistencia:
+     `localStorage["neural.skin"]`; el selector vive en Configuración →
+     Apariencia y en la cabecera (`components/app-shell.tsx`). El atributo lo
+     pone el script en línea de `layout.tsx` **antes del primer pintado**,
+     igual que `data-tema`, para que no haya destello.
+   - Cada skin define sus **dos bases**: la oscura (`html[data-skin=…]`) y la
+     clara (`html[data-skin=…][data-tema="claro"]`). La especificidad extra
+     del segundo selector garantiza que el claro del skin gana a su base
+     oscura y al claro genérico.
+   - La **semántica de los acentos no se negocia**: ok activo/nominal, warn
+     degradado/aviso, crit fallo, info telemetría/en curso, idle sin dato.
+     Un skin puede cambiar la familia de tono, nunca el significado.
+   ========================================================================== */
+
+/* --- Skin «Slate frío»: neutros azules de sala de control ----------------- */
+html[data-skin="slate"] {
+  color-scheme: dark;
+  --c-bg: #090e14;
+  --c-surface: #0e141d;
+  --c-surface-2: #121a26;
+  --c-surface-3: #182231;
+  --c-line: #1d2938;
+  --c-line-strong: #2c3d52;
+  --c-ink: #e2e8f0;
+  --c-ink-2: #94a3b8;
+  --c-ink-3: #64748b;
+  --c-ok: #34d399;
+  --c-warn: #fbbf24;
+  --c-crit: #fb7185;
+  --c-info: #38bdf8;
+  --c-idle: #64748b;
+  --c-radius: 4px;
+}
+html[data-skin="slate"][data-tema="claro"] {
+  color-scheme: light;
+  --c-bg: #eef2f6;
+  --c-surface: #ffffff;
+  --c-surface-2: #f7f9fb;
+  --c-surface-3: #e6ebf1;
+  --c-line: #d3dae2;
+  --c-line-strong: #b3bfc9;
+  --c-ink: #101820;
+  --c-ink-2: #4a5560;
+  --c-ink-3: #6b7682;
+  --c-ok: #047857;
+  --c-warn: #b45309;
+  --c-crit: #be123c;
+  --c-info: #0369a1;
+  --c-idle: #64748b;
+}
+
+/* --- Skin «Papel técnico»: documento impreso, IBM Plex -------------------- */
+html[data-skin="papel"] {
+  color-scheme: dark;
+  --c-bg: #141311;
+  --c-surface: #1b1a17;
+  --c-surface-2: #211f1c;
+  --c-surface-3: #2a2723;
+  --c-line: #2e2b26;
+  --c-line-strong: #45413a;
+  --c-ink: #ece9e2;
+  --c-ink-2: #b0ab9f;
+  --c-ink-3: #7d786c;
+  --c-ok: #34d399;
+  --c-warn: #fbbf24;
+  --c-crit: #fb7185;
+  --c-info: #38bdf8;
+  --c-idle: #71717a;
+  --c-radius: 4px;
+  --c-font-sans: "IBM Plex Sans", "Segoe UI Variable Text", "Segoe UI",
+    system-ui, -apple-system, sans-serif;
+  --c-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "Cascadia Mono",
+    Consolas, monospace;
+}
+html[data-skin="papel"][data-tema="claro"] {
+  color-scheme: light;
+  --c-bg: #f1f1ee;
+  --c-surface: #ffffff;
+  --c-surface-2: #f8f8f6;
+  --c-surface-3: #e9e9e5;
+  --c-line: #d8d8d2;
+  --c-line-strong: #b5b5ad;
+  --c-ink: #1b1b18;
+  --c-ink-2: #55554f;
+  --c-ink-3: #7d7d75;
+  --c-ok: #06705a;
+  --c-warn: #9a5b06;
+  --c-crit: #c11f3e;
+  --c-info: #0b6a9e;
+  --c-idle: #78786f;
+}
+
+/* --- Skin «Fósforo»: terminal de telemetría, todo monoespaciado ----------- */
+html[data-skin="fosforo"] {
+  color-scheme: dark;
+  --c-bg: #090c09;
+  --c-surface: #0e130e;
+  --c-surface-2: #121812;
+  --c-surface-3: #1a221a;
+  --c-line: #1f2a1f;
+  --c-line-strong: #344534;
+  --c-ink: #d9e6d9;
+  --c-ink-2: #9db69d;
+  --c-ink-3: #68806b;
+  --c-ok: #4ade80;
+  --c-warn: #fbbf24;
+  --c-crit: #fb7185;
+  --c-info: #2dd4bf;
+  --c-idle: #6b7d6b;
+  --c-radius: 3px;
+  --c-font-sans: "IBM Plex Mono", ui-monospace, SFMono-Regular, "Cascadia Mono",
+    Consolas, monospace;
+  --c-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "Cascadia Mono",
+    Consolas, monospace;
+}
+html[data-skin="fosforo"][data-tema="claro"] {
+  color-scheme: light;
+  --c-bg: #eef3ee;
+  --c-surface: #ffffff;
+  --c-surface-2: #f5f9f5;
+  --c-surface-3: #e4ede4;
+  --c-line: #d0ddd0;
+  --c-line-strong: #a9bfa9;
+  --c-ink: #101a12;
+  --c-ink-2: #3f5243;
+  --c-ink-3: #5c6f5e;
+  --c-ok: #15803d;
+  --c-warn: #b45309;
+  --c-crit: #be123c;
+  --c-info: #0f766e;
+  --c-idle: #6b7d6b;
+}
+
+/* --- Skin «Carbón»: negro puro, radios de 2 px, máxima densidad ----------- */
+html[data-skin="carbon"] {
+  color-scheme: dark;
+  --c-bg: #0a0a0a;
+  --c-surface: #121212;
+  --c-surface-2: #171717;
+  --c-surface-3: #1f1f1f;
+  --c-line: #262626;
+  --c-line-strong: #3d3d3d;
+  --c-ink: #ededed;
+  --c-ink-2: #a3a3a3;
+  --c-ink-3: #6b6b6b;
+  --c-ok: #22c55e;
+  --c-warn: #eab308;
+  --c-crit: #f43f5e;
+  --c-info: #22d3ee;
+  --c-idle: #737373;
+  --c-radius: 2px;
+}
+html[data-skin="carbon"][data-tema="claro"] {
+  color-scheme: light;
+  --c-bg: #f4f4f4;
+  --c-surface: #ffffff;
+  --c-surface-2: #fafafa;
+  --c-surface-3: #ececec;
+  --c-line: #dcdcdc;
+  --c-line-strong: #b8b8b8;
+  --c-ink: #111111;
+  --c-ink-2: #525252;
+  --c-ink-3: #737373;
+  --c-ok: #15803d;
+  --c-warn: #a16207;
+  --c-crit: #be123c;
+  --c-info: #0e7490;
+  --c-idle: #737373;
+}
+
+/* --- Skin «Plex cuadrado»: IBM Carbon, radios 0, acento azul -------------- */
+html[data-skin="plex"] {
+  color-scheme: dark;
+  --c-bg: #161616;
+  --c-surface: #262626;
+  --c-surface-2: #333333;
+  --c-surface-3: #393939;
+  --c-line: #3d3d3d;
+  --c-line-strong: #6f6f6f;
+  --c-ink: #f4f4f4;
+  --c-ink-2: #c6c6c6;
+  --c-ink-3: #8d8d8d;
+  --c-ok: #42be65;
+  --c-warn: #f1c21b;
+  --c-crit: #fa4d56;
+  --c-info: #4589ff;
+  --c-idle: #8d8d8d;
+  --c-radius: 0px;
+  --c-font-sans: "IBM Plex Sans", "Segoe UI Variable Text", "Segoe UI",
+    system-ui, -apple-system, sans-serif;
+  --c-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "Cascadia Mono",
+    Consolas, monospace;
+}
+html[data-skin="plex"][data-tema="claro"] {
+  color-scheme: light;
+  --c-bg: #f4f4f4;
+  --c-surface: #ffffff;
+  --c-surface-2: #f7f7f7;
+  --c-surface-3: #e0e0e0;
+  --c-line: #c6c6c6;
+  --c-line-strong: #a8a8a8;
+  --c-ink: #161616;
+  --c-ink-2: #525252;
+  --c-ink-3: #8d8d8d;
+  --c-ok: #198038;
+  --c-warn: #a87000;
+  --c-crit: #da1e28;
+  --c-info: #0f62fe;
+  --c-idle: #8d8d8d;
+}
+
 /* Puente tokens → utilidades de Tailwind (`@theme inline` mantiene la
    referencia a la variable, de modo que el cambio de tema es instantáneo). */
 @theme inline {
@@ -102,6 +322,64 @@
 
   --radius-sm: var(--c-radius);
   --radius-md: calc(var(--c-radius) + 2px);
+
+  /*
+   * Escala neutra heredada → tokens del sistema.
+   *
+   * El Studio y varias vistas usaban la escala `neutral-*` de Tailwind y el
+   * acento `sky-*`. En vez de reescribir sus clases una a una (3 800 líneas),
+   * se **redefine la escala** sobre los tokens: `bg-neutral-900` pasa a ser la
+   * superficie del sistema, `text-neutral-400` el texto secundario, etc.
+   *
+   * Consecuencia: todo el producto hereda la base nueva y el tema claro sin
+   * tocar su lógica ni sus componentes, y la escala deja de ser un segundo
+   * sistema de color paralelo.
+   */
+  --color-neutral-50: var(--c-surface-2);
+  --color-neutral-100: var(--c-ink);
+  --color-neutral-200: var(--c-ink);
+  --color-neutral-300: var(--c-ink-2);
+  --color-neutral-400: var(--c-ink-2);
+  --color-neutral-500: var(--c-ink-3);
+  --color-neutral-600: var(--c-ink-3);
+  --color-neutral-700: var(--c-line-strong);
+  --color-neutral-800: var(--c-surface-2);
+  --color-neutral-900: var(--c-surface);
+  --color-neutral-950: var(--c-bg);
+
+  /* El acento heredado pasa al único cyan del sistema (telemetría / en curso). */
+  --color-sky-300: var(--c-info);
+  --color-sky-400: var(--c-info);
+  --color-sky-500: var(--c-info);
+  --color-sky-600: var(--c-info);
+  --color-sky-700: var(--c-info);
+  --color-sky-900: var(--c-info);
+
+  /*
+   * Los acentos nominales también se unifican: el producto sólo usa cuatro
+   * (emerald, amber, rose, cyan) y todos salen de los tokens, de modo que el
+   * tema claro ajusta el contraste de los cuatro a la vez.
+   */
+  --color-emerald-300: var(--c-ok);
+  --color-emerald-400: var(--c-ok);
+  --color-emerald-500: var(--c-ok);
+  --color-emerald-600: var(--c-ok);
+  --color-emerald-700: var(--c-ok);
+  --color-emerald-900: var(--c-ok);
+
+  --color-amber-300: var(--c-warn);
+  --color-amber-400: var(--c-warn);
+  --color-amber-500: var(--c-warn);
+  --color-amber-600: var(--c-warn);
+  --color-amber-900: var(--c-warn);
+
+  --color-rose-300: var(--c-crit);
+  --color-rose-400: var(--c-crit);
+  --color-rose-500: var(--c-crit);
+  --color-rose-600: var(--c-crit);
+  --color-rose-700: var(--c-crit);
+  --color-rose-800: var(--c-crit);
+  --color-rose-900: var(--c-crit);
 }
 
 body {
@@ -322,7 +600,14 @@ body {
 
 /* Tabla densa: cabecera pegajosa, líneas de 1px, cifras tabulares. */
 .tabla-ops {
-  @apply w-full border-collapse text-left text-xs;
+  /*
+   * `min-w` es lo que evita que la columna larga (título, tema) se estrangule:
+   * sin él, la tabla reparte el ancho disponible entre nueve columnas y los
+   * textos se parten en ocho líneas (filas desiguales y una tabla ilegible).
+   * Con el mínimo, la tabla **se desplaza horizontalmente** dentro de su
+   * envoltorio, que es lo propio de una tabla densa.
+   */
+  @apply w-full min-w-[52rem] border-collapse text-left text-xs;
 }
 .tabla-ops thead th {
   @apply sticky top-0 z-10 border-b border-line bg-surface px-2 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
@@ -371,6 +656,22 @@ body {
 }
 .filtro-on {
   @apply border-info/50 bg-info/10 text-info;
+}
+
+/* Selector de skin de la cabecera: `<select>` nativo compacto, altura del
+   botón de tema, tipografía mono (es un dato de apariencia, no una etiqueta). */
+.selector-skin {
+  @apply h-8 rounded-md border border-line bg-surface-2 px-1.5 font-mono text-xs text-ink-2 outline-none transition hover:border-line-strong hover:text-ink focus-visible:ring-2 focus-visible:ring-info/60;
+}
+
+/* Botón de cabecera ordenable (`.tabla-ops th`): hereda la versalitas mono del
+   `th` y añade el chevron del estado. El `th` ya centra su contenido; aquí se
+   restaura el flujo en línea del botón. */
+.orden-cabecera {
+  @apply inline-flex items-center gap-1 text-inherit;
+}
+.orden-cabecera:hover {
+  @apply text-ink;
 }
 
 /* Estados de carga y vacío (sin spinners: la forma es la del contenido final). */

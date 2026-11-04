@@ -63,7 +63,7 @@ export const DossierPanel: React.FC<{ projectId: number }> = ({ projectId }) => 
     );
   }
   return (
-    <div className="space-y-2 rounded-lg border border-sky-900/60 bg-neutral-900/70 p-3">
+    <div className="space-y-2 rounded-md border border-sky-900/60 bg-neutral-900/70 p-3">
       <p className="text-xs font-bold text-sky-300">
         Dossier editorial vinculado · historia #{dossier.story?.id} ·{' '}
         {ETIQUETA_NOTICIA[dossier.story?.status ?? ''] ?? dossier.story?.status}

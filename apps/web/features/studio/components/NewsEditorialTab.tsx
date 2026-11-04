@@ -78,7 +78,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-ink">
                 Módulo Editorial: Redacción y Escaleta neural.news
               </h3>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -120,7 +120,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
         <div className="mt-4 pt-3 border-t border-neutral-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3 text-neutral-300">
             <span className="text-neutral-500 font-mono">ESTADO DE LA REDACCIÓN:</span>
-            <span className="font-bold text-white font-mono">{articles.length}</span>
+            <span className="font-bold text-ink font-mono">{articles.length}</span>
             <span>noticias totales</span>
             <span className="text-neutral-600">|</span>
             <span className="font-bold text-emerald-400 font-mono">
@@ -145,7 +145,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
 
       {/* Barra de Filtros, Búsqueda y Bloques */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1 overflow-x-auto bg-neutral-900 p-1 rounded-lg border border-neutral-800">
+        <div className="flex items-center gap-1 overflow-x-auto bg-neutral-900 p-1 rounded-md border border-neutral-800">
           {(['todas', 'aprobada', 'pendiente', 'descartada'] as const).map((st) => (
             <button
               key={st}
@@ -153,7 +153,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
               className={`px-3 py-1 rounded text-xs font-medium capitalize transition cursor-pointer whitespace-nowrap ${
                 filterStatus === st
                   ? 'bg-sky-500 text-neutral-950 font-bold shadow'
-                  : 'text-neutral-400 hover:text-white'
+                  : 'text-neutral-400 hover:text-ink'
               }`}
             >
               {st}
@@ -165,7 +165,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
           <select
             value={filterBlock}
             onChange={(e) => setFilterBlock(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-neutral-300 focus:outline-none focus:border-sky-500"
+            className="bg-neutral-900 border border-neutral-800 rounded-md px-2.5 py-1.5 text-xs text-neutral-300 focus:outline-none focus:border-sky-500"
           >
             <option value="todos">Todos los Bloques</option>
             {episodeBlocks.map((b) => (
@@ -181,7 +181,7 @@ export const NewsEditorialTab: React.FC<NewsEditorialTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar noticia, fuentes..."
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-sky-500"
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-md pl-8 pr-3 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-sky-500"
             />
           </div>
         </div>

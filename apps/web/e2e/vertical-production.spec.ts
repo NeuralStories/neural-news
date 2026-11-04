@@ -62,7 +62,7 @@ test("producción vertical: director → prompt → paquete Flow → importar MP
 
   // Abrir el Studio en el proyecto y ir a Producción y Vídeo.
   await page.goto(`/estudio?project=${pid}`);
-  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await expect(page.getByText(/Estado sincronizado|Guardado/)).toBeVisible();
   await page.getByRole("button", { name: /Producción y Vídeo/ }).first().click();
 
   // Director determinista: crea beats + tomas persistidas.
@@ -99,7 +99,7 @@ test("producción vertical: director → prompt → paquete Flow → importar MP
 
   // Persistencia: recargar y recuperar el estado completo del proyecto.
   await page.reload();
-  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await expect(page.getByText(/Estado sincronizado|Guardado/)).toBeVisible();
   await page.getByRole("button", { name: /Producción y Vídeo/ }).first().click();
   const takesAfter = page.locator("li", { hasText: "Toma 1 ·" }).first();
   await expect(takesAfter.getByText(/estado: APROBADA/)).toBeVisible();
@@ -122,7 +122,7 @@ test("producción vertical: director → prompt → paquete Flow → importar MP
 
   // Recargar para que el Studio monte de nuevo el panel y traiga los gráficos.
   await page.reload();
-  await expect(page.getByText(/Estado sincronizado|Guardado ✓/)).toBeVisible();
+  await expect(page.getByText(/Estado sincronizado|Guardado/)).toBeVisible();
   await page.getByRole("button", { name: /Producción y Vídeo/ }).first().click();
   await expect(page.getByText(/Gráficos programáticos/)).toBeVisible();
   await expect(page.locator('img[alt*="Gráfico"]').first()).toBeVisible();

@@ -16,6 +16,7 @@
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { flowRuntime } from './flow/adapter';
+import { IconoCruce } from '@/components/ui/icono';
 import { useStudioProject } from './lib/useStudioProject';
 import { useHidratacionStudio } from './lib/useHidratacionStudio';
 import { useGuardadoPasos } from './lib/useGuardadoPasos';
@@ -353,7 +354,7 @@ export default function App({ projectId }: { projectId: number | null }) {
           </div>
         )}
         {projectLoadError && (
-          <div className="p-3 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-200 text-xs">
+          <div className="p-3 rounded-md bg-rose-950/80 border border-rose-800 text-rose-200 text-xs">
             No se pudo cargar el proyecto: {projectLoadError}
           </div>
         )}
@@ -373,7 +374,7 @@ export default function App({ projectId }: { projectId: number | null }) {
               </span>
             ) : Object.entries(saveStates).some(([, st]) => st === 'saved') ? (
               <span className="px-2 py-1 rounded bg-emerald-950/70 border border-emerald-800 text-emerald-300">
-                Guardado ✓ (persistente tras recargar)
+                Guardado (persistente tras recargar)
               </span>
             ) : (
               <span className="px-2 py-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-400">
@@ -383,7 +384,7 @@ export default function App({ projectId }: { projectId: number | null }) {
           </div>
         )}
         {successToast && (
-          <div className="p-3 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-200 text-xs flex items-center justify-between shadow-lg">
+          <div className="p-3 rounded-md bg-emerald-950/80 border border-emerald-800 text-emerald-200 text-xs flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2">
               <span>{successToast}</span>
             </div>
@@ -391,15 +392,15 @@ export default function App({ projectId }: { projectId: number | null }) {
               onClick={() => setSuccessToast(null)}
               aria-label="Cerrar el aviso"
               title="Cerrar"
-              className="text-emerald-400 hover:text-white cursor-pointer"
+              className="text-emerald-400 hover:text-ink cursor-pointer"
             >
-              ✕
+              <IconoCruce />
             </button>
           </div>
         )}
 
         {errorMessage && (
-          <div className="p-3.5 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center justify-between">
+          <div className="p-3.5 rounded-md bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span>{errorMessage}</span>
             </div>
@@ -407,9 +408,9 @@ export default function App({ projectId }: { projectId: number | null }) {
               onClick={() => setErrorMessage(null)}
               aria-label="Cerrar el mensaje de error"
               title="Cerrar"
-              className="text-rose-400 hover:text-white cursor-pointer"
+              className="text-rose-400 hover:text-ink cursor-pointer"
             >
-              ✕
+              <IconoCruce />
             </button>
           </div>
         )}

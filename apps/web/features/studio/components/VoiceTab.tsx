@@ -13,7 +13,7 @@ export const VoiceTab: React.FC<VoiceTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Declaración de capacidad real */}
-      <div className="p-4 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300 flex items-start gap-3">
+      <div className="p-4 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-300 flex items-start gap-3">
         <div className="text-xs space-y-1">
           <p className="font-semibold text-sky-200">
             Aviso de Transparencia de Capacidades
@@ -27,11 +27,11 @@ export const VoiceTab: React.FC<VoiceTabProps> = ({
 
       {/* Ficha canónica de voz: Perfil Algenib */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-5 space-y-4">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-md p-5 space-y-4">
           <div className="panel-header">
             <div className="flex items-center gap-2">
               <div>
-                <h3 className="text-sm font-bold text-white">Perfil Preferido: {voiceConfig.profile}</h3>
+                <h3 className="text-sm font-bold text-ink">Perfil Preferido: {voiceConfig.profile}</h3>
                 <span className="text-[11px] text-neutral-400">Locutor Oficial de NeuralStories News</span>
               </div>
             </div>
@@ -57,7 +57,7 @@ export const VoiceTab: React.FC<VoiceTabProps> = ({
         </div>
 
         {/* Ajuste de velocidad y control de ritmo */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-5 space-y-4 flex flex-col justify-between">
+        <div className="bg-neutral-900 border border-neutral-800 rounded-md p-5 space-y-4 flex flex-col justify-between">
           <div>
             <h4 className="text-xs font-semibold text-neutral-200 uppercase tracking-wider mb-2">
               Control de Ritmo de Locución
@@ -66,7 +66,7 @@ export const VoiceTab: React.FC<VoiceTabProps> = ({
               El estilo de NeuralStories exige un ritmo un <strong>15% a 20% más rápido</strong> que la lectura estándar para aportar frescura y densidad informativa.
             </p>
 
-            <div className="space-y-3 bg-neutral-950 p-4 rounded-lg border border-neutral-800">
+            <div className="space-y-3 bg-neutral-950 p-4 rounded-md border border-neutral-800">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-neutral-400">Multiplicador de velocidad:</span>
                 <span className="font-mono font-bold text-sky-400">

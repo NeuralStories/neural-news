@@ -1,5 +1,6 @@
 import React from 'react';
 import { CameraMovement } from '../types';
+import { IconoCheck } from '@/components/ui/icono';
 
 interface MovementTabProps {
   movements: CameraMovement[];
@@ -14,7 +15,7 @@ export const MovementTab: React.FC<MovementTabProps> = ({
     <div className="space-y-6">
       {/* Cabecera de especificación de 8s */}
       <div className="card">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
           Comportamiento Óptico y Dinamismo Visual (duración según proveedor)
         </h3>
         <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
@@ -30,7 +31,7 @@ export const MovementTab: React.FC<MovementTabProps> = ({
             <div
               key={mov.id}
               onClick={() => onToggleMovement(mov.id)}
-              className={`p-4 rounded-lg border transition-all cursor-pointer flex items-start gap-3 ${
+              className={`p-4 rounded-md border transition-all cursor-pointer flex items-start gap-3 ${
                 mov.selected
                   ? 'bg-neutral-900 border-sky-500 ring-1 ring-sky-500/40 shadow-md shadow-sky-950/20'
                   : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-700'
@@ -41,12 +42,12 @@ export const MovementTab: React.FC<MovementTabProps> = ({
                   mov.selected ? 'bg-sky-500 text-neutral-950' : 'border border-neutral-600 bg-neutral-950'
                 }`}
               >
-                {mov.selected && <span className="text-[14px] font-bold leading-none">✓</span>}
+                {mov.selected && <IconoCheck tamano={13} />}
               </div>
 
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">{mov.label}</span>
+                  <span className="text-xs font-bold text-ink">{mov.label}</span>
                   <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-neutral-950 text-neutral-400 border border-neutral-800">
                     {mov.category}
                   </span>

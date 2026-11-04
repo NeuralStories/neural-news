@@ -79,19 +79,19 @@ export const ResultTab: React.FC<ResultTabProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Noticia Editorial</span>
-          <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1 truncate" title={activeArticle?.title}>
+          <span className="text-xs font-semibold text-ink flex items-center gap-1 mt-1 truncate" title={activeArticle?.title}>
             {activeArticle ? activeArticle.title : 'Guion Manual'}
           </span>
         </div>
         <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Escenario & Ratio</span>
-          <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1">
+          <span className="text-xs font-semibold text-ink flex items-center gap-1 mt-1">
             CRT {aspectRatio}
           </span>
         </div>
         <div className="card-compact">
           <span className="text-[10px] uppercase font-mono text-neutral-500 block">Voz Algenib</span>
-          <span className="text-xs font-semibold text-white flex items-center gap-1 mt-1">
+          <span className="text-xs font-semibold text-ink flex items-center gap-1 mt-1">
             {voiceConfig.speedMultiplier.toFixed(2)}x (+18%)
           </span>
         </div>
@@ -111,7 +111,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
 
       {/* Auditoría de Referencias Transmitidas a Google Flow */}
       <div className="card">
-        <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2">
+        <h4 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2 mb-2">
           Auditoría de Insumos para Omni 1.1 Flash (Google Flow)
         </h4>
 
@@ -119,7 +119,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
           <div className="p-3 rounded bg-neutral-950 border border-neutral-800/80 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-emerald-300 font-mono text-[11px]">
-                ✓ Referencias Visuales Reales (mediaId):
+                Referencias Visuales Reales (mediaId):
               </span>
               <span className="text-[10px] font-mono text-emerald-400">
                 {mediaIdRefs.length + (sheetState.mediaId ? 1 : 0)} activas
@@ -149,7 +149,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
           <div className="p-3 rounded bg-neutral-950 border border-neutral-800/80 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sky-300 font-mono text-[11px]">
-                ⚠ Directivas Textuales en Prompt:
+                Directivas Textuales en Prompt:
               </span>
               <span className="text-[10px] font-mono text-sky-400">
                 {promptOnlyRefs.length} elementos
@@ -173,7 +173,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
       {multiSceneAnalysis.scenes.length > 1 && (
         <div className="card-compact">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-white flex items-center gap-1.5">
+            <span className="text-xs font-bold text-ink flex items-center gap-1.5">
               Secuencia de Escenas del Noticiero ({multiSceneAnalysis.scenes.length} fragmentos, duración calculada por palabras)
             </span>
             <button
@@ -192,7 +192,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
                 className={`px-3 py-1.5 rounded-md text-xs font-mono transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   selectedSceneIndex === idx
                     ? 'bg-sky-500 text-neutral-950 font-bold shadow'
-                    : 'bg-neutral-950 text-neutral-400 border border-neutral-800 hover:text-white'
+                    : 'bg-neutral-950 text-neutral-400 border border-neutral-800 hover:text-ink'
                 }`}
               >
                 <span>Toma {s.sceneIndex}</span>
@@ -260,15 +260,15 @@ export const ResultTab: React.FC<ResultTabProps> = ({
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
               <span className="text-[11px] text-neutral-400 font-mono">
-                Modelo: <strong className="text-white">Omni 1.1 Flash</strong> (T2V / R2V 720p, duración según capacidad del proveedor)
+                Modelo: <strong className="text-ink">Omni 1.1 Flash</strong> (T2V / R2V 720p, duración según capacidad del proveedor)
               </span>
               <button
                 disabled={isGeneratingVideo || !spendAuthorized}
                 onClick={() => onGenerateVideo(promptToRender)}
-                className={`px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-lg ${
+                className={`px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm ${
                   !spendAuthorized
                     ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-60'
-                    : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-neutral-950 shadow-sky-500/20'
+                    : 'bg-info/20 text-info hover:bg-info/30 text-neutral-950 shadow-sky-500/20'
                 }`}
               >
                 <span>
@@ -290,7 +290,7 @@ export const ResultTab: React.FC<ResultTabProps> = ({
           </span>
 
           <div
-            className={`w-full rounded-lg border-2 border-neutral-800 bg-neutral-950 overflow-hidden flex items-center justify-center relative shadow-inner ${
+            className={`w-full rounded-md border-2 border-neutral-800 bg-neutral-950 overflow-hidden flex items-center justify-center relative shadow-inner ${
               aspectRatio === '9:16' ? 'aspect-[9/16] max-h-[460px] mx-auto' : 'aspect-video'
             }`}
           >

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IconoCruce } from '@/components/ui/icono';
 
 /**
  * Modal de creación de un bloque o episodio de la escaleta (NN-113.13).
@@ -16,18 +17,18 @@ export const ModalNuevoBloque: React.FC<ModalNuevoBloqueProps> = ({ onCrear, onC
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-md max-w-md w-full p-6 space-y-4 shadow-2xl">
         <div className="panel-header">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-white">Nuevo Bloque / Episodio</h3>
+            <h3 className="text-sm font-bold text-ink">Nuevo Bloque / Episodio</h3>
           </div>
           <button
             onClick={onCerrar}
             aria-label="Cerrar la ventana de nuevo bloque"
             title="Cerrar"
-            className="text-neutral-400 hover:text-white p-1 rounded cursor-pointer"
+            className="text-neutral-400 hover:text-ink p-1 rounded cursor-pointer"
           >
-            ✕
+            <IconoCruce />
           </button>
         </div>
 

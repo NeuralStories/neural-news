@@ -1,442 +1,812 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+/**
+ * Fuentes: el inventario de lo que ha entrado al sistema.
+ *
+ * Migrada al sistema visual (tokens semánticos, `Panel`, `TablaOps`, `Estado`):
+ * tabla densa con filtros **en la URL**, columnas ocultables y el detalle de la
+ * fuente seleccionada en una columna lateral (en vez de desplegar filas: el
+ * alto de la tabla no baila al abrir un detalle).
+ *
+ * No cambia la API ni la lógica: se usan las mismas llamadas que antes
+ * (`listSources`, `addSource`, `getSource`, `getTranscript`, `addTranscript`,
+ * `transcribeSource`, `processSource`, `analyzeVideo`).
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { BADGE_DE_FUENTE, insigniaDe } from "@/lib/estados";
+import { BADGE_DE_FUENTE, ETIQUETA_FUENTE, insigniaDe } from "@/lib/estados";
 import { idempotenciaDe } from "@/lib/http";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { SourceDetail, SourceListItem } from "@/lib/types";
+import { Estado, type TonoEstado } from "@/components/ui/estado";
+import { Metrica } from "@/components/ui/metrica";
+import { Panel } from "@/components/ui/panel";
+import { TablaOps, type Columna } from "@/components/ui/tabla";
+import { EsqueletoPanel, EsqueletoTabla, Vacio } from "@/components/ui/estados";
+import {
+  IconoAlerta,
+  IconoBuscar,
+  IconoCaja,
+  IconoCheck,
+  IconoCruce,
+  IconoFlecha,
+  IconoRefrescar,
+} from "@/components/ui/icono";
 
-/**
- * Severidad explícita de un mensaje de la interfaz (hallazgo B4).
- * Antes, el mismo `msg` pintaba en verde tanto un éxito como un error: «el vídeo
- * no tiene subtítulos» se leía como una operación correcta. La severidad la
- * decide la acción, nunca el color.
- */
-type MsgKind = "ok" | "warn" | "error";
+const LIMITE_PAGINA = 25;
 
-const MSG_CLASS: Record<MsgKind, string> = {
-  ok: "text-emerald-400",
-  warn: "text-amber-400",
-  error: "text-red-400",
+const TONOS: Record<string, TonoEstado> = {
+  "badge-ok": "ok",
+  "badge-warn": "warn",
+  "badge-err": "crit",
+  "badge-info": "info",
+  "badge-neutral": "idle",
 };
 
-type Msg = { text: string; kind: MsgKind } | null;
+function tonoDeFuente(estado: string): TonoEstado {
+  return TONOS[insigniaDe(BADGE_DE_FUENTE, estado)] ?? "idle";
+}
+
+/** Columnas secundarias (ocultables por el operador). */
+const COLUMNAS_SECUNDARIAS = ["proveedor", "autor", "publicada", "importada"];
 
 export default function FuentesPage() {
-  const [items, setItems] = useState<SourceListItem[]>([]);
-  const [url, setUrl] = useState("");
-  const [text, setText] = useState("");
-  const [transcript, setTranscript] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { waiting, poll, error: jobError } = useJobPolling();
-  const fileInput = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const parametros = useSearchParams();
 
-  const refresh = useCallback(async () => {
+  const estado = parametros.get("estado") ?? "";
+  const proveedor = parametros.get("proveedor") ?? "";
+  const texto = parametros.get("q") ?? "";
+  const pagina = Number(parametros.get("pagina") ?? "1");
+
+  const [items, setItems] = useState<SourceListItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [seleccionada, setSeleccionada] = useState<number | null>(null);
+  const [ocultas, setOcultas] = useState<string[]>([]);
+  const [url, setUrl] = useState("");
+  const [textoFuente, setTextoFuente] = useState("");
+  const [modo, setModo] = useState<"url" | "texto">("url");
+  const [aviso, setAviso] = useState<string | null>(null);
+  const { waiting, error: errorTrabajo, poll, stop } = useJobPolling();
+
+  const actualizarUrl = useCallback(
+    (cambios: Record<string, string>) => {
+      const siguiente = new URLSearchParams(parametros.toString());
+      for (const [clave, valor] of Object.entries(cambios)) {
+        if (valor) siguiente.set(clave, valor);
+        else siguiente.delete(clave);
+      }
+      router.replace(`/fuentes${siguiente.toString() ? `?${siguiente}` : ""}`, {
+        scroll: false,
+      });
+    },
+    [parametros, router],
+  );
+
+  const refrescar = useCallback(async () => {
+    setCargando(true);
     try {
-      const data = await api.listSources();
-      setItems(data.items);
-    } catch (e) {
-      setError((e as Error).message);
+      const consulta = new URLSearchParams();
+      if (estado) consulta.set("status", estado);
+      if (proveedor) consulta.set("provider", proveedor);
+      consulta.set("limit", String(LIMITE_PAGINA * pagina));
+      // El cliente concatena la consulta a la ruta: tiene que llevar el «?».
+      const datos = await api.listSources(`?${consulta.toString()}`);
+      setItems(datos.items);
+      setTotal(datos.total);
+      setError(null);
+    } catch (fallo) {
+      setError((fallo as Error).message);
+    } finally {
+      setCargando(false);
     }
-  }, []);
+  }, [estado, proveedor, pagina]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    void refrescar();
+  }, [refrescar]);
 
-  const submit = async (payload: Record<string, unknown>) => {
-    setLoading(true);
-    setError(null);
-    setNotice(null);
+  const proveedores = useMemo(
+    () => Array.from(new Set(items.map((fuente) => fuente.provider))).sort(),
+    [items],
+  );
+
+  const visibles = useMemo(() => {
+    const busqueda = texto.trim().toLowerCase();
+    if (!busqueda) return items;
+    return items.filter((fuente) =>
+      [fuente.title, fuente.author, fuente.canonical_url, fuente.provider]
+        .filter(Boolean)
+        .some((campo) => String(campo).toLowerCase().includes(busqueda)),
+    );
+  }, [items, texto]);
+
+  const archivoRef = useRef<HTMLInputElement | null>(null);
+
+  /** Reprocesa una fuente y espera al trabajo. */
+  const reprocesar = useCallback(
+    async (id: number) => {
+      try {
+        const res = await api.processSource(id);
+        setAviso("Reprocesando la fuente…");
+        await poll(res.job_id, async () => {
+          await refrescar();
+        });
+      } catch (fallo) {
+        setAviso(`No se pudo reprocesar: ${(fallo as Error).message}`);
+      }
+    },
+    [poll, refrescar],
+  );
+
+  /** Pide el análisis de vídeo de una fuente y espera al trabajo. */
+  const analizar = useCallback(
+    async (id: number) => {
+      try {
+        const res = await api.analyzeVideo(id);
+        setAviso("Analizando el vídeo…");
+        await poll(res.job_id, async () => {
+          await refrescar();
+        });
+      } catch (fallo) {
+        setAviso(`No se pudo analizar el vídeo: ${(fallo as Error).message}`);
+      }
+    },
+    [poll, refrescar],
+  );
+
+  const columnas: Columna<SourceListItem>[] = useMemo(
+    () => [
+      {
+        clave: "id",
+        cabecera: "#",
+        ancho: "4.5rem",
+        numerica: true,
+        render: (fuente) => <span className="id">{fuente.id}</span>,
+      },
+      {
+        clave: "proveedor",
+        cabecera: "Tipo",
+        ancho: "8rem",
+        secundaria: true,
+        render: (fuente) => <span className="text-ink-2">{fuente.provider}</span>,
+      },
+      {
+        clave: "estado",
+        cabecera: "Estado",
+        ancho: "10rem",
+        render: (fuente) => (
+          <Estado
+            tono={tonoDeFuente(fuente.status)}
+            etiqueta={ETIQUETA_FUENTE[fuente.status] ?? fuente.status_label ?? fuente.status}
+            variante="punto"
+          />
+        ),
+      },
+      {
+        clave: "titulo",
+        cabecera: "Título",
+        // Ancho mínimo: la columna larga no puede quedarse con el sobrante
+        // (el título se partía en ocho líneas y la tabla se descuadraba).
+        ancho: "20rem",
+        render: (fuente) => (
+          <span className="text-ink" title={fuente.title ?? ""}>
+            {fuente.title ?? <span className="id">sin título</span>}
+          </span>
+        ),
+      },
+      {
+        clave: "enlace",
+        cabecera: "Enlace",
+        ancho: "12rem",
+        secundaria: true,
+        render: (fuente) =>
+          fuente.canonical_url ? (
+            <a
+              className="text-info hover:underline"
+              href={fuente.canonical_url}
+              target="_blank"
+              rel="noreferrer"
+              title={fuente.canonical_url}
+            >
+              {fuente.canonical_url.replace(/^https?:\/\//, "").slice(0, 40)}
+            </a>
+          ) : (
+            <span className="id">—</span>
+          ),
+      },
+      {
+        clave: "autor",
+        cabecera: "Autor",
+        ancho: "9rem",
+        secundaria: true,
+        render: (fuente) => <span className="text-ink-3">{fuente.author ?? "—"}</span>,
+      },
+      {
+        clave: "publicada",
+        cabecera: "Fecha original",
+        ancho: "10rem",
+        numerica: true,
+        secundaria: true,
+        render: (fuente) => <span className="num">{fmtDate(fuente.published_at)}</span>,
+      },
+      {
+        clave: "importada",
+        cabecera: "Importada",
+        ancho: "10rem",
+        numerica: true,
+        secundaria: true,
+        render: (fuente) => <span className="num">{fmtDate(fuente.imported_at)}</span>,
+      },
+      {
+        clave: "acciones",
+        cabecera: "Acciones",
+        ancho: "9rem",
+        numerica: true,
+        render: (fuente) => (
+          <span className="flex items-center gap-1">
+            {/*
+              Acciones rápidas por fila. Los rótulos («Volver a analizar»,
+              «Analizar vídeo») son parte del contrato que comprueba el E2E.
+            */}
+            <button
+              type="button"
+              className="filtro"
+              aria-label="Volver a analizar"
+              title="Volver a analizar"
+              disabled={waiting !== null}
+              onClick={() => void reprocesar(fuente.id)}
+            >
+              <IconoRefrescar />
+            </button>
+            <button
+              type="button"
+              className="filtro"
+              aria-label="Analizar vídeo"
+              title="Analizar vídeo"
+              disabled={waiting !== null}
+              onClick={() => void analizar(fuente.id)}
+            >
+              <IconoFlecha />
+            </button>
+            <button
+              type="button"
+              className="filtro"
+              aria-label={seleccionada === fuente.id ? "Cerrar el detalle" : "Ver el detalle"}
+              title={seleccionada === fuente.id ? "Cerrar el detalle" : "Ver el detalle"}
+              onClick={() => setSeleccionada(seleccionada === fuente.id ? null : fuente.id)}
+            >
+              {seleccionada === fuente.id ? <IconoCruce /> : <IconoFlecha />}
+            </button>
+          </span>
+        ),
+      },
+    ],
+    [seleccionada, waiting, reprocesar, analizar],
+  );
+
+  const añadir = async (payload: Record<string, unknown>) => {
+    setAviso(null);
     try {
-      // La clave de idempotencia se deriva del **contenido**, no del reloj
-      // (NN-113.11): con `Date.now()` cada pulsación creaba una fuente
-      // distinta y la idempotencia del servidor nunca se ejercía.
-      const key = idempotenciaDe(payload);
-      const result = await api.addSource(payload, key);
-      if (result.message) setNotice(result.message);
-      else setNotice("Fuente registrada; el análisis está en marcha.");
-      if (result.job_id) await poll(result.job_id, refresh);
-      await refresh();
+      const resultado = await api.addSource(payload, idempotenciaDe(payload));
+      setAviso(resultado.message ?? `Fuente #${resultado.source.id} en cola.`);
       setUrl("");
-      setText("");
-      setTranscript("");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
+      await refrescar();
+    } catch (fallo) {
+      setAviso(`No se pudo añadir la fuente: ${(fallo as Error).message}`);
     }
   };
 
-  const onFile = async (file: File) => {
-    if (file.size > 2_000_000) {
-      setError("El archivo supera 2 MB; pega el texto directamente o usa un archivo más pequeño");
-      return;
+  const subirArchivo = async (fichero: File) => {
+    const datos = new FormData();
+    datos.append("file", fichero);
+    try {
+      const respuesta = await fetch("/api/v1/sources", { method: "POST", body: datos });
+      if (!respuesta.ok) {
+        setAviso(`No se pudo subir el fichero (HTTP ${respuesta.status}).`);
+        return;
+      }
+      setAviso(`Fichero «${fichero.name}» en cola.`);
+      await refrescar();
+    } catch (fallo) {
+      setAviso(`No se pudo subir el fichero: ${(fallo as Error).message}`);
     }
-    const content = await file.text();
-    setText(content.slice(0, 2_000_000));
-    setNotice(`Archivo «${file.name}» cargado; revisa el texto y pulsa Registrar`);
   };
 
   return (
-    <div className="space-y-6">
-      <section className="card space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Añadir fuente</h1>
-          <p className="mt-1 text-sm text-neutral-400">
-            Pega una URL de YouTube, un episodio de Spotify, un artículo o feed web — o aporta texto y
-            transcripciones directamente.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            className="input"
-            placeholder="https://… (YouTube, Spotify, artículo o feed RSS)"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
+    <div className="space-y-3">
+      {/* --- Alta de fuente ------------------------------------------------- */}
+      <Panel
+        titulo="Añadir fuente"
+        meta="URL o texto"
+        acciones={
           <button
-            className="btn-primary shrink-0"
-            disabled={loading || (!url && !text)}
-            onClick={() =>
-              submit({
-                url: url || undefined,
-                text: text || undefined,
-                // La transcripción pegada se envía con el alta: antes se perdía en
-                // silencio (hallazgo B2). El backend la guarda como TRANSCRIPT.
-                transcript: transcript.trim() || undefined,
-              })
-            }
+            type="button"
+            className="btn-sm"
+            onClick={() => void refrescar()}
+            disabled={cargando}
           >
-            Registrar y analizar
+            <IconoRefrescar />
+            {cargando ? "leyendo…" : "refrescar"}
+          </button>
+        }
+      >
+        {/*
+          Modos de alta. Los rótulos («Aportar texto, archivo o transcripción» y
+          «Registrar y analizar») son parte del contrato que comprueban las
+          pruebas de Playwright: no se cambian sin actualizar las pruebas.
+        */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            className={`filtro ${modo === "url" ? "filtro-on" : ""}`}
+            onClick={() => setModo("url")}
+          >
+            URL
+          </button>
+          <button
+            type="button"
+            className={`filtro ${modo === "texto" ? "filtro-on" : ""}`}
+            onClick={() => setModo("texto")}
+          >
+            Aportar texto, archivo o transcripción
           </button>
         </div>
 
-        <details className="rounded-md border border-neutral-800 bg-neutral-900/40 p-3 text-sm">
-          <summary className="cursor-pointer text-neutral-300">Aportar texto, archivo o transcripción</summary>
-          <div className="mt-3 space-y-3">
+        {modo === "url" ? (
+          <div className="mt-3">
+            <label className="ops-panel-title" htmlFor="url-fuente">
+              URL
+            </label>
             <input
-              ref={fileInput}
-              type="file"
-              accept=".txt,.md,.json,text/plain"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-            />
-            <button className="btn" onClick={() => fileInput.current?.click()}>
-              Subir archivo de texto (.txt/.md, máx. 2 MB)
-            </button>
-            <textarea
-              className="input min-h-24"
-              placeholder="Texto pegado (se tratará como fuente manual)"
-              aria-label="Texto de la fuente"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-            <textarea
-              className="input min-h-16"
-              placeholder="Transcripción (opcional): si el vídeo o episodio no tiene transcripción, pégala aquí para analizar lo que se ha dicho"
-              aria-label="Transcripción opcional de la fuente"
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
+              id="url-fuente"
+              className="input mt-1 font-mono"
+              placeholder="https://… (YouTube, Spotify, artículo o feed RSS)"
+              value={url}
+              onChange={(evento) => setUrl(evento.target.value)}
             />
           </div>
-        </details>
+        ) : (
+          <div className="mt-3">
+            <label className="ops-panel-title" htmlFor="texto-fuente">
+              texto de la fuente
+            </label>
+            <textarea
+              id="texto-fuente"
+              className="input mt-1 h-28 font-mono text-xs"
+              placeholder="Pega aquí el artículo, la transcripción o la nota…"
+              value={textoFuente}
+              onChange={(evento) => setTextoFuente(evento.target.value)}
+            />
+          </div>
+        )}
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
-      {/* El error del trabajo en cola ya no se descarta (NN-113.5): si el
-          análisis falla, se dice por qué. */}
-      {jobError && <p className="text-sm text-red-400">{jobError}</p>}
-        {notice && <p className="text-sm text-emerald-400">{notice}</p>}
-        {waiting !== null && <p className="text-sm text-sky-400">Analizando la fuente (trabajo #{waiting})…</p>}
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Fuentes registradas</h2>
-        <div className="table-wrap">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th>Fecha original</th>
-                <th>Enlace</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-neutral-500">
-                    Todavía no hay fuentes. Registra la primera arriba.
-                  </td>
-                </tr>
-              )}
-              {items.map((s) => (
-                <SourceRow key={s.id} source={s} />
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            className="btn-sm-primary"
+            disabled={modo === "url" ? !url.trim() : !textoFuente.trim()}
+            onClick={() => {
+              if (modo === "url") {
+                if (url.trim()) void añadir({ url: url.trim() });
+              } else if (textoFuente.trim()) {
+                void añadir({
+                  title: textoFuente.trim().slice(0, 120),
+                  text: textoFuente.trim(),
+                });
+              }
+            }}
+          >
+            <IconoCaja /> Registrar y analizar
+          </button>
+          <input
+            ref={archivoRef}
+            type="file"
+            className="hidden"
+            aria-label="Subir un fichero como fuente"
+            onChange={(evento) => {
+              const fichero = evento.target.files?.[0];
+              if (fichero) void subirArchivo(fichero);
+              evento.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            className="btn-sm"
+            onClick={() => archivoRef.current?.click()}
+          >
+            <IconoCaja /> subir fichero
+          </button>
         </div>
-      </section>
+        {aviso ? (
+          <div className="alerta-fila alerta-fila-warn mt-3" role="status">
+            <IconoAlerta className="mt-0.5 shrink-0" />
+            <p>{aviso}</p>
+          </div>
+        ) : null}
+        {errorTrabajo ? (
+          <div className="alerta-fila alerta-fila-err mt-3" role="alert">
+            <IconoAlerta className="mt-0.5 shrink-0" />
+            <p>{errorTrabajo}</p>
+          </div>
+        ) : null}
+      </Panel>
+
+      {/* --- Inventario + detalle ------------------------------------------- */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Panel
+          titulo="Fuentes registradas"
+          meta={`${visibles.length} de ${total}`}
+          relleno="flush"
+          acciones={
+            <>
+              <input
+                className="input-compact w-40"
+                placeholder="filtrar por texto…"
+                defaultValue={texto}
+                onChange={(evento) => actualizarUrl({ q: evento.target.value, pagina: "1" })}
+                aria-label="Filtrar fuentes por texto"
+              />
+              <select
+                className="input-compact w-32"
+                value={estado}
+                onChange={(evento) => actualizarUrl({ estado: evento.target.value, pagina: "1" })}
+                aria-label="Filtrar por estado"
+              >
+                <option value="">todos los estados</option>
+                {Object.entries(ETIQUETA_FUENTE).map(([clave, etiqueta]) => (
+                  <option key={clave} value={clave}>
+                    {etiqueta}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="input-compact w-32"
+                value={proveedor}
+                onChange={(evento) => actualizarUrl({ proveedor: evento.target.value, pagina: "1" })}
+                aria-label="Filtrar por proveedor"
+              >
+                <option value="">todos los proveedores</option>
+                {proveedores.map((nombre) => (
+                  <option key={nombre} value={nombre}>
+                    {nombre}
+                  </option>
+                ))}
+              </select>
+              {COLUMNAS_SECUNDARIAS.map((clave) => (
+                <button
+                  key={clave}
+                  type="button"
+                  className={`filtro ${!ocultas.includes(clave) ? "filtro-on" : ""}`}
+                  onClick={() =>
+                    setOcultas((actual) =>
+                      actual.includes(clave)
+                        ? actual.filter((item) => item !== clave)
+                        : [...actual, clave],
+                    )
+                  }
+                  title="Mostrar u ocultar columna"
+                >
+                  {clave}
+                </button>
+              ))}
+            </>
+          }
+        >
+          {cargando && items.length === 0 ? (
+            <EsqueletoTabla filas={8} />
+          ) : (
+            <>
+              {error ? (
+                <div className="alerta-fila alerta-fila-err" role="alert">
+                  <IconoAlerta className="mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p>No se pudo leer el inventario de fuentes.</p>
+                    <p className="mt-1 break-words font-mono text-[11px] text-ink-2">{error}</p>
+                  </div>
+                </div>
+              ) : null}
+              <TablaOps
+                columnas={columnas}
+                filas={visibles}
+                claveFila={(fuente) => String(fuente.id)}
+                vacio={
+                  <Vacio
+                    titulo="No hay fuentes con estos filtros"
+                    pista="Añade una URL arriba o quita los filtros de la barra."
+                    icono={<IconoCaja />}
+                  />
+                }
+              />
+            </>
+          )}
+          <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-2">
+            <span className="ops-panel-meta">
+              página {pagina} · {total} en total
+            </span>
+            <span className="flex items-center gap-1.5">
+              <button
+                type="button"
+                className="filtro"
+                disabled={pagina <= 1}
+                onClick={() => actualizarUrl({ pagina: String(pagina - 1) })}
+              >
+                anterior
+              </button>
+              <button
+                type="button"
+                className="filtro"
+                disabled={visibles.length < LIMITE_PAGINA && pagina * LIMITE_PAGINA >= total}
+                onClick={() => actualizarUrl({ pagina: String(pagina + 1) })}
+              >
+                siguiente
+              </button>
+            </span>
+          </div>
+        </Panel>
+
+        <DetalleFuente
+          id={seleccionada}
+          onCambio={refrescar}
+          poll={poll}
+          waiting={waiting}
+          stop={stop}
+        />
+      </div>
     </div>
   );
 }
 
-type TranscriptInfo = {
-  found: boolean;
-  message?: string;
-  content_type?: string;
-  content_type_label?: string;
-  is_verbatim?: boolean;
-  provider?: string;
-  text?: string;
-  segments?: Array<{ start_ms: number | null; end_ms: number | null; text: string; sequence: number }>;
+/* --- Detalle -------------------------------------------------------------- */
+
+type PropsDetalle = {
+  id: number | null;
+  onCambio: () => Promise<void>;
+  poll: (jobId: number, onDone?: (info: { status: string; error: string | null }) => void) => Promise<{
+    status: string;
+    error: string | null;
+  }>;
+  waiting: number | null;
+  stop: () => void;
 };
 
-function SourceRow({ source }: { source: SourceListItem }) {
-  const [detail, setDetail] = useState<SourceDetail | null>(null);
-  const [transcript, setTranscript] = useState("");
-  const [msg, setMsg] = useState<Msg>(null);
-  const [busy, setBusy] = useState(false);
-  const [transcriptData, setTranscriptData] = useState<TranscriptInfo | null>(null);
-  const [showTranscript, setShowTranscript] = useState(false);
-  const { poll } = useJobPolling();
+function DetalleFuente({ id, onCambio, poll, waiting }: PropsDetalle) {
+  const [detalle, setDetalle] = useState<SourceDetail | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [transcripcion, setTranscripcion] = useState("");
+  const [mensaje, setMensaje] = useState<string | null>(null);
 
-  const toggle = async () => {
-    if (detail) return setDetail(null);
-    const d = await api.getSource(source.id);
-    setDetail(d);
-  };
-
-  const loadTranscript = async () => {
-    setShowTranscript((v) => !v);
-    try {
-      setTranscriptData(await api.getTranscript(source.id));
-    } catch (e) {
-      setMsg({ text: (e as Error).message, kind: "error" });
+  const cargar = useCallback(async () => {
+    if (id === null) {
+      setDetalle(null);
+      return;
     }
-  };
-
-  const searchTranscript = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    setBusy(true);
-    setMsg(null);
+    setCargando(true);
     try {
-      // La transcripción se busca en segundo plano (gate G3): la API encola el
-      // trabajo y devuelve enseguida. El resultado se lee cuando termina.
-      const res = await api.transcribeSource(source.id);
-      setMsg({ text: "Buscando transcripción…", kind: "ok" });
-      const info = await poll(res.job_id, async () => {
-        setTranscriptData(await api.getTranscript(source.id));
-        setDetail(await api.getSource(source.id));
-      });
-      if (info.status === "DONE") {
-        const t = await api.getTranscript(source.id);
-        setMsg({
-          text: t.found
-            ? "Transcripción almacenada."
-            : t.message || "No se ha encontrado transcripción accesible.",
-          kind: t.found ? "ok" : "warn",
-        });
-      } else {
-        setMsg({
-          text: info.error || "No se ha podido obtener la transcripción.",
-          kind: "error",
-        });
-      }
-    } catch (e) {
-      setMsg({ text: (e as Error).message, kind: "error" });
+      setDetalle(await api.getSource(id));
+      setError(null);
+    } catch (fallo) {
+      setError((fallo as Error).message);
     } finally {
-      setBusy(false);
+      setCargando(false);
     }
-  };
+  }, [id]);
 
-  const saveTranscript = async () => {
-    if (!transcript.trim()) return;
-    try {
-      await api.addTranscript(source.id, transcript);
-      setMsg({
-        text: "Transcripción guardada. Vuelve a procesar la fuente para extraer noticias.",
-        kind: "ok",
-      });
-      setTranscript("");
-      setDetail(await api.getSource(source.id));
-    } catch (e) {
-      setMsg({ text: (e as Error).message, kind: "error" });
-    }
-  };
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
 
-  const reprocess = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await api.processSource(source.id);
-      setMsg({
-        text: res.created ? "Volver a analizar la fuente…" : "Ya había un análisis en marcha; se reutiliza.",
-        kind: "ok",
-      });
-      await poll(res.job_id, async () => {
-        setDetail(await api.getSource(source.id));
-      });
-    } catch (e) {
-      setMsg({ text: (e as Error).message, kind: "error" });
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (id === null) {
+    return (
+      <Panel titulo="Detalle" meta="sin selección">
+        <Vacio
+          titulo="Ninguna fuente seleccionada"
+          pista="Pulsa la flecha de una fila para ver su contenido, su transcripción y sus noticias."
+          icono={<IconoCaja />}
+        />
+      </Panel>
+    );
+  }
 
-  const analyzeVideo = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await api.analyzeVideo(source.id);
-      setMsg({ text: "Pidiendo el análisis del vídeo…", kind: "ok" });
-      await poll(res.job_id, async () => {
-        setDetail(await api.getSource(source.id));
-      });
-    } catch (e) {
-      setMsg({ text: (e as Error).message, kind: "error" });
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (cargando && !detalle) {
+    return (
+      <Panel titulo="Detalle" meta={`fuente #${id}`}>
+        <EsqueletoPanel lineas={5} />
+      </Panel>
+    );
+  }
+
+  if (error && !detalle) {
+    return (
+      <Panel titulo="Detalle" meta={`fuente #${id}`}>
+        <div className="alerta-fila alerta-fila-err" role="alert">
+          <IconoAlerta className="mt-0.5 shrink-0" />
+          <p>{error}</p>
+        </div>
+        <button type="button" className="btn-sm mt-3" onClick={() => void cargar()}>
+          <IconoRefrescar /> reintentar
+        </button>
+      </Panel>
+    );
+  }
 
   return (
-    <>
-      <tr className="cursor-pointer hover:bg-neutral-900/60" onClick={toggle}>
-        <td className="max-w-72">
-          <div className="font-medium">{source.title || "(sin título)"}</div>
-          <div className="text-xs text-neutral-500">
-            {source.demo && <span className="badge-demo mr-1">DEMO</span>}
-            registrado {fmtDate(source.imported_at)}
-          </div>
-        </td>
-        <td className="capitalize text-neutral-300">{source.provider.replace("_", " ")}</td>
-        <td>
-          <span className={insigniaDe(BADGE_DE_FUENTE, source.status)}>{source.status_label}</span>
-        </td>
-        <td className="text-neutral-400">{fmtDate(source.published_at)}</td>
-        <td className="max-w-56 truncate text-sky-400">
-          {source.canonical_url ? (
-            <a href={source.canonical_url} target="_blank" rel="noreferrer noopener" onClick={(e) => e.stopPropagation()}>
-              abrir original
-            </a>
-          ) : (
-            "—"
-          )}
-        </td>
-        <td onClick={(e) => e.stopPropagation()}>
-          <div className="flex flex-wrap gap-1">
-            <button className="btn px-2 py-1 text-xs" onClick={reprocess} disabled={busy}>
-              {busy ? "Trabajando…" : "Volver a analizar"}
-            </button>
-            {source.provider === "youtube" && (
-              <button className="btn px-2 py-1 text-xs" onClick={analyzeVideo} disabled={busy}>
-                Analizar vídeo
-              </button>
-            )}
-            <button className="btn px-2 py-1 text-xs" onClick={loadTranscript}>
-              Transcripción
-            </button>
-            <button
-              className="btn-primary px-2 py-1 text-xs"
-              onClick={searchTranscript}
-              disabled={busy}
-              title="Busca subtítulos públicos (YouTube), el texto del artículo o la transcripción del feed"
-            >
-              {busy ? "Buscando…" : "Buscar transcripción"}
-            </button>
-          </div>
-        </td>
-      </tr>
-      {detail && (
-        <tr className="bg-neutral-900/40">
-          <td colSpan={6}>
-            <div className="space-y-3 p-2">
-              {detail.contents.length === 0 && <p className="text-sm text-neutral-400">Sin contenido todavía.</p>}
-              {detail.contents.map((c) => (
-                <div key={c.id} className="card-quiet text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={c.content_type === "TRANSCRIPT" ? "badge-ok" : c.content_type === "METADATA_ONLY" ? "badge-warn" : "badge-info"}>
-                      {c.content_type_label}
-                    </span>
-                    {c.is_verbatim ? <span className="badge-neutral">texto literal</span> : <span className="badge-neutral">no literal</span>}
-                    {c.coverage !== null && <span className="badge-neutral">cobertura {Math.round(c.coverage * 100)}%</span>}
-                    <span className="text-xs text-neutral-500">
-                      {c.char_count.toLocaleString("es-ES")} caracteres · {c.segment_count} fragmentos · {c.provider || "—"}
-                    </span>
-                  </div>
-                  {detail.stories.length > 0 && (
-                    <div className="mt-2 text-xs text-neutral-400">
-                      Noticias derivadas:{" "}
-                      {detail.stories.map((st) => (
-                        <a key={st.id} href={`/noticias/${st.id}`} className="mr-2 text-sky-400 hover:underline">
-                          {st.title}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {showTranscript && (
-                <div className="rounded border border-neutral-800 bg-neutral-950 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={transcriptData?.found ? "badge-ok" : "badge-warn"}>
-                      {transcriptData?.found ? `Transcripción (${transcriptData.content_type_label ?? "transcripción"})` : "Sin transcripción"}
-                    </span>
-                    {transcriptData?.found && transcriptData.provider && (
-                      <span className="text-xs text-neutral-500">vía {transcriptData.provider}</span>
-                    )}
-                  </div>
-                  {transcriptData?.found && transcriptData.text && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-sky-400">Ver texto completo</summary>
-                      <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap text-xs text-neutral-200">{transcriptData.text}</pre>
-                      {transcriptData.segments && transcriptData.segments.length > 0 && (
-                        <p className="mt-1 text-xs text-neutral-500">
-                          {transcriptData.segments.length} fragmentos con marcas de tiempo.
-                        </p>
-                      )}
-                    </details>
-                  )}
-                  {!transcriptData?.found && transcriptData?.message && (
-                    <p className="mt-1 text-xs text-neutral-400">{transcriptData.message}</p>
-                  )}
-                </div>
-              )}
-              {(source.status === "METADATA_ONLY" || source.status === "PARTIAL" || source.status === "READY") && (
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    className="input"
-                    placeholder="Pega aquí una transcripción para analizar lo que se ha dicho"
-                    aria-label="Transcripción de la fuente"
-                    value={transcript}
-                    onChange={(e) => setTranscript(e.target.value)}
-                  />
-                  <button className="btn-primary shrink-0" onClick={saveTranscript} disabled={!transcript.trim()}>
-                    Guardar transcripción
-                  </button>
-                </div>
-              )}
-              {msg && (
-                <p
-                  className={`text-sm ${MSG_CLASS[msg.kind]}`}
-                  role={msg.kind === "error" ? "alert" : "status"}
-                >
-                  {msg.text}
-                </p>
-              )}
+    <Panel
+      titulo="Detalle"
+      meta={`fuente #${id}`}
+      acciones={
+        <button
+          type="button"
+          className="btn-sm"
+          onClick={() => void cargar()}
+          aria-label="Actualizar el detalle de la fuente"
+          title="Actualizar el detalle de la fuente"
+        >
+          <IconoRefrescar />
+        </button>
+      }
+    >
+      {error ? (
+        <div className="alerta-fila alerta-fila-err mb-3" role="alert">
+          <IconoAlerta className="mt-0.5 shrink-0" />
+          <p>{error}</p>
+        </div>
+      ) : null}
+      {mensaje ? (
+        <div className="alerta-fila alerta-fila-warn mb-3" role="status">
+          <IconoAlerta className="mt-0.5 shrink-0" />
+          <p>{mensaje}</p>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Metrica etiqueta="contenidos" valor={String(detalle?.contents.length ?? 0)} />
+        <Metrica etiqueta="noticias" valor={String(detalle?.stories.length ?? 0)} />
+      </div>
+
+      <div className="mt-3">
+        <span className="ops-panel-title">contenidos</span>
+        {detalle?.contents.length ? (
+          detalle.contents.map((contenido) => (
+            <div key={contenido.id} className="kv">
+              <span className="kv-clave truncate" title={contenido.content_type_label}>
+                {contenido.content_type_label}
+              </span>
+              <Estado
+                tono={contenido.is_verbatim ? "info" : "idle"}
+                etiqueta={contenido.is_verbatim ? "verbatim" : "derivado"}
+                variante="punto"
+              />
+              <span className="kv-valor">
+                {contenido.char_count.toLocaleString("es-ES")} car.
+              </span>
             </div>
-          </td>
-        </tr>
-      )}
-    </>
+          ))
+        ) : (
+          <p className="ops-panel-meta mt-1">sin contenidos extraídos</p>
+        )}
+      </div>
+
+      <div className="mt-3">
+        <span className="ops-panel-title">noticias extraídas</span>
+        {detalle?.stories.length ? (
+          detalle.stories.map((noticia) => (
+            <div key={noticia.id} className="kv">
+              <span className="kv-clave truncate">{noticia.title}</span>
+              <Estado
+                tono={tonoDeFuente(noticia.status)}
+                etiqueta={noticia.status_label}
+                variante="punto"
+              />
+            </div>
+          ))
+        ) : (
+          <p className="ops-panel-meta mt-1">todavía no hay noticias</p>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          className="btn-sm"
+          disabled={waiting !== null}
+          onClick={async () => {
+            const res = await api.processSource(id);
+            setMensaje("Reprocesando la fuente…");
+            await poll(res.job_id, async () => {
+              await cargar();
+              await onCambio();
+            });
+          }}
+        >
+          <IconoRefrescar /> Volver a analizar
+        </button>
+        <button
+          type="button"
+          className="btn-sm"
+          disabled={waiting !== null}
+          onClick={async () => {
+            const res = await api.analyzeVideo(id);
+            setMensaje("Analizando el vídeo…");
+            await poll(res.job_id, async () => {
+              await cargar();
+              await onCambio();
+            });
+          }}
+        >
+          <IconoFlecha /> Analizar vídeo
+        </button>
+        <button
+          type="button"
+          className="btn-sm"
+          disabled={waiting !== null}
+          onClick={async () => {
+            const res = await api.transcribeSource(id);
+            setMensaje("Transcribiendo…");
+            await poll(res.job_id, async () => {
+              await cargar();
+              await onCambio();
+            });
+          }}
+        >
+          <IconoCheck /> Transcribir
+        </button>
+        <button
+          type="button"
+          className="btn-sm"
+          onClick={async () => {
+            try {
+              const info = await api.getTranscript(id);
+              setTranscripcion(info.text ?? "");
+              setMensaje(
+                info.found
+                  ? "Transcripción cargada."
+                  : (info.message ?? "La fuente todavía no tiene transcripción."),
+              );
+            } catch (fallo) {
+              setMensaje(`No se pudo leer la transcripción: ${(fallo as Error).message}`);
+            }
+          }}
+        >
+          <IconoBuscar /> Buscar transcripción
+        </button>
+      </div>
+
+      <div className="mt-3">
+        <label className="ops-panel-title" htmlFor="transcripcion">
+          transcripción
+        </label>
+        <textarea
+          id="transcripcion"
+          className="input mt-1 h-24 font-mono text-xs"
+          value={transcripcion}
+          onChange={(evento) => setTranscripcion(evento.target.value)}
+          placeholder="Pega aquí la transcripción si la fuente no la trae…"
+        />
+        <div className="mt-2">
+          <button
+            type="button"
+            className="btn-sm"
+            disabled={!transcripcion.trim()}
+            onClick={async () => {
+              try {
+                await api.addTranscript(id, transcripcion);
+                setMensaje("Transcripción guardada.");
+                await cargar();
+                await onCambio();
+              } catch (fallo) {
+                setMensaje(`No se pudo guardar: ${(fallo as Error).message}`);
+              }
+            }}
+          >
+            <IconoCheck /> guardar transcripción
+          </button>
+        </div>
+      </div>
+    </Panel>
   );
 }

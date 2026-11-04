@@ -1,5 +1,6 @@
 import React from 'react';
 import type { NewsArticle } from '../../types';
+import { IconoCruce } from '@/components/ui/icono';
 
 /**
  * Lista de noticias de la redacción (NN-113.13).
@@ -24,7 +25,7 @@ export const ListaNoticias: React.FC<ListaNoticiasProps> = ({
 }) => {
   if (articulos.length === 0) {
     return (
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-10 text-center space-y-3">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-md p-10 text-center space-y-3">
         <h4 className="text-sm font-semibold text-neutral-300">
           No hay noticias con los filtros actuales
         </h4>
@@ -45,9 +46,9 @@ export const ListaNoticias: React.FC<ListaNoticiasProps> = ({
         return (
           <div
             key={art.id}
-            className={`bg-neutral-900 rounded-lg border p-4 transition-all flex flex-col md:flex-row items-start justify-between gap-4 ${
+            className={`bg-neutral-900 rounded-md border p-4 transition-all flex flex-col md:flex-row items-start justify-between gap-4 ${
               isActive
-                ? 'border-sky-500 ring-1 ring-sky-500/50 bg-neutral-900/90 shadow-lg shadow-sky-950/20'
+                ? 'border-sky-500 ring-1 ring-sky-500/50 bg-neutral-900/90 shadow-sm shadow-sky-950/20'
                 : isApproved
                 ? 'border-neutral-800 hover:border-neutral-700'
                 : 'border-neutral-800/60 opacity-80'
@@ -80,7 +81,7 @@ export const ListaNoticias: React.FC<ListaNoticiasProps> = ({
                 )}
               </div>
 
-              <h4 className="text-sm font-bold text-white leading-snug">
+              <h4 className="text-sm font-bold text-ink leading-snug">
                 {art.title}
               </h4>
 
@@ -127,7 +128,7 @@ export const ListaNoticias: React.FC<ListaNoticiasProps> = ({
                   }`}
                   title="Aprobar para producción audiovisual"
                 >
-                  Aprobar ✓
+                  Aprobar
                 </button>
                 <button
                   onClick={() => onUpdateArticle(art.id, { approvalStatus: 'pendiente' })}
@@ -138,7 +139,7 @@ export const ListaNoticias: React.FC<ListaNoticiasProps> = ({
                   }`}
                   title="Marcar como pendiente"
                 >
-                  Pendiente ⏳
+                  Pendiente
                 </button>
                 <button
                   onClick={() => onUpdateArticle(art.id, { approvalStatus: 'descartada' })}
@@ -149,7 +150,7 @@ export const ListaNoticias: React.FC<ListaNoticiasProps> = ({
                   }`}
                   title="Descartar"
                 >
-                  ✕
+                  <IconoCruce />
                 </button>
               </div>
 

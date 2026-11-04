@@ -133,3 +133,53 @@ export function IconoFlecha(props: Props) {
     </Base>
   );
 }
+
+export function IconoBuscar(props: Props) {
+  return (
+    <Base {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Base>
+  );
+}
+
+export function IconoCruz(props: Props) {
+  return (
+    <Base {...props}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Base>
+  );
+}
+
+/**
+ * Indicador de orden de columna: chevron de 10 px alineado con la cabecera.
+ * Apagado (35 % de tinta) cuando esa columna no manda el orden; girado 180°
+ * en descendente. Es un marcador, no un icono de acción: no lleva trazo 1,75.
+ */
+export function IconoOrden({
+  dir,
+  activo = false,
+}: {
+  dir: "asc" | "desc";
+  activo?: boolean;
+}) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className={dir === "desc" ? "rotate-180" : undefined}
+      style={{ opacity: activo ? 1 : 0.35 }}
+    >
+      <path d="m6 15 6-6 6 6" />
+    </svg>
+  );
+}

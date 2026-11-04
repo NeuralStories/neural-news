@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MultiSceneScriptAnalysis, NewsArticle, SceneProductionPlan } from '../types';
+import { IconoAlerta, IconoCheck } from '@/components/ui/icono';
 
 interface ScriptTabProps {
   scriptText: string;
@@ -46,10 +47,10 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Cabecera explicativa con rigor técnico */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-md p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-ink">
               Analizador de Guiones: Desglose en Escenas (duración calculada)
             </h3>
             {selectedArticle && (
@@ -68,7 +69,7 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
         <div className="flex items-center gap-3 bg-neutral-950 px-3.5 py-2 rounded-md border border-neutral-800 self-start md:self-auto">
           <div>
             <div className="text-[10px] uppercase font-mono text-neutral-500">Duración Estimada</div>
-            <div className="text-base font-bold font-mono text-white flex items-baseline gap-1">
+            <div className="text-base font-bold font-mono text-ink flex items-baseline gap-1">
               <span>{multiSceneAnalysis.fullEstDurationSeconds}s</span>
               <span className="text-[10px] text-neutral-400 font-normal">({multiSceneAnalysis.scenesCount} tomas, duración calculada)</span>
             </div>
@@ -80,7 +81,7 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
       </div>
 
       {/* Alerta de Transparencia de Audio y Continuidad */}
-      <div className="p-3.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 space-y-1">
+      <div className="p-3.5 rounded-md bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 space-y-1">
         <div className="flex items-center gap-2 text-sky-300 font-semibold">
           <span>Aviso Técnico de Continuidad Sonora:</span>
         </div>
@@ -98,11 +99,15 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
               Guion Editorial Completo (Locución Algenib)
             </label>
             <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
-              <span>Palabras: <strong className="text-white">{multiSceneAnalysis.fullWordCount}</strong></span>
+              <span>Palabras: <strong className="text-ink">{multiSceneAnalysis.fullWordCount}</strong></span>
               {hasWordCountDiscrepancy ? (
-                <span className="text-rose-400 text-[10px]" title="Discrepancia léxica detectada">⚠ Verificando integridad</span>
+                <span className="text-rose-400 text-[10px] inline-flex items-center gap-1" title="Discrepancia léxica detectada">
+                  <IconoAlerta tamano={12} /> Verificando integridad
+                </span>
               ) : (
-                <span className="text-emerald-400 text-[10px] font-bold">✓ 100% Integridad Textual</span>
+                <span className="text-emerald-400 text-[10px] font-bold inline-flex items-center gap-1">
+                  <IconoCheck tamano={12} /> 100% Integridad Textual
+                </span>
               )}
             </div>
           </div>
@@ -112,7 +117,7 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
             onChange={(e) => onChangeScript(e.target.value)}
             rows={8}
             placeholder="Introduce el guion completo de la noticia (ej. 30s, 45s o 60s)..."
-            className="w-full text-xs font-mono bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-sky-500 leading-relaxed"
+            className="w-full text-xs font-mono bg-neutral-950 border border-neutral-800 rounded-md p-3 text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-sky-500 leading-relaxed"
           />
 
           <div className="flex items-center justify-between gap-2 pt-1">
@@ -148,14 +153,14 @@ export const ScriptTab: React.FC<ScriptTabProps> = ({
                 <div
                   key={idx}
                   onClick={() => !isEditingThis && setActiveScenePreviewIndex(idx)}
-                  className={`p-3 rounded-lg border transition ${
+                  className={`p-3 rounded-md border transition ${
                     isSelected
                       ? 'bg-neutral-900 border-sky-500 ring-1 ring-sky-500/40 shadow'
                       : 'bg-neutral-900/60 border-neutral-800 hover:border-neutral-700'
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-bold text-white flex items-center gap-1.5">
+                    <span className="font-bold text-ink flex items-center gap-1.5">
                       <span className="w-5 h-5 rounded bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-mono">
                         {scene.sceneIndex}
                       </span>

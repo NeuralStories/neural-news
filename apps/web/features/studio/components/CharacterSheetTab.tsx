@@ -33,12 +33,12 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Banner de regla estricta de identidad */}
-      <div className="bg-neutral-900/90 border border-neutral-800 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-neutral-900/90 border border-neutral-800 rounded-md p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 mt-0.5">
             </div>
           <div>
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
               Identidad Canónica: {MAXDOTAI_CANONICAL.name} ({MAXDOTAI_CANONICAL.handle})
               <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700">
                 Regla inmutable
@@ -88,7 +88,7 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
             )}
           </div>
 
-          <div className="aspect-video w-full rounded-lg border-2 border-neutral-800 bg-neutral-950 overflow-hidden relative flex items-center justify-center group shadow-inner">
+          <div className="aspect-video w-full rounded-md border-2 border-neutral-800 bg-neutral-950 overflow-hidden relative flex items-center justify-center group shadow-inner">
             {sheetState.base64 ? (
               // eslint-disable-next-line @next/next/no-img-element -- la hoja es un data URL en base64; next/image no lo admite.
               <img
@@ -155,7 +155,7 @@ export const CharacterSheetTab: React.FC<CharacterSheetTabProps> = ({
                 Generar Nueva Hoja (16:9)
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400">
-                🍌 Nano Banana Pro
+                Nano Banana Pro
               </span>
             </div>
             <p className="text-[11px] text-neutral-400">

@@ -5,11 +5,29 @@
  * Una sola navegación, un solo sistema editorial: el Studio carga y guarda su
  * estado en PostgreSQL vía /api/v1/projects. Deep-links compatibles:
  * /estudio?project=<id>[&story=<id>][&revision=<n>]
+ *
+ * El lanzador (sin proyecto abierto) usa el sistema visual: panel de alta y
+ * tabla densa de proyectos con su estado.
  */
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StudioApp from "@/features/studio/App";
 import { ProjectSummary, projectApi } from "@/features/studio/lib/projectApi";
+import { Estado, type TonoEstado } from "@/components/ui/estado";
+import { Metrica } from "@/components/ui/metrica";
+import { Panel } from "@/components/ui/panel";
+import { TablaOps, type Columna } from "@/components/ui/tabla";
+import { EsqueletoTabla, Vacio } from "@/components/ui/estados";
+import { IconoAlerta, IconoCaja, IconoFlecha, IconoRefrescar } from "@/components/ui/icono";
+
+/** Estado del proyecto → tono del sistema. */
+function tonoDeProyecto(status: string): TonoEstado {
+  if (status === "DRAFT") return "idle";
+  if (status === "IN_PROGRESS" || status === "ACTIVE") return "info";
+  if (status === "DONE" || status === "EXPORTED") return "ok";
+  if (status === "BLOCKED" || status === "FAILED") return "crit";
+  return "idle";
+}
 
 function Launcher() {
   const router = useRouter();
@@ -22,16 +40,23 @@ function Launcher() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
+  const refrescar = useCallback(async () => {
+    try {
+      const res = await projectApi.list();
+      setProjects(res.items);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudieron leer los proyectos");
+    }
+  }, []);
+
   useEffect(() => {
-    projectApi
-      .list()
-      .then((res) => setProjects(res.items))
-      .catch((err: Error) => setError(err.message));
+    void refrescar();
     projectApi
       .listStories()
       .then((res) => setStories(res.items))
       .catch(() => setStories([]));
-  }, []);
+  }, [refrescar]);
 
   const create = useCallback(async () => {
     setCreating(true);
@@ -65,98 +90,179 @@ function Launcher() {
     [router, searchParams],
   );
 
+  const columnas: Columna<ProjectSummary>[] = [
+    {
+      clave: "id",
+      cabecera: "#",
+      ancho: "4.5rem",
+      numerica: true,
+      render: (proyecto) => <span className="id">{proyecto.id}</span>,
+    },
+    {
+      clave: "nombre",
+      cabecera: "proyecto",
+      render: (proyecto) => <span className="text-ink">{proyecto.name}</span>,
+    },
+    {
+      clave: "estado",
+      cabecera: "estado",
+      ancho: "9rem",
+      render: (proyecto) => (
+        <Estado
+          tono={tonoDeProyecto(proyecto.status)}
+          etiqueta={proyecto.status}
+          variante="punto"
+        />
+      ),
+    },
+    {
+      clave: "ratio",
+      cabecera: "ratio",
+      ancho: "5rem",
+      numerica: true,
+      render: (proyecto) => <span className="num">{proyecto.ratio}</span>,
+    },
+    {
+      clave: "noticia",
+      cabecera: "noticia",
+      ancho: "9rem",
+      render: (proyecto) =>
+        proyecto.story ? (
+          <span className="text-ink-2 truncate" title={proyecto.story.title}>
+            #{proyecto.story.id} · {proyecto.story.title}
+          </span>
+        ) : (
+          <span className="id">sin noticia</span>
+        ),
+    },
+    {
+      clave: "acciones",
+      cabecera: "",
+      ancho: "6rem",
+      numerica: true,
+      render: (proyecto) => (
+        <button type="button" className="filtro" onClick={() => void openDeepLink(proyecto)}>
+          <IconoFlecha /> abrir
+        </button>
+      ),
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6 py-6">
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-100">Estudio Flow</h1>
-        <p className="mt-1 text-sm text-neutral-400">
+    <div className="space-y-3">
+      <Panel titulo="Estudio Flow" meta="8 etapas creativas">
+        <p className="max-w-3xl text-xs text-ink-2">
           Las ocho etapas creativas de Flow, integradas en neural.news con persistencia real en la
           base de datos. Fuera del editor de Flow, la generación queda BLOCKED y se trabaja con el
           paquete manual.
         </p>
-      </div>
+      </Panel>
 
-      <section className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-neutral-200">Crear proyecto</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-xs text-neutral-400 space-y-1 block">
-            Nombre
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
-            />
-          </label>
-          <label className="text-xs text-neutral-400 space-y-1 block">
-            Proporción (se fija en la creación)
-            <select aria-label="Proporción (se fija en la creación)"
-              value={ratio}
-              onChange={(e) => setRatio(e.target.value as "9:16" | "16:9")}
-              className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
-            >
-              <option value="9:16">9:16 — Short/Reel</option>
-              <option value="16:9">16:9 — Informativo</option>
-            </select>
-          </label>
-          <label className="text-xs text-neutral-400 space-y-1 block sm:col-span-2">
-            Noticia del motor editorial (opcional; queda activa desde el inicio)
-            <select aria-label="Noticia del motor editorial (opcional; queda activa desde el inicio)"
-              value={storyId}
-              onChange={(e) => setStoryId(e.target.value)}
-              className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
-            >
-              <option value="">— Sin noticia vinculada —</option>
-              {stories.map((s) => (
-                <option key={s.id} value={s.id}>
-                  #{s.id} · {s.title.slice(0, 80)} ({s.status})
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <button
-          onClick={create}
-          disabled={creating || !name.trim()}
-          className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-50"
-        >
-          {creating ? "Creando…" : "Crear y abrir el Studio"}
-        </button>
-      </section>
-
-      <section className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-neutral-200">Proyectos existentes</h2>
-        {projects === null && <p className="text-xs text-neutral-500">Cargando…</p>}
-        {projects?.length === 0 && (
-          <p className="text-xs text-neutral-500">Todavía no hay proyectos creados.</p>
-        )}
-        <ul className="divide-y divide-neutral-800">
-          {projects?.map((p) => (
-            <li key={p.id} className="flex items-center justify-between gap-3 py-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm text-neutral-200">
-                  #{p.id} · {p.name}
-                </p>
-                <p className="text-[11px] text-neutral-500">
-                  {p.ratio} · {p.status}
-                  {p.story ? ` · noticia #${p.story.id} activa` : " · sin noticia"}
-                </p>
-              </div>
-              <button
-                onClick={() => openDeepLink(p)}
-                className="shrink-0 rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800"
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <Panel titulo="Crear proyecto" meta="nombre, ratio y noticia">
+          <form
+            className="space-y-3"
+            onSubmit={(evento) => {
+              evento.preventDefault();
+              void create();
+            }}
+          >
+            <div>
+              <label className="ops-panel-title" htmlFor="proyecto-nombre">
+                Nombre
+              </label>
+              <input
+                id="proyecto-nombre"
+                className="input mt-1"
+                value={name}
+                onChange={(evento) => setName(evento.target.value)}
+              />
+            </div>
+            <div>
+              <label className="ops-panel-title" htmlFor="proyecto-ratio">
+                Proporción (se fija en la creación)
+              </label>
+              <select
+                id="proyecto-ratio"
+                className="input mt-1"
+                value={ratio}
+                onChange={(evento) => setRatio(evento.target.value as "9:16" | "16:9")}
               >
-                Abrir
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+                <option value="9:16">9:16 — Short/Reel</option>
+                <option value="16:9">16:9 — Informativo</option>
+              </select>
+            </div>
+            <div>
+              <label className="ops-panel-title" htmlFor="proyecto-noticia">
+                Noticia del motor editorial (opcional)
+              </label>
+              <select
+                id="proyecto-noticia"
+                className="input mt-1"
+                value={storyId}
+                onChange={(evento) => setStoryId(evento.target.value)}
+              >
+                <option value="">— sin noticia vinculada —</option>
+                {stories.map((noticia) => (
+                  <option key={noticia.id} value={noticia.id}>
+                    #{noticia.id} · {noticia.title.slice(0, 80)} ({noticia.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="btn-sm-primary" disabled={creating || !name.trim()}>
+              <IconoCaja /> {creating ? "Creando…" : "Crear y abrir el Studio"}
+            </button>
+          </form>
+        </Panel>
 
-      {error && (
-        <p className="rounded-md border border-rose-900 bg-rose-950/60 p-3 text-xs text-rose-200">
-          {error}
-        </p>
-      )}
+        <Panel
+          titulo="Proyectos"
+          meta={projects ? `${projects.length}` : "…"}
+          relleno="flush"
+          acciones={
+            <button type="button" className="btn-sm" onClick={() => void refrescar()}>
+              <IconoRefrescar /> refrescar
+            </button>
+          }
+        >
+          {error ? (
+            <div className="alerta-fila alerta-fila-err" role="alert">
+              <IconoAlerta className="mt-0.5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          ) : null}
+          {projects === null ? (
+            <EsqueletoTabla filas={5} />
+          ) : (
+            <TablaOps
+              columnas={columnas}
+              filas={projects}
+              claveFila={(proyecto) => String(proyecto.id)}
+              vacio={
+                <Vacio
+                  titulo="Todavía no hay proyectos"
+                  pista="Crea uno a la izquierda: el Studio guarda el estado de cada etapa en la base de datos."
+                  icono={<IconoCaja />}
+                />
+              }
+            />
+          )}
+          {projects && projects.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2 border-t border-line p-3">
+              <Metrica etiqueta="proyectos" valor={String(projects.length)} />
+              <Metrica
+                etiqueta="con noticia"
+                valor={String(projects.filter((proyecto) => proyecto.story).length)}
+              />
+              <Metrica
+                etiqueta="9:16"
+                valor={String(projects.filter((proyecto) => proyecto.ratio === "9:16").length)}
+              />
+            </div>
+          ) : null}
+        </Panel>
+      </div>
     </div>
   );
 }
@@ -175,7 +281,14 @@ function EstudioContent() {
 export default function EstudioPage() {
   return (
     <div className="studio-root">
-      <Suspense fallback={<p className="p-6 text-sm text-neutral-500">Cargando el Studio…</p>}>
+      <Suspense
+        fallback={
+          <div className="ops-panel-body">
+            <span className="esqueleto block h-3 w-48" />
+            <span className="sr-only">Cargando el Studio…</span>
+          </div>
+        }
+      >
         <EstudioContent />
       </Suspense>
     </div>

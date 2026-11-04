@@ -63,7 +63,7 @@ function TablaOpsImpl<T>({
   }
 
   return (
-    <div className="max-h-[26rem] overflow-auto">
+    <div className="tabla-contenedor">
       <table className="tabla-ops">
         <thead>
           <tr>

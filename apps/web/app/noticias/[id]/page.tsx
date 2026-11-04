@@ -148,6 +148,9 @@ export default function StoryDetailPage() {
     {
       clave: "notas",
       cabecera: "notas",
+      // Sin mínimo declarado la columna se aplasta a una letra por línea cuando
+      // la afirmación y el estado se reparten el ancho: regla del ancho mínimo.
+      ancho: "12rem",
       secundaria: true,
       render: (claim) =>
         claim.verification_notes ? (
@@ -394,9 +397,12 @@ export default function StoryDetailPage() {
             <span className="badge-neutral">puntuación {story.editorial_score}/100</span>
           ) : null}
           <span className="badge-neutral">
-            {totales.afirmaciones.length} afirmaciones
+            {totales.afirmaciones.length}{" "}
+            {totales.afirmaciones.length === 1 ? "afirmación" : "afirmaciones"}
           </span>
-          <span className="badge-neutral">{totales.evidencias.length} evidencias</span>
+          <span className="badge-neutral">
+            {totales.evidencias.length} {totales.evidencias.length === 1 ? "evidencia" : "evidencias"}
+          </span>
           <span className="ops-panel-meta">
             fecha del acontecimiento: {fmtDate(story.original_event_date)}
           </span>

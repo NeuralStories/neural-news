@@ -634,7 +634,10 @@ function NoticiasVista() {
                       {s.title}
                     </Link>
                     <span className="block font-mono text-[11px] tabular-nums text-ink-3">
-                      {s.possible_duplicates?.length ?? 0} posibles · #{s.id}
+                      {(s.possible_duplicates?.length ?? 0) === 1
+                        ? "1 posible"
+                        : `${s.possible_duplicates?.length ?? 0} posibles`}{" "}
+                      · #{s.id}
                     </span>
                   </li>
                 ))}

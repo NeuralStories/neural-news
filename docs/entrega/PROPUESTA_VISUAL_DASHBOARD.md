@@ -248,3 +248,24 @@ Cada fase termina con la suite de 14 comprobaciones en verde + evidencia en `doc
 ---
 
 *Documento redactado tras revisar: `globals.css`, `layout.tsx`, `app-shell.tsx`, `components/ui/*`, `lib/{api,http,hooks,types}.ts`, `app/{page,loading,error,ops}/*`, `app/{fuentes,lotes,noticias,configuracion,estudio}/page.tsx`, `features/studio/**` (muestreo), `apps/api/src/neuralnews/api/ops.py`. Ningún fichero del repositorio fue editado; ninguna dependencia fue instalada.*
+
+---
+
+## 7. PLAY DE COHERENCIA VISUAL (verificado en navegador, 8 rutas × escritorio/móvil)
+
+Recorrido real con la pila en producción local: medidas de desborde (`scrollWidth`, contenedores con `overflow-x` activo) y captura por vista, en 1440×900 y 390×844, tema oscuro base + muestreo de claro y dos skins.
+
+**Resultado de la matriz:** 0 desbordes horizontales de página en las 8 rutas en los dos tamaños; los desplazamientos horizontales quedan confinados a los envoltorios de tabla (regla del ancho mínimo), que es el comportamiento previsto.
+
+**Incoherencias encontradas y corregidas en este mismo pase:**
+
+| # | Hallazgo (evidencia) | Corrección |
+|---|---|---|
+| P-1 | Columnas **aplastadas a una letra por línea** cuando la tabla no quepa: la columna sin `ancho` declarado es la elidida (p. ej. `notas` en la ficha de noticia). El `min-w` de la tabla evita el estrangulamiento del título, pero cualquier columna secundaria sin mínimo sigue siendo víctima. | `ancho: "12rem"` en `notas` (ficha); regla documentada: **toda columna no flexible declara su mínimo**. |
+| P-2 | Cabecera del panel de /fuentes incoherente: 7 controles en `acciones` partían la cabecera en 3 filas y aplastaban el título (en móvil, la etiqueta quedaba a ~55 px). | Los 3 filtros se mudan a una **fila propia** bajo la cabecera (envuelve en pantallas estrechas); en `acciones` quedan solo los 4 chips de columna. Anchos de filtro en `style` porque `@apply w-full` de `.input-compact` (regla sin capa) vence a las utilidades `w-*` de Tailwind v4. |
+| P-3 | Barra de desplazamiento gruesa de Chromium (16 px con flechas) dentro de los paneles: tapaba la última columna y desdecía del trazo de 1 px. | Nueva clase `.tabla-contenedor` en `globals.css` (scrollbar de 8 px, pulgar `--c-line-strong`, `scrollbar-width: thin`) aplicada en el envoltorio de `TablaOps`. |
+| P-4 | Concordancia de textos: «1 posibles · #9» (duplicados), «1 afirmaciones» / «0 evidencias» (ficha). | Pluralización correcta («1 posible», «1 afirmación»). |
+
+**Verificación tras corregir:** `check_clases.py` OK · `check_a11y.py` 0 bloqueantes · `tsc --noEmit` 0 · `eslint .` 0 · `npm run build` compila 11/11 · `npx playwright test` **15 passed (2,7 min)** · re-inspección visual de /fuentes y de la ficha confirmando cabecera limpia, filtros en fila y notas legibles.
+
+**Restante consciente:** la tabla de lotes existentes desplaza en horizontal dentro de la columna lateral (consecuencia aceptada de la regla del ancho mínimo; las columnas ya declaran sus mínimos), y F-6/F-8 siguen post-beta.

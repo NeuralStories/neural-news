@@ -609,6 +609,34 @@ body {
    */
   @apply w-full min-w-[52rem] border-collapse text-left text-xs;
 }
+
+/* Envoltorio de las tablas densas. La barra de desplazamiento va fina y
+   discreta: la rueda gruesa de Chromium (16 px con flechas) tapaba la última
+   columna y desdecía del trazo de 1px del sistema. */
+.tabla-contenedor {
+  @apply max-h-[26rem] overflow-auto;
+}
+.tabla-contenedor::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.tabla-contenedor::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tabla-contenedor::-webkit-scrollbar-thumb {
+  background: var(--c-line-strong);
+  border-radius: 2px;
+}
+.tabla-contenedor::-webkit-scrollbar-thumb:hover {
+  background: var(--c-idle);
+}
+.tabla-contenedor::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.tabla-contenedor {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line-strong) transparent;
+}
 .tabla-ops thead th {
   @apply sticky top-0 z-10 border-b border-line bg-surface px-2 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-3;
 }

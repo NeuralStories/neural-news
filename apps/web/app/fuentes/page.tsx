@@ -443,39 +443,12 @@ export default function FuentesPage() {
           relleno="flush"
           acciones={
             <>
-              <input
-                className="input-compact w-40"
-                placeholder="filtrar por texto…"
-                defaultValue={texto}
-                onChange={(evento) => actualizarUrl({ q: evento.target.value, pagina: "1" })}
-                aria-label="Filtrar fuentes por texto"
-              />
-              <select
-                className="input-compact w-32"
-                value={estado}
-                onChange={(evento) => actualizarUrl({ estado: evento.target.value, pagina: "1" })}
-                aria-label="Filtrar por estado"
-              >
-                <option value="">todos los estados</option>
-                {Object.entries(ETIQUETA_FUENTE).map(([clave, etiqueta]) => (
-                  <option key={clave} value={clave}>
-                    {etiqueta}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="input-compact w-32"
-                value={proveedor}
-                onChange={(evento) => actualizarUrl({ proveedor: evento.target.value, pagina: "1" })}
-                aria-label="Filtrar por proveedor"
-              >
-                <option value="">todos los proveedores</option>
-                {proveedores.map((nombre) => (
-                  <option key={nombre} value={nombre}>
-                    {nombre}
-                  </option>
-                ))}
-              </select>
+              {/*
+                Sólo los chips de columna viven en la cabecera: los tres
+                controles de filtro se mudaron al cuerpo (fila propia bajo la
+                cabecera). Con siete controles en `acciones` la cabecera se
+                partía en tres filas y aplastaba el título a la izquierda.
+              */}
               {COLUMNAS_SECUNDARIAS.map((clave) => (
                 <button
                   key={clave}
@@ -496,6 +469,48 @@ export default function FuentesPage() {
             </>
           }
         >
+          {/* Filtros: fila propia, a todo el ancho, que envuelve en pantallas
+              estrechas en lugar de estrangular la cabecera del panel. El ancho
+              va en `style` porque `@apply w-full` de `.input-compact` (estilo
+              sin capa) vence a las utilidades `w-*` de Tailwind v4. */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2">
+            <input
+              className="input-compact"
+              style={{ width: "13rem", maxWidth: "100%" }}
+              placeholder="filtrar por texto…"
+              defaultValue={texto}
+              onChange={(evento) => actualizarUrl({ q: evento.target.value, pagina: "1" })}
+              aria-label="Filtrar fuentes por texto"
+            />
+            <select
+              className="input-compact"
+              style={{ width: "11rem", maxWidth: "100%" }}
+              value={estado}
+              onChange={(evento) => actualizarUrl({ estado: evento.target.value, pagina: "1" })}
+              aria-label="Filtrar por estado"
+            >
+              <option value="">todos los estados</option>
+              {Object.entries(ETIQUETA_FUENTE).map(([clave, etiqueta]) => (
+                <option key={clave} value={clave}>
+                  {etiqueta}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input-compact"
+              style={{ width: "12rem", maxWidth: "100%" }}
+              value={proveedor}
+              onChange={(evento) => actualizarUrl({ proveedor: evento.target.value, pagina: "1" })}
+              aria-label="Filtrar por proveedor"
+            >
+              <option value="">todos los proveedores</option>
+              {proveedores.map((nombre) => (
+                <option key={nombre} value={nombre}>
+                  {nombre}
+                </option>
+              ))}
+            </select>
+          </div>
           {cargando && items.length === 0 ? (
             <EsqueletoTabla filas={8} />
           ) : (

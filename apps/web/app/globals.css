@@ -653,6 +653,14 @@ body {
   @apply font-mono tabular-nums text-ink-3;
 }
 
+/* Variante de panel: tabla dentro de una columna estrecha (ficha, lateral).
+   Sin el mínimo de lista (52 rem) — que en una columna de ~45 rem fuerza un
+   scroll horizontal innecesario —; el aplastamiento lo evita el `ancho`
+   declarado de cada columna, que sigue siendo contrato. */
+.tabla-ops-panel {
+  min-width: 0;
+}
+
 /* Fila de clave/valor (detalle técnico). */
 .kv {
   @apply flex items-baseline justify-between gap-3 border-b border-line/60 py-1 text-xs last:border-b-0;

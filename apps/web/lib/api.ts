@@ -53,8 +53,13 @@ export const api = {
   getJob: (id: number) => request<import("./types").JobInfo>(`/v1/jobs/${id}`),
   // Las lecturas de la consola aceptan `signal`: el ciclo nuevo aborta al
   // anterior en vuelo para que una respuesta lenta nunca pise a una fresca.
-  listJobs: (opciones?: { signal?: AbortSignal }) =>
-    request<{ items: import("./types").JobInfo[] }>("/v1/jobs", opciones),
+  // `consulta` lleva la paginación y los filtros del servidor (F-6): la
+  // respuesta incluye el `total` real, no el recorte de la página.
+  listJobs: (consulta = "", opciones?: { signal?: AbortSignal }) =>
+    request<{ items: import("./types").JobInfo[]; total: number; limit: number; offset: number }>(
+      `/v1/jobs${consulta}`,
+      opciones,
+    ),
 
   providerStatus: (opciones?: { signal?: AbortSignal }) =>
     request<{ demo_mode: boolean; paid_services_enabled: boolean; providers: import("./types").ProviderStatus[] }>("/v1/provider-status", opciones),

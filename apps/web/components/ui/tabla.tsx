@@ -45,6 +45,14 @@ export type PropsTabla<T> = {
   orden?: OrdenTabla | null;
   /** Clic en una cabecera ordenable. */
   alOrdenar?: (clave: string) => void;
+  /**
+   * Ancho mínimo del elemento `table`: «completa» (52 rem, listas a todo
+   * ancho) o «panel» (sin mínimo propio: para tablas dentro de una columna
+   * estrecha, donde el mínimo global de lista fuerza un scroll innecesario).
+   * En «panel» el aplastamiento lo evitan los `ancho` de cada columna —
+   * regla del ancho mínimo: toda columna no flexible declara el suyo.
+   */
+  anchura?: "completa" | "panel";
 };
 
 function TablaOpsImpl<T>({
@@ -55,6 +63,7 @@ function TablaOpsImpl<T>({
   vacio,
   orden = null,
   alOrdenar,
+  anchura = "completa",
 }: PropsTabla<T>) {
   const visibles = columnas.filter((columna) => !ocultas.includes(columna.clave));
 
@@ -64,7 +73,7 @@ function TablaOpsImpl<T>({
 
   return (
     <div className="tabla-contenedor">
-      <table className="tabla-ops">
+      <table className={anchura === "panel" ? "tabla-ops tabla-ops-panel" : "tabla-ops"}>
         <thead>
           <tr>
             {visibles.map((columna) => {

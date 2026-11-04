@@ -51,6 +51,16 @@ import {
 } from "@/components/ui/icono";
 
 const INTERVALO_MS = 15_000;
+/** Tamaño de página de la tabla de trabajos (paginación en servidor, F-6). */
+const TRABAJOS_POR_PAGINA = 50;
+
+/** Filtro de la URL → valores `status` del servidor («en curso» agrupa dos). */
+const ESTADO_A_SERVIDOR: Record<FiltroEstado, string> = {
+  todos: "",
+  fallidos: "FAILED",
+  en_curso: "QUEUED,RUNNING",
+  completados: "DONE",
+};
 
 /** Bloques independientes de la lectura: cada uno falla por su cuenta. */
 type ClaveLectura = "salud" | "trabajos" | "uso" | "proveedores" | "metricas";
@@ -58,6 +68,8 @@ type ClaveLectura = "salud" | "trabajos" | "uso" | "proveedores" | "metricas";
 type Datos = {
   salud: EstadoSalud;
   trabajos: JobInfo[];
+  /** Total real del filtro en servidor (el recorte de página no miente ya). */
+  totalTrabajos: number;
   uso: UsageInfo;
   proveedores: ProviderStatus[];
   metricas: MetricasOperacion;
@@ -138,8 +150,11 @@ export default function OperacionPage() {
 
   // Los filtros viven **en la URL**: una vista de operaciones se comparte
   // (mando, enlace) con el filtro puesto, y recargar no pierde el contexto.
+  // Estado y tipo se aplican **en el servidor** (F-6): el total y la página
+  // son reales; la página también viaja en la URL.
   const filtroEstado = (parametros.get("estado") ?? "todos") as FiltroEstado;
   const filtroTipo = parametros.get("tipo") ?? "todos";
+  const pagina = Math.max(1, Number(parametros.get("pagina") ?? "1") || 1);
   // El filtro de alerta guarda el **código** de la alerta, no el array de
   // trabajos: cada ciclo trae objetos nuevos y una comparación por identidad
   // dejaba el filtro aplicado con el botón ya incapaz de quitarlo.
@@ -152,8 +167,11 @@ export default function OperacionPage() {
     (cambios: Record<string, string>) => {
       const siguiente = new URLSearchParams(parametros.toString());
       for (const [clave, valor] of Object.entries(cambios)) {
-        if (valor && valor !== "todos") siguiente.set(clave, valor);
-        else siguiente.delete(clave);
+        if (valor && valor !== "todos" && !(clave === "pagina" && valor === "1")) {
+          siguiente.set(clave, valor);
+        } else {
+          siguiente.delete(clave);
+        }
       }
       router.replace(`/ops${siguiente.toString() ? `?${siguiente}` : ""}`, { scroll: false });
     },
@@ -181,9 +199,17 @@ export default function OperacionPage() {
     };
 
     try {
+      // Consulta de trabajos: paginación + filtros en el servidor (F-6).
+      const parametrosTrabajos = new URLSearchParams();
+      parametrosTrabajos.set("limit", String(TRABAJOS_POR_PAGINA));
+      parametrosTrabajos.set("offset", String((pagina - 1) * TRABAJOS_POR_PAGINA));
+      const estadoServidor = ESTADO_A_SERVIDOR[filtroEstado];
+      if (estadoServidor) parametrosTrabajos.set("status", estadoServidor);
+      if (filtroTipo !== "todos") parametrosTrabajos.set("type", filtroTipo);
+
       const [salud, trabajos, uso, proveedores, metricas] = await Promise.all([
         leer("salud", () => api.health({ signal })),
-        leer("trabajos", () => api.listJobs({ signal })),
+        leer("trabajos", () => api.listJobs(`?${parametrosTrabajos}`, { signal })),
         leer("uso", () => api.usage({ signal })),
         leer("proveedores", () => api.providerStatus({ signal })),
         leer("metricas", () => api.metrics({ signal })),
@@ -216,6 +242,9 @@ export default function OperacionPage() {
       const siguiente: Datos = {
         salud: salud.dato ?? previo!.salud,
         trabajos: trabajos.dato ? trabajos.dato.items : previo!.trabajos,
+        totalTrabajos: trabajos.dato
+          ? trabajos.dato.total
+          : (previo?.totalTrabajos ?? previo!.trabajos.length),
         uso: uso.dato ?? previo!.uso,
         proveedores: proveedores.dato ? proveedores.dato.providers : previo!.proveedores,
         metricas: metricas.dato ? metricas.dato.metricas : previo!.metricas,
@@ -230,7 +259,7 @@ export default function OperacionPage() {
     } finally {
       if (!signal.aborted) setActualizando(false);
     }
-  }, []);
+  }, [filtroEstado, filtroTipo, pagina]);
 
   useEffect(() => {
     void cargar();
@@ -267,20 +296,17 @@ export default function OperacionPage() {
     return datos?.alertas.find((alerta) => alerta.codigo === codigoAlerta)?.trabajos ?? null;
   }, [codigoAlerta, datos]);
 
+  // Estado y tipo ya vienen filtrados del servidor (F-6); en cliente queda
+  // sólo el filtro por ids de una alerta, que es una relación puntual.
   const trabajosFiltrados = useMemo(() => {
     const base = datos?.trabajos ?? [];
     return base.filter((trabajo) => {
-      if (filtroEstado === "fallidos" && trabajo.status !== "FAILED") return false;
-      if (filtroEstado === "en_curso" && !(trabajo.status === "QUEUED" || trabajo.status === "RUNNING"))
-        return false;
-      if (filtroEstado === "completados" && trabajo.status !== "DONE") return false;
-      if (filtroTipo !== "todos" && trabajo.type !== filtroTipo) return false;
       if (trabajosDeAlerta && !trabajosDeAlerta.includes(trabajo.id)) return false;
       return true;
     });
-  }, [datos, filtroEstado, filtroTipo, trabajosDeAlerta]);
+  }, [datos, trabajosDeAlerta]);
 
-  // Orden en cliente sobre la ventana filtrada; `null` = el orden del
+  // Orden en cliente sobre la **página actual**; `null` = el orden del
   // servidor (creado descendente). Tres estados: asc → desc → sin orden.
   const trabajosOrdenados = useMemo(() => {
     if (!orden) return trabajosFiltrados;
@@ -425,7 +451,7 @@ export default function OperacionPage() {
 
   if (!datos) return null;
 
-  const { salud, metricas, alertas, proveedores, uso, trabajos } = datos;
+  const { salud, metricas, alertas, proveedores, uso, trabajos, totalTrabajos } = datos;
   const degradado = salud.checks
     ? Object.entries(salud.checks).filter(([, comprobacion]) => !comprobacion.ok)
     : [];
@@ -655,7 +681,7 @@ export default function OperacionPage() {
 
           <Panel
             titulo="Trabajos"
-            meta={`${trabajosFiltrados.length} de ${trabajos.length}`}
+            meta={`página ${pagina} · ${totalTrabajos} en total`}
             relleno="flush"
             acciones={
               <>
@@ -723,6 +749,32 @@ export default function OperacionPage() {
                 />
               }
             />
+            {/* Paginación en servidor (F-6): el contador es el total real del
+                filtro, no el recorte de la página. El orden por cabecera ordena
+                la página actual. */}
+            <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-2">
+              <span className="ops-panel-meta">
+                página {pagina} de {Math.max(1, Math.ceil(totalTrabajos / TRABAJOS_POR_PAGINA))}
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className="filtro"
+                  disabled={pagina <= 1}
+                  onClick={() => actualizarUrl({ pagina: String(pagina - 1) })}
+                >
+                  anterior
+                </button>
+                <button
+                  type="button"
+                  className="filtro"
+                  disabled={pagina * TRABAJOS_POR_PAGINA >= totalTrabajos}
+                  onClick={() => actualizarUrl({ pagina: String(pagina + 1) })}
+                >
+                  siguiente
+                </button>
+              </div>
+            </div>
           </Panel>
         </div>
 

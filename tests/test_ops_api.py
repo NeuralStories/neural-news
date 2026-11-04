@@ -61,7 +61,45 @@ def test_trabajo_serializa_estado_y_motivo_normalizado(demo_client, con_trabajos
 def test_listado_de_trabajos_acota_el_limite(demo_client, con_trabajos) -> None:
     respuesta = demo_client.get("/api/v1/jobs?limit=5000")
     assert respuesta.status_code == 200
-    assert len(respuesta.json()["items"]) <= 200
+    cuerpo = respuesta.json()
+    assert len(cuerpo["items"]) <= 200
+    # F-6: la consola necesita el total real para decir «N de M» sin mentir.
+    assert isinstance(cuerpo["total"], int)
+    assert cuerpo["total"] >= len(cuerpo["items"])
+
+
+def test_listado_de_trabajos_pagina_y_filtra(demo_client, con_trabajos) -> None:
+    """F-6: paginación en servidor (offset) y filtros por estado y tipo."""
+    completa = demo_client.get("/api/v1/jobs?limit=200").json()
+
+    # Paginación: offset avanza sin repetir filas y el total no cambia.
+    primera = demo_client.get("/api/v1/jobs?limit=1&offset=0").json()
+    segunda = demo_client.get("/api/v1/jobs?limit=1&offset=1").json()
+    assert primera["total"] == completa["total"] == segunda["total"]
+    if len(completa["items"]) >= 2:
+        assert primera["items"][0]["id"] != segunda["items"][0]["id"]
+
+    # Filtro por estado: todo lo devuelto cumple el filtro y el total es el
+    # del filtro, no el global.
+    cuerpo_fallidos = demo_client.get("/api/v1/jobs?limit=200&status=FAILED").json()
+    assert all(item["status"] == "FAILED" for item in cuerpo_fallidos["items"])
+    assert cuerpo_fallidos["total"] == sum(
+        1 for item in completa["items"] if item["status"] == "FAILED"
+    )
+
+    # Filtro por tipo: idem.
+    por_tipo = demo_client.get("/api/v1/jobs?limit=200&type=procesar_demo").json()
+    assert all(item["type"] == "procesar_demo" for item in por_tipo["items"])
+
+    # Orden ascendente: el primero es el más antiguo de la página.
+    ascendente = demo_client.get("/api/v1/jobs?limit=5&order=created_at:asc").json()
+    fechas = [item["created_at"] for item in ascendente["items"]]
+    assert fechas == sorted(fechas)
+
+    # Un offset fuera de rango devuelve página vacía, no un error.
+    fuera = demo_client.get("/api/v1/jobs?limit=10&offset=99999").json()
+    assert fuera["items"] == []
+    assert fuera["total"] == completa["total"]
 
 
 def test_estado_de_proveedores_distingue_lo_que_funciona(demo_client) -> None:

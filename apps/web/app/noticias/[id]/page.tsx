@@ -21,36 +21,26 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { ETIQUETA_TIPO_AFIRMACION, ETIQUETA_VERIFICACION } from "@/lib/estados";
+import {
+  ETIQUETA_TIPO_AFIRMACION,
+  ETIQUETA_VERIFICACION,
+  TONO_DE_NOTICIA,
+  TONO_VERIFICACION_ESTADO,
+} from "@/lib/estados";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { ClaimItem, EvidenceItem, StoryDetail, Storyboard } from "@/lib/types";
-import { Estado, type TonoEstado } from "@/components/ui/estado";
+import { Estado } from "@/components/ui/estado";
 import { Metrica } from "@/components/ui/metrica";
 import { Panel } from "@/components/ui/panel";
 import { TablaOps, type Columna } from "@/components/ui/tabla";
 import { EsqueletoMetrica, EsqueletoPanel, Vacio } from "@/components/ui/estados";
 import { IconoAlerta, IconoCheck, IconoFlecha, IconoRefrescar } from "@/components/ui/icono";
 
-/**
- * Tono semántico del estado de la noticia y de cada estado de verificación.
- * `ok` = respaldado/aprobado, `warn` = sin verificar, `crit` = contradicho,
- * `idle` = no verificable o en espera, `info` = en curso.
+/*
+ * Los tonos de los estados viven en `lib/estados.ts` (TONO_DE_NOTICIA y
+ * TONO_VERIFICACION_ESTADO): la guardia `test_estados_compartidos` impide
+ * volver a declararlos en la página.
  */
-const TONO_POR_ESTADO: Record<string, TonoEstado> = {
-  CANDIDATE: "idle",
-  RESEARCHING: "info",
-  REVIEW_REQUIRED: "warn",
-  SCRIPT_DRAFT: "info",
-  APPROVED: "ok",
-  REJECTED: "idle",
-};
-
-const TONO_POR_VERIFICACION: Record<string, TonoEstado> = {
-  UNVERIFIED: "warn",
-  SUPPORTED: "ok",
-  CONTRADICTED: "crit",
-  NOT_VERIFIABLE: "idle",
-};
 
 /** Columnas ocultables de la tabla de afirmaciones. */
 const COLUMNAS_AFIRMACION = [{ clave: "notas", etiqueta: "notas" }] as const;
@@ -79,7 +69,10 @@ export default function StoryDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [wordsPerMinute, setWordsPerMinute] = useState(150);
   const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
-  const [ocultasAfirmacion, setOcultasAfirmacion] = useState<string[]>([]);
+  // Las notas de verificación son ruido en la lectura normal (en demo, una
+  // nota larga que sólo fuerza scroll): ocultas de entrada, visibles por el
+  // chip NOTAS de la cabecera del panel.
+  const [ocultasAfirmacion, setOcultasAfirmacion] = useState<string[]>(["notas"]);
   const [ocultasEvidencia, setOcultasEvidencia] = useState<string[]>([]);
   // Mientras se guarda una versión, aprobar o volver a guardar actuaría sobre
   // una versión que el servidor puede haber descartado: los botones se bloquean.
@@ -130,7 +123,7 @@ export default function StoryDetailPage() {
       ancho: "10rem",
       render: (claim) => (
         <Estado
-          tono={TONO_POR_VERIFICACION[claim.verification_status] ?? "idle"}
+          tono={TONO_VERIFICACION_ESTADO[claim.verification_status] ?? "idle"}
           etiqueta={
             ETIQUETA_VERIFICACION[claim.verification_status] ?? claim.verification_status
           }
@@ -364,7 +357,7 @@ export default function StoryDetailPage() {
               {story.title}
             </h1>
             <Estado
-              tono={TONO_POR_ESTADO[story.status] ?? "idle"}
+              tono={TONO_DE_NOTICIA[story.status] ?? "idle"}
               etiqueta={story.status_label}
               variante="punto"
             />
@@ -642,6 +635,7 @@ export default function StoryDetailPage() {
               filas={totales.afirmaciones}
               claveFila={(claim) => String(claim.id)}
               ocultas={ocultasAfirmacion}
+              anchura="panel"
               vacio={
                 <Vacio
                   titulo="Sin afirmaciones registradas todavía"
@@ -683,6 +677,7 @@ export default function StoryDetailPage() {
               filas={totales.evidencias}
               claveFila={(ev) => String(ev.id)}
               ocultas={ocultasEvidencia}
+              anchura="panel"
               vacio={
                 <Vacio
                   titulo="Sin evidencias"

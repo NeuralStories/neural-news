@@ -102,6 +102,37 @@ export const TONO_DE_VERIFICACION: Record<string, Tono> = {
   NOT_VERIFIABLE: "neutro",
 };
 
+/*
+ * Tonos de los estados de noticia y de lote (paquete). Vivían duplicados en
+ * `app/lotes` y `app/noticias` hasta que `test_estados_compartidos` los cazó:
+ * los mapas de estado viven sólo aquí, junto a sus listas canónicas.
+ */
+export type TonoEstado = "ok" | "warn" | "crit" | "info" | "idle";
+
+export const TONO_DE_NOTICIA: Record<string, TonoEstado> = {
+  CANDIDATE: "idle",
+  RESEARCHING: "info",
+  REVIEW_REQUIRED: "warn",
+  SCRIPT_DRAFT: "info",
+  APPROVED: "ok",
+  REJECTED: "idle",
+};
+
+export const TONO_DE_PAQUETE: Record<string, TonoEstado> = {
+  NOT_STARTED: "idle",
+  DRAFT: "info",
+  READY_FOR_REVIEW: "warn",
+  EXPORTED: "ok",
+};
+
+/** Tono de un estado de verificación para el componente `Estado` (la ficha). */
+export const TONO_VERIFICACION_ESTADO: Record<string, TonoEstado> = {
+  UNVERIFIED: "warn",
+  SUPPORTED: "ok",
+  CONTRADICTED: "crit",
+  NOT_VERIFIABLE: "idle",
+};
+
 /**
  * Insignia de un estado, con reserva honesta: si el estado no está en el mapa
  * se muestra `badge-neutral` y **no** se inventa un color.

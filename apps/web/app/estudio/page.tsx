@@ -158,7 +158,9 @@ function Launcher() {
         </p>
       </Panel>
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      {/* items-start: el panel de creación no debe estirarse hasta la altura
+          de la tabla de proyectos (quedaba medio panel vacío debajo). */}
+      <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <Panel titulo="Crear proyecto" meta="nombre, ratio y noticia">
           <form
             className="space-y-3"

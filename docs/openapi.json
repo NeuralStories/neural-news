@@ -1349,6 +1349,7 @@
     },
     "/api/v1/jobs": {
       "get": {
+        "description": "Listado paginado de trabajos con filtros y total.\n\nLa consola de operación pagina en servidor: sin `total` y sin filtros, el\noperador ve «50 de 50» con 158 trabajos en la ventana y los fallos antiguos\nson invisibles (hallazgo F-6 de la propuesta visual).",
         "operationId": "list_jobs_api_v1_jobs_get",
         "parameters": [
           {
@@ -1359,6 +1360,58 @@
               "default": 50,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "default": "created_at:desc",
+              "title": "Order",
+              "type": "string"
             }
           }
         ],

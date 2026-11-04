@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from ..config import get_settings
 from ..db import get_db
@@ -41,8 +41,32 @@ def get_job(job_id: int, db=Depends(get_db), actor=Depends(get_current_actor)) -
 
 
 @router.get("/jobs")
-def list_jobs(db=Depends(get_db), actor=Depends(get_current_actor), limit: int = 50) -> dict:
-    rows = db.scalars(select(Job).order_by(Job.created_at.desc()).limit(min(limit, 200))).all()
+def list_jobs(
+    db=Depends(get_db),
+    actor=Depends(get_current_actor),
+    limit: int = 50,
+    offset: int = 0,
+    status: str | None = None,
+    type: str | None = None,
+    order: str = "created_at:desc",
+) -> dict:
+    """Listado paginado de trabajos con filtros y total.
+
+    La consola de operación pagina en servidor: sin `total` y sin filtros, el
+    operador ve «50 de 50» con 158 trabajos en la ventana y los fallos antiguos
+    son invisibles (hallazgo F-6 de la propuesta visual).
+    """
+    consulta = select(Job)
+    if status:
+        # «en curso» agrupa dos estados: la consola pide `status=QUEUED,RUNNING`.
+        consulta = consulta.where(Job.status.in_([s for s in status.split(",") if s]))
+    if type:
+        consulta = consulta.where(Job.type == type)
+    total = db.scalar(select(func.count()).select_from(consulta.subquery()))
+    consulta = consulta.order_by(
+        Job.created_at.asc() if order.endswith(":asc") else Job.created_at.desc()
+    )
+    rows = db.scalars(consulta.limit(min(max(limit, 1), 200)).offset(max(offset, 0))).all()
     return {
         "items": [
             {
@@ -57,7 +81,10 @@ def list_jobs(db=Depends(get_db), actor=Depends(get_current_actor), limit: int =
                 "created_at": j.created_at.isoformat(),
             }
             for j in rows
-        ]
+        ],
+        "total": int(total or 0),
+        "limit": min(max(limit, 1), 200),
+        "offset": max(offset, 0),
     }
 
 

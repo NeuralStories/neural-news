@@ -22,10 +22,16 @@ import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { ESTADOS_NOTICIA, ETIQUETA_NOTICIA, ETIQUETA_PAQUETE } from "@/lib/estados";
+import {
+  ESTADOS_NOTICIA,
+  ETIQUETA_NOTICIA,
+  ETIQUETA_PAQUETE,
+  TONO_DE_NOTICIA,
+  TONO_DE_PAQUETE,
+} from "@/lib/estados";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { BatchDetail, StoryListItem } from "@/lib/types";
-import { Estado, type TonoEstado } from "@/components/ui/estado";
+import { Estado } from "@/components/ui/estado";
 import { Metrica } from "@/components/ui/metrica";
 import { Panel } from "@/components/ui/panel";
 import { TablaOps, type Columna } from "@/components/ui/tabla";
@@ -39,23 +45,9 @@ const TAMANO_PAGINA = 15;
 const TAMANOS = [5, 10] as const;
 type Tamano = (typeof TAMANOS)[number];
 
-/** Tono semántico del estado de una noticia. */
-const TONO_POR_ESTADO: Record<string, TonoEstado> = {
-  CANDIDATE: "idle",
-  RESEARCHING: "info",
-  REVIEW_REQUIRED: "warn",
-  SCRIPT_DRAFT: "info",
-  APPROVED: "ok",
-  REJECTED: "idle",
-};
-
-/** Tono semántico del estado de un lote (paquete). */
-const TONO_POR_LOTE: Record<string, TonoEstado> = {
-  NOT_STARTED: "idle",
-  DRAFT: "info",
-  READY_FOR_REVIEW: "warn",
-  EXPORTED: "ok",
-};
+// Los tonos de los estados viven en `lib/estados.ts` (TONO_DE_NOTICIA y
+// TONO_DE_PAQUETE): la guardia `test_estados_compartidos` impide volver a
+// declararlos por página.
 
 const ORDENES = [
   { clave: "recientes", etiqueta: "recientes" },
@@ -282,7 +274,7 @@ function LotesVista() {
       ancho: "9.5rem",
       render: (s) => (
         <Estado
-          tono={TONO_POR_ESTADO[s.status] ?? "idle"}
+          tono={TONO_DE_NOTICIA[s.status] ?? "idle"}
           etiqueta={s.status_label}
           variante="punto"
         />
@@ -356,7 +348,7 @@ function LotesVista() {
       ancho: "9.5rem",
       render: (b) => (
         <Estado
-          tono={TONO_POR_LOTE[b.status] ?? "idle"}
+          tono={TONO_DE_PAQUETE[b.status] ?? "idle"}
           etiqueta={ETIQUETA_PAQUETE[b.status] ?? b.status}
           variante="punto"
         />
@@ -573,7 +565,7 @@ function LotesVista() {
                     className="flex flex-wrap items-center gap-2 border-b border-line/60 pb-1 text-sm last:border-b-0"
                   >
                     <Estado
-                      tono={TONO_POR_ESTADO[s.status] ?? "idle"}
+                      tono={TONO_DE_NOTICIA[s.status] ?? "idle"}
                       etiqueta={s.status_label}
                       variante="punto"
                     />
@@ -752,6 +744,7 @@ function LotesVista() {
               filas={batches}
               claveFila={(b) => String(b.id)}
               ocultas={ocultasLote}
+              anchura="panel"
               vacio={
                 <Vacio
                   titulo="Todavía no hay lotes"

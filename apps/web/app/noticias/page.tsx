@@ -21,10 +21,10 @@ import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { ESTADOS_NOTICIA, ETIQUETA_NOTICIA } from "@/lib/estados";
+import { ESTADOS_NOTICIA, ETIQUETA_NOTICIA, TONO_DE_NOTICIA } from "@/lib/estados";
 import { fmtDate, useJobPolling } from "@/lib/hooks";
 import type { StoryListItem } from "@/lib/types";
-import { Estado, type TonoEstado } from "@/components/ui/estado";
+import { Estado } from "@/components/ui/estado";
 import { Metrica } from "@/components/ui/metrica";
 import { Panel } from "@/components/ui/panel";
 import { TablaOps, type Columna } from "@/components/ui/tabla";
@@ -34,19 +34,9 @@ import { IconoAlerta, IconoCruce, IconoFlecha, IconoRefrescar } from "@/componen
 /** Filas por página (la tabla es densa: 20 caben en dos pantallas). */
 const TAMANO_PAGINA = 20;
 
-/**
- * Tono semántico de cada estado de noticia. Los acentos son funcionales:
- * `ok` = aprobado, `info` = en curso, `warn` = requiere revisión,
- * `idle` = sin trabajo en marcha (candidata o descartada).
- */
-const TONO_POR_ESTADO: Record<string, TonoEstado> = {
-  CANDIDATE: "idle",
-  RESEARCHING: "info",
-  REVIEW_REQUIRED: "warn",
-  SCRIPT_DRAFT: "info",
-  APPROVED: "ok",
-  REJECTED: "idle",
-};
+// El tono de cada estado de noticia vive en `lib/estados.ts`
+// (TONO_DE_NOTICIA): la guardia `test_estados_compartidos` impide que una
+// página vuelva a declarar mapas de estado.
 
 const ORDENES = [
   { clave: "recientes", etiqueta: "recientes" },
@@ -214,7 +204,10 @@ function NoticiasVista() {
             </span>
           ) : null}
           {s.summary ? (
-            <div className="mt-0.5 line-clamp-2 text-xs text-ink-3">{s.summary}</div>
+            // Una línea de resumen: en la mayoría de filas el resumen repite
+            // el titular y dos líneas doblaban la altura de la tabla sin
+            // aportar información nueva.
+            <div className="mt-0.5 line-clamp-1 text-xs text-ink-3">{s.summary}</div>
           ) : null}
         </div>
       ),
@@ -225,7 +218,7 @@ function NoticiasVista() {
       ancho: "10rem",
       render: (s) => (
         <Estado
-          tono={TONO_POR_ESTADO[s.status] ?? "idle"}
+          tono={TONO_DE_NOTICIA[s.status] ?? "idle"}
           etiqueta={s.status_label}
           variante="punto"
         />
